@@ -117,10 +117,10 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="calculate.h" />
     <ClInclude Include="camera.h" />
     <ClInclude Include="core_api.h" />
     <ClInclude Include="core_settings.h" />
-    <ClInclude Include="Primitives.h" />
     <ClInclude Include="Ray.h" />
     <ClInclude Include="rendercore.h" />
   </ItemGroup>

@@ -14,7 +14,7 @@
     </ClInclude>
     <ClInclude Include="camera.h" />
     <ClInclude Include="Ray.h" />
-    <ClInclude Include="Primitives.h" />
+    <ClInclude Include="calculate.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="API">

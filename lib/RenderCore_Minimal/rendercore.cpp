@@ -73,6 +73,7 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge, co
 	screen->Clear();
 	for( Mesh& mesh : meshes ) for( int i = 0; i < mesh.vcount; i++ )
 	{
+	
 		// convert a vertex position to a screen coordinate
 		int screenx = mesh.vertices[i].x / 80 * (float)screen->width + screen->width / 2;
 		int screeny = mesh.vertices[i].z / 80 * (float)screen->height + screen->height / 2;
