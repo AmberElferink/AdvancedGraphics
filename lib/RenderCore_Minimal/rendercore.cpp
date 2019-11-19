@@ -32,6 +32,7 @@ void RenderCore::Init()
 //  +-----------------------------------------------------------------------------+
 void RenderCore::SetTarget( GLTexture* target )
 {
+	//accepts opengl texture
 	// synchronize OpenGL viewport
 	targetTextureID = target->ID;
 	if (screen != 0 && target->width == screen->width && target->height == screen->height) return; // nothing changed
@@ -43,6 +44,10 @@ void RenderCore::SetTarget( GLTexture* target )
 //  |  RenderCore::SetGeometry                                                    |
 //  |  Set the geometry data for a model.                                   LH2'19|
 //  +-----------------------------------------------------------------------------+
+//meshIdx can be ignored. vertexData zitten x y en z in, de 4e is voor optimization, negeer die. 
+//triangle count is vertex count/3.
+//core triangles: 3 vertices kun je uit de rest halen, daarmee kun je al een intersection doen, maar de normal ed zit in de coreTriangles
+//copy data to new mesh, want je kan niet garanderen dat de data niet verandert terwijl je tekent. Daarom moet je een kopie maken.
 void RenderCore::SetGeometry( const int meshIdx, const float4* vertexData, const int vertexCount, const int triangleCount, const CoreTri* triangleData, const uint* alphaFlags )
 {
 	Mesh newMesh;
@@ -61,6 +66,7 @@ void RenderCore::SetGeometry( const int meshIdx, const float4* vertexData, const
 //  |  RenderCore::Render                                                         |
 //  |  Produce one image.                                                   LH2'19|
 //  +-----------------------------------------------------------------------------+
+// its not a raytracer, maar gaat over de vertices in de meshes en tekent een 2d versie of the level met dots voor je vertices. Zodra hij klaar is, tekent hij het naar de texture die wordt gerendert.
 void RenderCore::Render( const ViewPyramid& view, const Convergence converge, const float brightness, const float contrast )
 {
 	// render

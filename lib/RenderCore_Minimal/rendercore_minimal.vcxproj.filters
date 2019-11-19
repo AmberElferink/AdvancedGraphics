@@ -12,6 +12,9 @@
     <ClInclude Include="core_api.h">
       <Filter>API</Filter>
     </ClInclude>
+    <ClInclude Include="camera.h" />
+    <ClInclude Include="Ray.h" />
+    <ClInclude Include="Primitives.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="API">
