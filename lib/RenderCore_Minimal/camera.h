@@ -15,10 +15,10 @@ class Camera
 	{
 
 	}
-	float3 E = make_float3(0, 0, 0);
-	float3 V = make_float3(0, 0, 1);
-	float3 C;
-	float3 P0;
-	float3 P1;
-	float3 P2;
+	float3 E = make_float3(0, 0, 0); //camera position
+	float3 V = make_float3(0, 0, 1); // view direction; must be normalized
+	float3 C; // center of screen 
+	float3 P0; // upper left corner of screen
+	float3 P1; // upper right corner of screen
+	float3 P2; // bottom left corner of screen
 };
