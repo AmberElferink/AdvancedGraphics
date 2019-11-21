@@ -10,7 +10,7 @@ class Intersection
 	float t;								 // distance from starting point to intersection point
 	float3 point;							 // intersection point
 	float3 norm = make_float3( -1, -1, -1 ); // normal at intersection point
-	int material = 0xff0000;				 //red for now, figure this out later. Probably a property somewhere in the triangle but can't find where
+	int material = 0x0000ff;				 //red for now, figure this out later. Probably a property somewhere in the triangle but can't find where
 
 	Intersection( const float t, const float3 &point, const float3 &norm, const CoreTri &triangle ) : t( t ), point( point ), norm( norm )
 	{

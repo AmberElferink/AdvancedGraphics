@@ -1,5 +1,4 @@
-﻿#pragma once
-/* rendercore.cpp - Copyright 2019 Utrecht University
+﻿/* rendercore.cpp - Copyright 2019 Utrecht University
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -91,9 +90,11 @@ void RenderCore::Render( const ViewPyramid &view, const Convergence converge, co
 
 			Intersection closest;
 			closest.t = 100000;
+			closest.material = 0xffffff;
 
-			for ( Mesh &mesh : meshes )
-				for ( int i = 0; i < mesh.vcount / 3; i++ ) // TODO
+		//	for ( Mesh &mesh : meshes )
+			Mesh &mesh = meshes[5];
+				for ( int i = 0; i < mesh.vcount; i++) //mesh.vcount / 3; i++ ) // TODO
 				{
 					Intersection intersection;
 					if ( Intersect( ray, mesh.triangles[i], intersection ) )
