@@ -92,8 +92,7 @@ void RenderCore::Render( const ViewPyramid &view, const Convergence converge, co
 			closest.t = 100000;
 			closest.material = 0xffffff;
 
-		//	for ( Mesh &mesh : meshes )
-			Mesh &mesh = meshes[5];
+			for ( Mesh &mesh : meshes )
 				for ( int i = 0; i < mesh.vcount; i++) //mesh.vcount / 3; i++ ) // TODO
 				{
 					Intersection intersection;
