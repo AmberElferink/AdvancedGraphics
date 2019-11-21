@@ -13,6 +13,8 @@
    limitations under the License.
 */
 
+#include "Ray.h"
+#include "calculate.h"
 #include "core_settings.h"
 
 using namespace lh2core;
@@ -30,12 +32,12 @@ void RenderCore::Init()
 //  |  RenderCore::SetTarget                                                      |
 //  |  Set the OpenGL texture that serves as the render target.             LH2'19|
 //  +-----------------------------------------------------------------------------+
-void RenderCore::SetTarget( GLTexture* target )
+void RenderCore::SetTarget( GLTexture *target )
 {
 	//accepts opengl texture
 	// synchronize OpenGL viewport
 	targetTextureID = target->ID;
-	if (screen != 0 && target->width == screen->width && target->height == screen->height) return; // nothing changed
+	if ( screen != 0 && target->width == screen->width && target->height == screen->height ) return; // nothing changed
 	delete screen;
 	screen = new Bitmap( target->width, target->height );
 }
@@ -44,11 +46,11 @@ void RenderCore::SetTarget( GLTexture* target )
 //  |  RenderCore::SetGeometry                                                    |
 //  |  Set the geometry data for a model.                                   LH2'19|
 //  +-----------------------------------------------------------------------------+
-//meshIdx can be ignored. vertexData zitten x y en z in, de 4e is voor optimization, negeer die. 
+//meshIdx can be ignored. vertexData zitten x y en z in, de 4e is voor optimization, negeer die.
 //triangle count is vertex count/3.
 //core triangles: 3 vertices kun je uit de rest halen, daarmee kun je al een intersection doen, maar de normal ed zit in de coreTriangles
 //copy data to new mesh, want je kan niet garanderen dat de data niet verandert terwijl je tekent. Daarom moet je een kopie maken.
-void RenderCore::SetGeometry( const int meshIdx, const float4* vertexData, const int vertexCount, const int triangleCount, const CoreTri* triangleData, const uint* alphaFlags )
+void RenderCore::SetGeometry( const int meshIdx, const float4 *vertexData, const int vertexCount, const int triangleCount, const CoreTri *triangleData, const uint *alphaFlags )
 {
 	Mesh newMesh;
 	// copy the supplied vertices; we cannot assume that the render system does not modify
@@ -58,7 +60,7 @@ void RenderCore::SetGeometry( const int meshIdx, const float4* vertexData, const
 	memcpy( newMesh.vertices, vertexData, vertexCount * sizeof( float4 ) );
 	// copy the supplied 'fat triangles'
 	newMesh.triangles = new CoreTri[vertexCount / 3];
-	memcpy( newMesh.triangles, triangleData, (vertexCount / 3) * sizeof( CoreTri ) );
+	memcpy( newMesh.triangles, triangleData, ( vertexCount / 3 ) * sizeof( CoreTri ) );
 	meshes.push_back( newMesh );
 }
 
@@ -67,18 +69,50 @@ void RenderCore::SetGeometry( const int meshIdx, const float4* vertexData, const
 //  |  Produce one image.                                                   LH2'19|
 //  +-----------------------------------------------------------------------------+
 // its not a raytracer, maar gaat over de vertices in de meshes en tekent een 2d versie of the level met dots voor je vertices. Zodra hij klaar is, tekent hij het naar de texture die wordt gerendert.
-void RenderCore::Render( const ViewPyramid& view, const Convergence converge, const float brightness, const float contrast )
+void RenderCore::Render( const ViewPyramid &view, const Convergence converge, const float brightness, const float contrast )
 {
 	// render
 	screen->Clear();
-	for( Mesh& mesh : meshes ) for( int i = 0; i < mesh.vcount; i++ )
+
+	for ( int i = 0; i < screen->width; i++ ) //TODO niet in loop berekenen
 	{
-	
-		// convert a vertex position to a screen coordinate
-		int screenx = mesh.vertices[i].x / 80 * (float)screen->width + screen->width / 2;
-		int screeny = mesh.vertices[i].z / 80 * (float)screen->height + screen->height / 2;
-		screen->Plot( screenx, screeny, 0xffffff /* white */ );
+		for ( int j = 0; j < screen->height; j++ )
+		{
+			float u = (float)i / (float)screen->width;
+			float v = (float)j / (float)screen->height;
+			float3 P = view.p1 + u * ( view.p2 - view.p1 ) + v * ( view.p3 - view.p1 );
+
+			float3 dir = P - view.pos;
+			float3 D = dir / length( dir );
+
+			Ray ray = Ray( view.pos, D );
+
+			Intersection closest;
+			closest.t = 100000;
+
+			for ( Mesh &mesh : meshes )
+				for ( int i = 0; i < mesh.vcount / 3; i++ ) // TODO
+				{
+					Intersection intersection;
+					if ( Intersect( ray, mesh.triangles[i], intersection ) )
+					{
+						if ( intersection.t < closest.t )
+							closest = intersection;
+					}
+				}
+
+			screen->pixels[i + j * screen->width] = closest.material;
+		}
 	}
+
+	//	for( Mesh& mesh : meshes ) for( int i = 0; i < mesh.vcount; i++ )
+	//	{
+	//
+	//		// convert a vertex position to a screen coordinate
+	//		int screenx = mesh.vertices[i].x / 80 * (float)screen->width + screen->width / 2;
+	//		int screeny = mesh.vertices[i].z / 80 * (float)screen->height + screen->height / 2;
+	//		screen->Plot( screenx, screeny, 0xffffff /* white */ );
+	//}
 	// copy pixel buffer to OpenGL render target texture
 	glBindTexture( GL_TEXTURE_2D, targetTextureID );
 	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, screen->width, screen->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, screen->pixels );
