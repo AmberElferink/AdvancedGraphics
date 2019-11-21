@@ -1,13 +1,12 @@
 #pragma once
-#include "common_types.h"
 
 class Ray
 {
 public:
-	Ray(float3 O, float3 E) : O(O), E(E)
+	Ray::Ray(float3 O, float3 E) : O(O), E(E)
 	{
 	}
-	~Ray()
+	Ray::~Ray()
 	{
 	}
 

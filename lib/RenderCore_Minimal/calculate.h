@@ -1,6 +1,8 @@
 #pragma once
 #include "Ray.h"
-#include "common_classes.h"
+#include "core_settings.h"
+//#include "common_types.h"
+
 
 class Intersection
 {

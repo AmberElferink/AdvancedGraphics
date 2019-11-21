@@ -1,4 +1,5 @@
-﻿/* rendercore.cpp - Copyright 2019 Utrecht University
+﻿#pragma once
+/* rendercore.cpp - Copyright 2019 Utrecht University
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -12,10 +13,11 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 */
-
-#include "Ray.h"
 #include "calculate.h"
 #include "core_settings.h"
+
+//#include "common_classes.h"
+
 
 using namespace lh2core;
 
