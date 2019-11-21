@@ -1,6 +1,6 @@
 #pragma once
-#include "Ray.h"
 #include "core_settings.h"
+#include "Ray.h"
 //#include "common_types.h"
 
 
@@ -25,7 +25,6 @@ class Intersection
 bool Intersect( const Ray &ray, const CoreTri &triangle, Intersection &intersection )
 {
 	//TODO: het kan zijn dat een aantal dingen al geprecalculate zijn in CoreTri. Kijk daarnaar voor versnelling
-	const float EPSILON = 0.0000001;
 	float3 vertex0 = triangle.vertex0;
 	float3 vertex1 = triangle.vertex1;
 	float3 vertex2 = triangle.vertex2;

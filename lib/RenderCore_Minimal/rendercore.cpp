@@ -13,8 +13,8 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 */
-#include "calculate.h"
 #include "core_settings.h"
+#include "calculate.h"
 
 //#include "common_classes.h"
 

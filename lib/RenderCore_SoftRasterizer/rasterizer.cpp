@@ -16,7 +16,7 @@
    University of Applied Sciences / IGAD program.
 */
 
-
+#include "core_settings.h"
 
 uint ScaleColor( uint c, int scale )
 {
