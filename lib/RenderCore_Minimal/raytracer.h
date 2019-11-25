@@ -62,6 +62,7 @@ bool Intersect( const Ray &ray, const CoreTri &triangle, Intersection &intersect
 namespace lh2core
 {
 
+
 	// -----------------------------------------------------------
 	// Surface class
 	// bare minimum
@@ -106,52 +107,9 @@ namespace lh2core
 		Texture* texture = 0;			// texture
 	};
 
-	// -----------------------------------------------------------
-	// SGNode class
-	// scene graph node, with convenience functions for translate
-	// and transform; base class for Mesh
-	// -----------------------------------------------------------
-	class SGNode
-	{
-	public:
-		enum { SG_TRANSFORM = 0, SG_MESH };
-		// constructor / destructor
-		~SGNode()
-		{
-			for (int s = (int)child.size(), i = 0; i < s; i++)
-			{
-				for (int j = i + 1; j < s; j++) if (child[j] == child[i]) child[j] = 0;
-				delete child[i];
-			}
-		}
-		// methods
-		void SetPosition(float3& pos) { mat4& M = localTransform; M[3] = pos.x, M[7] = pos.y, M[11] = pos.z; }
-		float3 GetPosition() { mat4& M = localTransform; return make_float3(M[3], M[7], M[11]); }
-		void Render(const mat4& transform);
-		virtual int GetType() { return SG_TRANSFORM; }
-		// data members
-		mat4 localTransform;
-		vector<SGNode*> child;
-	};
 
 
-	// -----------------------------------------------------------
-	// Scene class
-	// owner of the scene graph;
-	// owner of the material and texture list
-	// -----------------------------------------------------------
-	class Scene
-	{
-	public:
-		// constructor / destructor
-		Scene() = default;
-		~Scene();
-		// data members
 
-		SGNode* root = 0;
-		vector<Material*> matList;
-		vector<Texture*> texList;
-	};
 
 	// -----------------------------------------------------------
 	// Rasterizer class
@@ -168,7 +126,6 @@ namespace lh2core
 			void Reinit(int w, int h, Surface* screen);
 			void Render(const mat4& transform);
 			// data members
-			Scene scene;
 			static float* zbuffer;
 			static float4 frustum[5];
 	};

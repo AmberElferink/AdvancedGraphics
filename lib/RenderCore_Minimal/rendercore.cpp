@@ -33,8 +33,8 @@ void RenderCore::SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, co
 	for (int i = 0; i < materialCount; i++)
 	{
 		Material* m;
-		if (i < raytracer.scene.matList.size()) m = raytracer.scene.matList[i];
-		else raytracer.scene.matList.push_back(m = new Material());
+		if (i < matList.size()) m = matList[i];
+		else matList.push_back(m = new Material());
 		m->texture = 0;
 		int texID = matEx[i].texture[TEXTURE0];
 		if (texID == -1)
@@ -44,7 +44,7 @@ void RenderCore::SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, co
 		}
 		else
 		{
-			m->texture = raytracer.scene.texList[texID];
+			m->texture = texList[texID];
 			m->texture->width = mat[i].texwidth0; // we know this only now, so set it properly
 			m->texture->height = mat[i].texheight0;
 		}
