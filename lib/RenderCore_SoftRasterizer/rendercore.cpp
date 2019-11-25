@@ -15,7 +15,7 @@
 
 #include "core_settings.h"
 
-using namespace lh2core;
+
 
 //  +-----------------------------------------------------------------------------+
 //  |  RenderCore::SetProbePos                                                    |

@@ -22,6 +22,9 @@
 
 #include "platform.h"
 
+// core-specific settings
+// #define NOTEXTURES		// all texture reads will be white
+
 #ifdef _DEBUG
 #pragma comment(lib, "../platform/lib/debug/platform.lib" )
 #else
@@ -32,8 +35,10 @@ using namespace lighthouse2;
 
 #include "core_api_base.h"
 #include "core_api.h"
+using namespace lh2core;
+#include "raytracer.h"
 #include "rendercore.h"
 
-using namespace lh2core;
+
 
 // EOF

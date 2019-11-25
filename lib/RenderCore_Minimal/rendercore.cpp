@@ -13,12 +13,10 @@
    limitations under the License.
 */
 #include "core_settings.h"
-#include "calculate.h"
+
+
 
 //#include "common_classes.h"
-
-
-using namespace lh2core;
 
 //  +-----------------------------------------------------------------------------+
 //  |  RenderCore::Init                                                           |
@@ -26,7 +24,31 @@ using namespace lh2core;
 //  +-----------------------------------------------------------------------------+
 void RenderCore::Init()
 {
-	// initialize core
+
+}
+
+void RenderCore::SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, const int materialCount) // textures must be in sync when calling this
+{
+	// copy the supplied array of materials
+	for (int i = 0; i < materialCount; i++)
+	{
+		Material* m;
+		if (i < raytracer.scene.matList.size()) m = raytracer.scene.matList[i];
+		else raytracer.scene.matList.push_back(m = new Material());
+		m->texture = 0;
+		int texID = matEx[i].texture[TEXTURE0];
+		if (texID == -1)
+		{
+			float r = mat[i].diffuse_r, g = mat[i].diffuse_g, b = mat[i].diffuse_b;
+			m->diffuse = ((int)(b * 255.0f) << 16) + ((int)(g * 255.0f) << 8) + (int)(r * 255.0f);
+		}
+		else
+		{
+			m->texture = raytracer.scene.texList[texID];
+			m->texture->width = mat[i].texwidth0; // we know this only now, so set it properly
+			m->texture->height = mat[i].texheight0;
+		}
+	}
 }
 
 //  +-----------------------------------------------------------------------------+
@@ -92,16 +114,21 @@ void RenderCore::Render( const ViewPyramid &view, const Convergence converge, co
 			closest.t = 10000000;
 			closest.material = 0xffffff;
 
-			for ( Mesh &mesh : meshes )
-				for ( int i = 0; i < mesh.vcount / 3; i++) //mesh.vcount / 3; i++ ) // TODO
+			for (Mesh &mesh : meshes)
+			{
+			
+				int verticeCount = mesh.vcount / 3;
+				for (int i = 0; i < verticeCount; i++) //mesh.vcount / 3; i++ ) // TODO
 				{
 					Intersection intersection;
-					if ( Intersect( ray, mesh.triangles[i], intersection ) )
+					if (Intersect(ray, mesh.triangles[i], intersection))
 					{
-						if ( intersection.t < closest.t )
+						if (intersection.t < closest.t)
 							closest = intersection;
 					}
 				}
+			}
+
 
 			screen->pixels[i + j * screen->width] = closest.material;
 		}

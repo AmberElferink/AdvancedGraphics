@@ -14,7 +14,7 @@
     </ClInclude>
     <ClInclude Include="camera.h" />
     <ClInclude Include="Ray.h" />
-    <ClInclude Include="calculate.h" />
+    <ClInclude Include="raytracer.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="API">

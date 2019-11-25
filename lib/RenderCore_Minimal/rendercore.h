@@ -28,6 +28,8 @@ public:
 	float4* vertices = 0;							// vertex data received via SetGeometry
 	int vcount = 0;									// vertex count
 	CoreTri* triangles = 0;							// 'fat' triangle data
+	int* material = 0;								// per-face material ID
+	float3* N = 0;									// triangle plane
 };
 
 //  +-----------------------------------------------------------------------------+
@@ -41,6 +43,17 @@ public:
 	void Init();
 	void SetTarget( GLTexture* target );
 	void SetGeometry( const int meshIdx, const float4* vertexData, const int vertexCount, const int triangleCount, const CoreTri* triangles, const uint* alphaFlags = 0 );
+
+	// passing data. Note: RenderCore always copies what it needs; the passed data thus remains the
+// property of the caller, and can be safely deleted or modified as soon as these calls return.
+	void SetTextures(const CoreTexDesc* tex, const int textureCount);
+	void SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, const int materialCount); // textures must be in sync when calling this
+	void SetLights(const CoreLightTri* areaLights, const int areaLightCount,
+		const CorePointLight* pointLights, const int pointLightCount,
+		const CoreSpotLight* spotLights, const int spotLightCount,
+		const CoreDirectionalLight* directionalLights, const int directionalLightCount);
+	void SetSkyData(const float3* pixels, const uint width, const uint height);
+
 	void Render( const ViewPyramid& view, const Convergence converge, const float brightness, const float contrast );
 	void Shutdown();
 	// internal methods
@@ -49,6 +62,7 @@ private:
 	Bitmap* screen = 0;								// temporary storage of RenderCore output; will be copied to render target
 	int targetTextureID = 0;						// ID of the target OpenGL texture
 	vector<Mesh> meshes;							// mesh data storage
+	Raytracer raytracer;
 public:
 	CoreStats coreStats;							// rendering statistics
 };
