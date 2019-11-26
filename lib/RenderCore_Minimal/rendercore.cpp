@@ -33,6 +33,9 @@ void RenderCore::Init()
 //  +-----------------------------------------------------------------------------+
 void RenderCore::SetTextures(const CoreTexDesc* tex, const int textures)
 {
+	Timer timer;
+	timer.reset();
+	
 	// copy the supplied array of texture descriptors
 	for (int i = 0; i < textures; i++)
 	{
@@ -44,10 +47,13 @@ void RenderCore::SetTextures(const CoreTexDesc* tex, const int textures)
 		else memcpy(t->pixels, 0, tex[i].pixelCount * sizeof(uint) /* assume integer textures */);
 		// Note: texture width and height are not known yet, will be set when we get the materials.
 	}
+	printf("loaded textures in %5.3fs\n", timer.elapsed());
 }
 
 void RenderCore::SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, const int materialCount) // textures must be in sync when calling this
 {
+	Timer timer;
+	timer.reset();
 	// copy the supplied array of materials
 	for (int i = 0; i < materialCount; i++)
 	{
@@ -67,6 +73,7 @@ void RenderCore::SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, co
 			m->texture->height = mat[i].texheight0;
 		}
 	}
+	printf("loaded materials in %5.3fs\n", timer.elapsed());
 }
 
 //  +-----------------------------------------------------------------------------+
@@ -83,6 +90,7 @@ void RenderCore::SetTarget( GLTexture *target )
 	screen = new Bitmap( target->width, target->height );
 }
 
+bool firsttime = true;
 //  +-----------------------------------------------------------------------------+
 //  |  RenderCore::SetGeometry                                                    |
 //  |  Set the geometry data for a model.                                   LH2'19|
@@ -93,21 +101,30 @@ void RenderCore::SetTarget( GLTexture *target )
 //copy data to new mesh, want je kan niet garanderen dat de data niet verandert terwijl je tekent. Daarom moet je een kopie maken.
 void RenderCore::SetGeometry( const int meshIdx, const float4 *vertexData, const int vertexCount, const int triangleCount, const CoreTri *triangleData, const uint *alphaFlags )
 {
-	Mesh newMesh;
-	// copy the supplied vertices; we cannot assume that the render system does not modify
-	// the original data after we leave this function.
-	newMesh.vertices = new float4[vertexCount];
-	newMesh.vcount = vertexCount;
-	memcpy( newMesh.vertices, vertexData, vertexCount * sizeof( float4 ) );
-	// copy the supplied 'fat triangles'
-	newMesh.triangles = new CoreTri[vertexCount / 3];
-	memcpy( newMesh.triangles, triangleData, ( vertexCount / 3 ) * sizeof( CoreTri ) );
-	meshes.push_back( newMesh );
+
+	if (firsttime) //meshes were loaded two times. For now only load it the first time the program is started.
+	{
+		Timer timer;
+		timer.reset();
+		Mesh newMesh;
+		// copy the supplied vertices; we cannot assume that the render system does not modify
+		// the original data after we leave this function.
+		newMesh.vertices = new float4[vertexCount];
+		newMesh.vcount = vertexCount;
+		memcpy(newMesh.vertices, vertexData, vertexCount * sizeof(float4));
+		// copy the supplied 'fat triangles'
+		newMesh.triangles = new CoreTri[vertexCount / 3];
+		memcpy(newMesh.triangles, triangleData, (vertexCount / 3) * sizeof(CoreTri));
+		meshes.push_back(newMesh);
+		printf("loaded geometry in %5.3fs\n", timer.elapsed());
+	}
+	firsttime = false;
+
 }
 
 uint FloatToIntColor(float3 floatColor)
 {
-	return ((int)(floatColor.x*255.0f) << 16 + (int)(floatColor.y * 255.0f) << 8 + (int)(floatColor.z * 255.0f));
+	return ((int)(floatColor.x*255.0f) << (16) + (int)(floatColor.y * 255.0f) << (8) + (int)(floatColor.z * 255.0f));
 }
 
 //  +-----------------------------------------------------------------------------+
@@ -119,6 +136,9 @@ void RenderCore::Render( const ViewPyramid &view, const Convergence converge, co
 {
 	// render
 	screen->Clear();
+
+	Timer timer;
+	timer.reset();
 
 	for ( int i = 0; i < screen->width; i++ ) //TODO niet in loop berekenen
 	{
@@ -155,6 +175,7 @@ void RenderCore::Render( const ViewPyramid &view, const Convergence converge, co
 			screen->pixels[i + j * screen->width] = FloatToIntColor( closest.material->GetColor());
 		}
 	}
+	printf("raytraced in %5.3fs\n", timer.elapsed());
 
 	//	for( Mesh& mesh : meshes ) for( int i = 0; i < mesh.vcount; i++ )
 	//	{
