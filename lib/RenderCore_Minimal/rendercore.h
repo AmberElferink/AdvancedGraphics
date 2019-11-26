@@ -18,19 +18,6 @@
 namespace lh2core
 {
 
-//  +-----------------------------------------------------------------------------+
-//  |  Mesh                                                                       |
-//  |  Minimalistic mesh storage.                                           LH2'19|
-//  +-----------------------------------------------------------------------------+
-class Mesh
-{
-public:
-	float4* vertices = 0;							// vertex data received via SetGeometry
-	int vcount = 0;									// vertex count
-	CoreTri* triangles = 0;							// 'fat' triangle data
-	int* material = 0;								// per-face material ID
-	float3* N = 0;									// triangle plane
-};
 
 //  +-----------------------------------------------------------------------------+
 //  |  RenderCore                                                                 |

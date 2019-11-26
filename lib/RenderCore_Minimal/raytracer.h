@@ -51,10 +51,33 @@ namespace lh2core
 	public:
 		// constructor / destructor
 		Material() = default;
+		Material(float3 color)
+		{
+			diffuse = color;
+		}
 		// data members
-		uint diffuse = 0xffffffff;		// diffuse material color
+
+		float3 diffuse = make_float3(1);		// diffuse material color
 		Texture* texture = 0;			// texture
+
+		float3 GetColor()
+		{
+			return diffuse;
+		}
 	};
+
+	//  +-----------------------------------------------------------------------------+
+//  |  Mesh                                                                       |
+//  |  Minimalistic mesh storage.                                           LH2'19|
+//  +-----------------------------------------------------------------------------+
+	class Mesh
+	{
+	public:
+		float4* vertices = 0;							// vertex data received via SetGeometry
+		int vcount = 0;									// vertex count
+		CoreTri* triangles = 0;							// 'fat' triangle data
+	};
+
 
 	class Intersection
 	{
@@ -62,7 +85,7 @@ namespace lh2core
 		float t;								 // distance from starting point to intersection point
 		float3 point;							 // intersection point
 		float3 norm = make_float3(-1, -1, -1); // normal at intersection point
-		Material material;				 //red for now, figure this out later. Probably a property somewhere in the triangle but can't find where
+		Material* material;				
 
 		Intersection(const float t, const float3 &point, const float3 &norm, const CoreTri &triangle) : t(t), point(point), norm(norm)
 		{
@@ -97,6 +120,6 @@ namespace lh2core
 			void Init();
 			void Reinit(int w, int h, Surface* screen);
 			void Render(const mat4& transform);	
-			bool Intersect(const Ray &ray, const CoreTri &triangle, int materialID, Intersection &intersection);
+			bool Intersect(const Ray &ray, const CoreTri &triangle, Intersection &intersection);
 	};
 }

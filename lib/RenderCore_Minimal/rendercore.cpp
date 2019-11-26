@@ -58,8 +58,7 @@ void RenderCore::SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, co
 		int texID = matEx[i].texture[TEXTURE0];
 		if (texID == -1)
 		{
-			float r = mat[i].diffuse_r, g = mat[i].diffuse_g, b = mat[i].diffuse_b;
-			m->diffuse = ((int)(b * 255.0f) << 16) + ((int)(g * 255.0f) << 8) + (int)(r * 255.0f);
+			m->diffuse = make_float3(mat[i].diffuse_r, mat[i].diffuse_g, mat[i].diffuse_b);
 		}
 		else
 		{
@@ -106,6 +105,11 @@ void RenderCore::SetGeometry( const int meshIdx, const float4 *vertexData, const
 	meshes.push_back( newMesh );
 }
 
+uint FloatToIntColor(float3 floatColor)
+{
+	return ((int)(floatColor.x*255.0f) << 16 + (int)(floatColor.y * 255.0f) << 8 + (int)(floatColor.z * 255.0f));
+}
+
 //  +-----------------------------------------------------------------------------+
 //  |  RenderCore::Render                                                         |
 //  |  Produce one image.                                                   LH2'19|
@@ -131,7 +135,7 @@ void RenderCore::Render( const ViewPyramid &view, const Convergence converge, co
 
 			Intersection closest;
 			closest.t = 10000000;
-			closest.material = 0xffffff;
+			closest.material = new Material(make_float3(0, 0, 0));
 
 			for (Mesh &mesh : meshes)
 			{
@@ -140,7 +144,7 @@ void RenderCore::Render( const ViewPyramid &view, const Convergence converge, co
 				for (int i = 0; i < verticeCount; i++) 
 				{
 					Intersection intersection;
-					if (raytracer.Intersect(ray, mesh.triangles[i], mesh.material[i], intersection))
+					if (raytracer.Intersect(ray, mesh.triangles[i], intersection))
 					{
 						if (intersection.t < closest.t)
 							closest = intersection;
@@ -148,8 +152,7 @@ void RenderCore::Render( const ViewPyramid &view, const Convergence converge, co
 				}
 			}
 
-
-			screen->pixels[i + j * screen->width] = closest.material.diffuse;
+			screen->pixels[i + j * screen->width] = FloatToIntColor( closest.material->GetColor());
 		}
 	}
 
