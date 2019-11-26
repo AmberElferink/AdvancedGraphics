@@ -90,4 +90,12 @@ void CoreAPI::SetInstance( const int instanceIdx, const int modelIdx, const mat4
 	// core->SetInstance( instanceIdx, modelIdx, transform ); // TODO; we will just render the meshes for now.
 }
 
+void CoreAPI::SetLights(const CoreLightTri *areaLights, const int areaLightCount,
+	const CorePointLight *pointLights, const int pointLightCount,
+	const CoreSpotLight *spotLights, const int spotLightCount,
+	const CoreDirectionalLight *directionalLights, const int directionalLightCount)
+{
+	core->SetLights( areaLights, areaLightCount, pointLights, pointLightCount, spotLights, spotLightCount, directionalLights, directionalLightCount );
+}
+
 // EOF
