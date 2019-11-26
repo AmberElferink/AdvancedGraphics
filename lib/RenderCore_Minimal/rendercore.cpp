@@ -27,6 +27,25 @@ void RenderCore::Init()
 
 }
 
+//  +-----------------------------------------------------------------------------+
+//  |  RenderCore::SetTextures                                                    |
+//  |  Set the texture data.                                                LH2'19|
+//  +-----------------------------------------------------------------------------+
+void RenderCore::SetTextures(const CoreTexDesc* tex, const int textures)
+{
+	// copy the supplied array of texture descriptors
+	for (int i = 0; i < textures; i++)
+	{
+		Texture* t;
+		if (i < texList.size()) t = texList[i];
+		else texList.push_back(t = new Texture());
+		t->pixels = (uint*)MALLOC64(tex[i].pixelCount * sizeof(uint));
+		if (tex[i].idata) memcpy(t->pixels, tex[i].idata, tex[i].pixelCount * sizeof(uint));
+		else memcpy(t->pixels, 0, tex[i].pixelCount * sizeof(uint) /* assume integer textures */);
+		// Note: texture width and height are not known yet, will be set when we get the materials.
+	}
+}
+
 void RenderCore::SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, const int materialCount) // textures must be in sync when calling this
 {
 	// copy the supplied array of materials
