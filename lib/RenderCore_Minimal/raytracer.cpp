@@ -37,3 +37,75 @@ bool Raytracer::Intersect(const Ray &ray, const CoreTri &triangle, Intersection 
 	else // This means that there is a line intersection but not a ray intersection.
 		return false;
 }
+
+bool Raytracer::IntersectScene( const Ray &ray, Mesh &mesh )
+{
+	for ( Mesh &mesh : scene.meshList )
+	{
+		int vertexCount = mesh.vcount / 3;
+		for ( int i = 0; i < vertexCount; i++ )
+		{
+			Intersection intersection;
+			if ( Intersect( ray, mesh.triangles[i], intersection ) )
+				return true;
+		}
+		return false;
+	}
+}
+
+bool Raytracer::viewLight( float3 I, Mesh &mesh, float dist, const Light &light )
+{
+	float3 dir = I - light.position;
+	float3 D = dir / length( dir );
+
+	Ray shadowRay = Ray( I, D );
+
+	if ( IntersectScene( shadowRay, mesh ) )
+		return false;
+	else
+		return true;
+}
+
+uint Raytracer::FloatToIntColor( float3 floatColor )
+{
+	return ( (int)( floatColor.x * 255.0f ) << 16 + (int)( floatColor.y * 255.0f ) << 8 + (int)( floatColor.z * 255.0f ) );
+}
+
+void Raytracer::rayTrace(Bitmap *screen, const ViewPyramid &view)
+{
+	for ( int i = 0; i < screen->width; i++ ) //TODO niet in loop berekenen
+	{
+		for ( int j = 0; j < screen->height; j++ )
+		{
+			float u = (float)i / (float)screen->width;
+			float v = (float)j / (float)screen->height;
+			float3 P = view.p1 + u * ( view.p2 - view.p1 ) + v * ( view.p3 - view.p1 );
+
+			float3 dir = P - view.pos;
+			float3 D = dir / length( dir );
+
+			Ray ray = Ray( view.pos, D );
+
+			Intersection closest;
+			closest.t = 10000000;
+			closest.material = new Material( make_float3( 0, 0, 0 ) );
+
+			for ( Mesh &mesh : scene.meshList )
+			{
+
+				int verticeCount = mesh.vcount / 3;
+				for ( int i = 0; i < verticeCount; i++ )
+				{
+					Intersection intersection;
+					if (Intersect( ray, mesh.triangles[i], intersection ) )
+					{
+						if ( intersection.t < closest.t )
+							closest = intersection;
+					}
+				}
+			}
+
+			screen->pixels[i + j * screen->width] = FloatToIntColor( closest.material->GetColor() );
+		}
+	}
+}
