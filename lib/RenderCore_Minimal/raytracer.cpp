@@ -38,7 +38,8 @@ bool Raytracer::Intersect(const Ray &ray, const CoreTri &triangle, Intersection 
 		return false;
 }
 
-bool Raytracer::IntersectScene( const Ray &ray )
+/* Method that checks whether there are any objects between a light point and the origin of a shadowray */
+bool Raytracer::IsOccluded( const Ray &ray, const Light &light)
 {
 	for ( Mesh &mesh : scene.meshList )
 	{
@@ -46,24 +47,30 @@ bool Raytracer::IntersectScene( const Ray &ray )
 		for ( int i = 0; i < vertexCount; i++ )
 		{
 			Intersection intersection;
-			if ( Intersect( ray, mesh.triangles[i], intersection ) )
-				return true;
+			if ( Intersect( ray, mesh.triangles[i], intersection ) ) //If there are intersections
+				if (length(intersection.point - ray.O) <  length(ray.O - light.position)) //Between the light and the origin, not after
+					return true;
 		}
-		return false;
+		return false; //false if no intersections are found
 	}
 }
 
-bool Raytracer::viewLight( float3 I, float dist, const Light &light )
+/*Method that shoots a shadow ray and checks whether there are objects between the current intersection point and a light source*/
+bool Raytracer::viewLight( Intersection intersection, const Light &light, float3 &lightVector )
 {
-	float3 dir = I - light.position;
-	float3 D = dir / length( dir );
+	float3 dir = intersection.point - light.position; //vector between light and intersection point
+	float3 D = dir / length( dir ); //normalized vector
 
-	Ray shadowRay = Ray( I, D );
+	lightVector = D;
 
-	if ( IntersectScene( shadowRay ) )
-		return false;
+	Ray shadowRay = Ray( intersection.point + intersection.norm * 0.001f, D ); //shadow ray from origin to light point
+
+	Intersection closest;
+
+	if ( IsOccluded( shadowRay, light ) ) 
+		return false; //cannot see light source
 	else
-		return true;
+		return true; //no objects that obstruct view of light source
 }
 
 uint Raytracer::FloatToIntColor( float3 floatColor )
@@ -101,6 +108,7 @@ void Raytracer::rayTrace(Bitmap *screen, const ViewPyramid &view, const int targ
 			closest.t = 10e30;
 			closest.material = new Material( make_float3( 0, 0, 0 ) ); //default black (background)
 
+			//Find closest intersection point for all meshes
 			for ( Mesh &mesh : scene.meshList )
 			{
 				t.reset();
@@ -110,17 +118,20 @@ void Raytracer::rayTrace(Bitmap *screen, const ViewPyramid &view, const int targ
 					Intersection intersection;
 					if (Intersect( ray, mesh.triangles[i], intersection ) )
 					{
-						if ( intersection.t < closest.t )
-							closest = intersection;
+						if ( intersection.t < closest.t ) //update closest intersection point only if distance to intersection point is shorter
+							closest = intersection; 
 					}
 				}
 			}
 
 			float3 intersectionColor = make_float3(0,0,0);
+
+			/*Check for all lights whether they can be seen from the current intersection point*/
 			for (Light &light : scene.lightList)
 			{
-				if ( viewLight( closest.point, 0, light ) )
-					intersectionColor += closest.material->diffuse * light.radiance;
+				float3 lightVector;
+				if ( viewLight( closest, light, lightVector ) )
+					intersectionColor += closest.material->diffuse * light.radiance * dot( closest.norm, lightVector ); //If light source can be seen, multiply color with current pixel color
 			}
 
 			screen->pixels[i + j * screen->width] = FloatToIntColor( intersectionColor );
