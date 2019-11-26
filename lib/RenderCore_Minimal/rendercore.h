@@ -62,8 +62,6 @@ private:
 	Bitmap* screen = 0;								// temporary storage of RenderCore output; will be copied to render target
 	int targetTextureID = 0;						// ID of the target OpenGL texture
 	vector<Mesh> meshes;							// mesh data storage
-	vector<Material*> matList;
-	vector<Texture*> texList;
 
 	Raytracer raytracer;
 public:

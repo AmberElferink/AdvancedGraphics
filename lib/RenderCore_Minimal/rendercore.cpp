@@ -37,8 +37,8 @@ void RenderCore::SetTextures(const CoreTexDesc* tex, const int textures)
 	for (int i = 0; i < textures; i++)
 	{
 		Texture* t;
-		if (i < texList.size()) t = texList[i];
-		else texList.push_back(t = new Texture());
+		if (i < raytracer.scene.texList.size()) t = raytracer.scene.texList[i];
+		else  raytracer.scene.texList.push_back(t = new Texture());
 		t->pixels = (uint*)MALLOC64(tex[i].pixelCount * sizeof(uint));
 		if (tex[i].idata) memcpy(t->pixels, tex[i].idata, tex[i].pixelCount * sizeof(uint));
 		else memcpy(t->pixels, 0, tex[i].pixelCount * sizeof(uint) /* assume integer textures */);
@@ -52,8 +52,8 @@ void RenderCore::SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, co
 	for (int i = 0; i < materialCount; i++)
 	{
 		Material* m;
-		if (i < matList.size()) m = matList[i];
-		else matList.push_back(m = new Material());
+		if (i < raytracer.scene.matList.size()) m = raytracer.scene.matList[i];
+		else  raytracer.scene.matList.push_back(m = new Material());
 		m->texture = 0;
 		int texID = matEx[i].texture[TEXTURE0];
 		if (texID == -1)
@@ -63,7 +63,7 @@ void RenderCore::SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, co
 		}
 		else
 		{
-			m->texture = texList[texID];
+			m->texture = raytracer.scene.texList[texID];
 			m->texture->width = mat[i].texwidth0; // we know this only now, so set it properly
 			m->texture->height = mat[i].texheight0;
 		}
@@ -137,10 +137,10 @@ void RenderCore::Render( const ViewPyramid &view, const Convergence converge, co
 			{
 			
 				int verticeCount = mesh.vcount / 3;
-				for (int i = 0; i < verticeCount; i++) //mesh.vcount / 3; i++ ) // TODO
+				for (int i = 0; i < verticeCount; i++) 
 				{
 					Intersection intersection;
-					if (raytracer.Intersect(ray, mesh.triangles[i], intersection))
+					if (raytracer.Intersect(ray, mesh.triangles[i], mesh.material[i], intersection))
 					{
 						if (intersection.t < closest.t)
 							closest = intersection;
@@ -149,7 +149,7 @@ void RenderCore::Render( const ViewPyramid &view, const Convergence converge, co
 			}
 
 
-			screen->pixels[i + j * screen->width] = closest.material;
+			screen->pixels[i + j * screen->width] = closest.material.diffuse;
 		}
 	}
 

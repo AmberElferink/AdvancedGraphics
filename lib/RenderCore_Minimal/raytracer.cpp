@@ -1,7 +1,7 @@
 #include "core_settings.h"
 
 // adapted from Möller–Trumbore intersection algorithm: https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
-bool Raytracer::Intersect(const Ray &ray, const CoreTri &triangle, Intersection &intersection)
+bool Raytracer::Intersect(const Ray &ray, const CoreTri &triangle, int materialID, Intersection &intersection)
 {
 	//TODO: het kan zijn dat een aantal dingen al geprecalculate zijn in CoreTri. Kijk daarnaar voor versnelling
 	float3 vertex0 = triangle.vertex0;
@@ -29,8 +29,9 @@ bool Raytracer::Intersect(const Ray &ray, const CoreTri &triangle, Intersection 
 	if (t > EPSILON && t < 1 / EPSILON) // ray intersection
 	{
 		float3 intersectionPoint = ray.O + ray.E * t;
-		float3 normal = make_float3(triangle.Nx, triangle.Ny, triangle.Nz);
+		float3 normal = make_float3(triangle.Nx, triangle.Ny, triangle.Nz); //TODO maybe use mesh N
 		intersection = Intersection(t, intersectionPoint, normal, triangle);
+		intersection.material = scene.matList[materialID];
 		return true;
 	}
 	else // This means that there is a line intersection but not a ray intersection.
