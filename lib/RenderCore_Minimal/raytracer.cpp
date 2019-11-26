@@ -38,7 +38,7 @@ bool Raytracer::Intersect(const Ray &ray, const CoreTri &triangle, Intersection 
 		return false;
 }
 
-bool Raytracer::IntersectScene( const Ray &ray, Mesh &mesh )
+bool Raytracer::IntersectScene( const Ray &ray )
 {
 	for ( Mesh &mesh : scene.meshList )
 	{
@@ -53,14 +53,14 @@ bool Raytracer::IntersectScene( const Ray &ray, Mesh &mesh )
 	}
 }
 
-bool Raytracer::viewLight( float3 I, Mesh &mesh, float dist, const Light &light )
+bool Raytracer::viewLight( float3 I, float dist, const Light &light )
 {
 	float3 dir = I - light.position;
 	float3 D = dir / length( dir );
 
 	Ray shadowRay = Ray( I, D );
 
-	if ( IntersectScene( shadowRay, mesh ) )
+	if ( IntersectScene( shadowRay ) )
 		return false;
 	else
 		return true;
@@ -104,6 +104,12 @@ void Raytracer::rayTrace(Bitmap *screen, const ViewPyramid &view)
 							closest = intersection;
 					}
 				}
+			}
+
+			for (Light &light : scene.lightList)
+			{
+				if ( viewLight( closest.point, 0, light ) )
+					closest.material->diffuse = closest.material->diffuse * light.radiance;
 			}
 
 			screen->pixels[i + j * screen->width] = FloatToIntColor( closest.material->GetColor() );

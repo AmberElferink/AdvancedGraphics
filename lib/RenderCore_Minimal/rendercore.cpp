@@ -133,13 +133,11 @@ void RenderCore::SetLights( const CoreLightTri *areaLights, const int areaLightC
 {
 	for ( int i = 0; i < pointLightCount; i++ )
 	{
-		Light *l;
-		if ( i < raytracer.scene.lightList.size() )
-			l = raytracer.scene.lightList[i];
-		else
-			raytracer.scene.lightList.push_back( l = new Light() );
-		//l->position = O;
-		//l->radiance = O;
+		Light l;
+		l.position = pointLights[i].position;
+		l.radiance = pointLights[i].radiance;
+		l.energy = pointLights[i].energy;
+		raytracer.scene.lightList.push_back( l );
 	}
 }
 

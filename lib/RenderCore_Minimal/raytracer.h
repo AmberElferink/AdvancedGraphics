@@ -106,7 +106,7 @@ class Scene
   public:
 	vector<Material *> matList;
 	vector<Texture *> texList;
-	vector<Light *> lightList;
+	vector<Light> lightList;
 	vector<Mesh> meshList;
 };
 
@@ -126,8 +126,8 @@ class Raytracer
 	void Reinit( int w, int h, Surface *screen );
 	void Render( const mat4 &transform );
 	bool Intersect( const Ray &ray, const CoreTri &triangle, Intersection &intersection );
-	bool IntersectScene( const Ray &ray, Mesh &mesh );
-	bool viewLight( float3 I, Mesh &mesh, float dist, const Light &light );
+	bool IntersectScene( const Ray &ray );
+	bool viewLight( float3 I, float dist, const Light &light );
 	void rayTrace( Bitmap *screen, const ViewPyramid &view );
 	uint FloatToIntColor( float3 floatColor );
 };
