@@ -73,9 +73,10 @@ uint Raytracer::FloatToIntColor( float3 floatColor )
 
 void Raytracer::rayTrace(Bitmap *screen, const ViewPyramid &view)
 {
-	for ( int i = 0; i < screen->width; i++ ) //TODO niet in loop berekenen
+	Timer t;
+	for ( int j = 0; j < screen->height; j++ )
 	{
-		for ( int j = 0; j < screen->height; j++ )
+		for (int i = 0; i < screen->width; i++) //TODO niet in loop berekenen
 		{
 			float u = (float)i / (float)screen->width;
 			float v = (float)j / (float)screen->height;
@@ -92,7 +93,7 @@ void Raytracer::rayTrace(Bitmap *screen, const ViewPyramid &view)
 
 			for ( Mesh &mesh : scene.meshList )
 			{
-
+				t.reset();
 				int verticeCount = mesh.vcount / 3;
 				for ( int i = 0; i < verticeCount; i++ )
 				{
