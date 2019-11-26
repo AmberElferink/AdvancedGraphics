@@ -106,13 +106,14 @@ void Raytracer::rayTrace(Bitmap *screen, const ViewPyramid &view)
 				}
 			}
 
+			float3 intersectionColor = make_float3(0,0,0);
 			for (Light &light : scene.lightList)
 			{
 				if ( viewLight( closest.point, 0, light ) )
-					closest.material->diffuse = closest.material->diffuse * light.radiance;
+					intersectionColor += closest.material->diffuse * light.radiance;
 			}
 
-			screen->pixels[i + j * screen->width] = FloatToIntColor( closest.material->GetColor() );
+			screen->pixels[i + j * screen->width] = FloatToIntColor( intersectionColor );
 		}
 	}
 }

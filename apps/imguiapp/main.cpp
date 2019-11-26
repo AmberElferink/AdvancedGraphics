@@ -44,11 +44,12 @@ void PrepareScene()
 	//materialFile = string( "data/pica/pica_materials.xml" );
 	renderer->AddScene("AnimatedCube.gltf", "data/animatedCube/", mat4::Translate(0, -10.2f, 0));
 	int rootNode = renderer->FindNode("RootNode (gltf orientation matrix)");
-	renderer->SetNodeTransform(rootNode, mat4::RotateX(-PI / 2));
+	//renderer->SetNodeTransform(rootNode, mat4::RotateX(-PI / 2));
 #if 1
 	// overhead light, use regular PT
 	//int lightMat = renderer->AddMaterial(make_float3(100, 100, 80));
 	//int lightQuad = renderer->AddQuad(make_float3(0, -1, 0), make_float3(0, 26.0f, 0), 6.9f, 6.9f, lightMat);
+	int lightBulb = renderer->AddPointLight( make_float3( 10, 10, 10 ), make_float3( 1000, 1000, 1000 ), true );
 #else
 	// difficult light; use BDPT
 	//int lightMat = renderer->AddMaterial(make_float3(500, 500, 400));
