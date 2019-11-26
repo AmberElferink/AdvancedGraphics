@@ -152,17 +152,11 @@ void RenderCore::Render( const ViewPyramid &view, const Convergence converge, co
 {
 	// render
 	screen->Clear();
-
+	Timer t;
+	t.reset();
 	raytracer.rayTrace( screen, view );
-	//	for( Mesh& mesh : meshes ) for( int i = 0; i < mesh.vcount; i++ )
-	//	{
-	//
-	//		// convert a vertex position to a screen coordinate
-	//		int screenx = mesh.vertices[i].x / 80 * (float)screen->width + screen->width / 2;
-	//		int screeny = mesh.vertices[i].z / 80 * (float)screen->height + screen->height / 2;
-	//		screen->Plot( screenx, screeny, 0xffffff /* white */ );
-	//}
-	// copy pixel buffer to OpenGL render target texture
+	printf("raytraced in %5.3fs\n", t.elapsed());
+
 	glBindTexture( GL_TEXTURE_2D, targetTextureID );
 	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, screen->width, screen->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, screen->pixels );
 }
