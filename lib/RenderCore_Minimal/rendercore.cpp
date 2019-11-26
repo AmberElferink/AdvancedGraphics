@@ -140,7 +140,7 @@ void RenderCore::Render( const ViewPyramid &view, const Convergence converge, co
 				for (int i = 0; i < verticeCount; i++) //mesh.vcount / 3; i++ ) // TODO
 				{
 					Intersection intersection;
-					if (Intersect(ray, mesh.triangles[i], intersection))
+					if (raytracer.Intersect(ray, mesh.triangles[i], intersection))
 					{
 						if (intersection.t < closest.t)
 							closest = intersection;
