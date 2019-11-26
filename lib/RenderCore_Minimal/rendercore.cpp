@@ -115,16 +115,32 @@ void RenderCore::SetGeometry( const int meshIdx, const float4 *vertexData, const
 		// copy the supplied 'fat triangles'
 		newMesh.triangles = new CoreTri[vertexCount / 3];
 		memcpy(newMesh.triangles, triangleData, (vertexCount / 3) * sizeof(CoreTri));
-		meshes.push_back(newMesh);
+		raytracer.scene.meshList.push_back(newMesh);
 		printf("loaded geometry in %5.3fs\n", timer.elapsed());
 	}
 	firsttime = false;
 
 }
 
-uint FloatToIntColor(float3 floatColor)
+//  +-----------------------------------------------------------------------------+
+//  |  RenderCore::SetLights                                                      |
+//  |  Set the light data.                                                  LH2'19|
+//  +-----------------------------------------------------------------------------+
+void RenderCore::SetLights( const CoreLightTri *areaLights, const int areaLightCount,
+							const CorePointLight *pointLights, const int pointLightCount,
+							const CoreSpotLight *spotLights, const int spotLightCount,
+							const CoreDirectionalLight *directionalLights, const int directionalLightCount )
 {
-	return ((int)(floatColor.x*255.0f) << (16) + (int)(floatColor.y * 255.0f) << (8) + (int)(floatColor.z * 255.0f));
+	for ( int i = 0; i < pointLightCount; i++ )
+	{
+		Light *l;
+		if ( i < raytracer.scene.lightList.size() )
+			l = raytracer.scene.lightList[i];
+		else
+			raytracer.scene.lightList.push_back( l = new Light() );
+		//l->position = O;
+		//l->radiance = O;
+	}
 }
 
 //  +-----------------------------------------------------------------------------+
@@ -137,46 +153,7 @@ void RenderCore::Render( const ViewPyramid &view, const Convergence converge, co
 	// render
 	screen->Clear();
 
-	Timer timer;
-	timer.reset();
-
-	for ( int i = 0; i < screen->width; i++ ) //TODO niet in loop berekenen
-	{
-		for ( int j = 0; j < screen->height; j++ )
-		{
-			float u = (float)i / (float)screen->width;
-			float v = (float)j / (float)screen->height;
-			float3 P = view.p1 + u * ( view.p2 - view.p1 ) + v * ( view.p3 - view.p1 );
-
-			float3 dir = P - view.pos;
-			float3 D = dir / length( dir );
-
-			Ray ray = Ray( view.pos, D );
-
-			Intersection closest;
-			closest.t = 10000000;
-			closest.material = new Material(make_float3(0, 0, 0));
-
-			for (Mesh &mesh : meshes)
-			{
-			
-				int verticeCount = mesh.vcount / 3;
-				for (int i = 0; i < verticeCount; i++) 
-				{
-					Intersection intersection;
-					if (raytracer.Intersect(ray, mesh.triangles[i], intersection))
-					{
-						if (intersection.t < closest.t)
-							closest = intersection;
-					}
-				}
-			}
-
-			screen->pixels[i + j * screen->width] = FloatToIntColor( closest.material->GetColor());
-		}
-	}
-	printf("raytraced in %5.3fs\n", timer.elapsed());
-
+	raytracer.rayTrace( screen, view );
 	//	for( Mesh& mesh : meshes ) for( int i = 0; i < mesh.vcount; i++ )
 	//	{
 	//
