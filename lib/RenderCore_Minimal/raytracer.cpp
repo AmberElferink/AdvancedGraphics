@@ -56,14 +56,14 @@ bool Raytracer::IsOccluded( const Ray &ray, const Light &light)
 }
 
 /*Method that shoots a shadow ray and checks whether there are objects between the current intersection point and a light source*/
-bool Raytracer::viewLight( float3 I, const Light &light, float3 lightVector )
+bool Raytracer::viewLight( Intersection intersection, const Light &light, float3 &lightVector )
 {
-	float3 dir = I - light.position; //vector between light and intersection point
+	float3 dir = intersection.point - light.position; //vector between light and intersection point
 	float3 D = dir / length( dir ); //normalized vector
 
 	lightVector = D;
 
-	Ray shadowRay = Ray( I, D ); //shadow ray from origin to light point
+	Ray shadowRay = Ray( intersection.point + intersection.norm * 0.001f, D ); //shadow ray from origin to light point
 
 	Intersection closest;
 
@@ -78,6 +78,14 @@ uint Raytracer::FloatToIntColor( float3 floatColor )
 	return ( (int)( floatColor.x * 255.0f ) << 16 + (int)( floatColor.y * 255.0f ) << 8 + (int)( floatColor.z * 255.0f ) );
 }
 
+//-----------------------------------------------------
+// shoot a ray through point p to intersect the scene.
+//  p3 |------------------| 
+//     |        .         |
+//     |        p         | screenheight
+//  p1 |------------------| p2
+//   screenwidth
+//-----------------------------------------------------
 void Raytracer::rayTrace(Bitmap *screen, const ViewPyramid &view)
 {
 	Timer t;
@@ -85,25 +93,27 @@ void Raytracer::rayTrace(Bitmap *screen, const ViewPyramid &view)
 	{
 		for (int i = 0; i < screen->width; i++) //TODO niet in loop berekenen
 		{
-			float u = (float)i / (float)screen->width;
+
+			//u and v are the vectors within the virtual screen scaled between 0 and 1, so u = px / screenwidth and y = py / screenwidth
+			float u = (float)i / (float)screen->width; 
 			float v = (float)j / (float)screen->height;
 			float3 P = view.p1 + u * ( view.p2 - view.p1 ) + v * ( view.p3 - view.p1 );
 
-			float3 dir = P - view.pos;
-			float3 D = dir / length( dir );
+			float3 dir = P - view.pos; // vector in the direction you want to shoot your ray
+			float3 D = dir / length( dir ); //normalize it
 
-			Ray ray = Ray( view.pos, D );
+			Ray ray = Ray( view.pos, D ); 
 
-			Intersection closest;
-			closest.t = 10000000;
-			closest.material = new Material( make_float3( 0, 0, 0 ) );
+			Intersection closest; //this will be your closest intersection of which you want to know the color
+			closest.t = 10e30;
+			closest.material = new Material( make_float3( 0, 0, 0 ) ); //default black (background)
 
 			//Find closest intersection point for all meshes
 			for ( Mesh &mesh : scene.meshList )
 			{
 				t.reset();
-				int verticeCount = mesh.vcount / 3;
-				for ( int i = 0; i < verticeCount; i++ )
+				int triangleCount = mesh.vcount / 3;
+				for ( int i = 0; i < triangleCount; i++ ) //find the closest triangle intersection for all triangles
 				{
 					Intersection intersection;
 					if (Intersect( ray, mesh.triangles[i], intersection ) )
@@ -120,8 +130,8 @@ void Raytracer::rayTrace(Bitmap *screen, const ViewPyramid &view)
 			for (Light &light : scene.lightList)
 			{
 				float3 lightVector;
-				if ( viewLight( closest.point, light, lightVector ) )
-					intersectionColor += closest.material->diffuse * light.radiance; //* dot(closest.norm,lightVector); //If light source can be seen, multiply color with current pixel color
+				if ( viewLight( closest, light, lightVector ) )
+					intersectionColor += closest.material->diffuse * light.radiance * dot( closest.norm, lightVector ); //If light source can be seen, multiply color with current pixel color
 			}
 
 			screen->pixels[i + j * screen->width] = FloatToIntColor( intersectionColor );
