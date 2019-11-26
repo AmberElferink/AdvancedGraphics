@@ -152,7 +152,7 @@ void RenderCore::Render( const ViewPyramid &view, const Convergence converge, co
 	screen->Clear();
 	Timer t;
 	t.reset();
-	raytracer.rayTrace( screen, view );
+	raytracer.rayTrace( screen, view, targetTextureID );
 	printf("raytraced in %5.3fs\n", t.elapsed());
 
 	glBindTexture( GL_TEXTURE_2D, targetTextureID );

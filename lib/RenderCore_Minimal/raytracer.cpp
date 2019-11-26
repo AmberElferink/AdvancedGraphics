@@ -68,7 +68,7 @@ bool Raytracer::viewLight( float3 I, float dist, const Light &light )
 
 uint Raytracer::FloatToIntColor( float3 floatColor )
 {
-	return ( (int)( floatColor.x * 255.0f ) << 16 + (int)( floatColor.y * 255.0f ) << 8 + (int)( floatColor.z * 255.0f ) );
+	return ( (uint)( floatColor.x * 255.0f ) << 16 + (uint)( floatColor.y * 255.0f ) << 8 + (uint)( floatColor.z * 255.0f ) );
 }
 
 //-----------------------------------------------------
@@ -79,7 +79,7 @@ uint Raytracer::FloatToIntColor( float3 floatColor )
 //  p1 |------------------| p2
 //   screenwidth
 //-----------------------------------------------------
-void Raytracer::rayTrace(Bitmap *screen, const ViewPyramid &view)
+void Raytracer::rayTrace(Bitmap *screen, const ViewPyramid &view, const int targetTextureID)
 {
 	Timer t;
 	for ( int j = 0; j < screen->height; j++ )
@@ -125,5 +125,7 @@ void Raytracer::rayTrace(Bitmap *screen, const ViewPyramid &view)
 
 			screen->pixels[i + j * screen->width] = FloatToIntColor( intersectionColor );
 		}
+		glBindTexture(GL_TEXTURE_2D, targetTextureID);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, screen->width, screen->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, screen->pixels);
 	}
 }
