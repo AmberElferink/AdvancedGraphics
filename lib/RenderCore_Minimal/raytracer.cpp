@@ -77,8 +77,8 @@ uint Raytracer::FloatToIntColor( float3 floatColor )
 	float r = min(floatColor.x, 1.0f);
 	float g = min(floatColor.y, 1.0f);
 	float b = min(floatColor.z, 1.0f);
-	return ( (uint)( r * 255.0f ) << 16 + (uint)(g * 255.0f ) << 8 + (uint)( b * 255.0f ) );
-}
+	return ( ((uint)( r * 255.0f ) << 16) + ((uint)(g * 255.0f ) << 8) + (uint)( b * 255.0f ) );
+	}
 
 //-----------------------------------------------------
 // shoot a ray through point p to intersect the scene.
@@ -131,10 +131,10 @@ void Raytracer::rayTrace(Bitmap *screen, const ViewPyramid &view, const int targ
 			/*Check for all lights whether they can be seen from the current intersection point*/
 			for (Light &light : scene.lightList)
 			{
-				std::cout << closest.material.diffuse.x << " " << closest.material.diffuse.y << " " << closest.material.diffuse.z << endl;
+				//std::cout << closest.material.diffuse.x << " " << closest.material.diffuse.y << " " << closest.material.diffuse.z << endl;
 				float3 lightVector;
 				if (viewLight(closest, light, lightVector))
-					intersectionColor += closest.material.diffuse * light.radiance * dot( closest.norm, lightVector ); //If light source can be seen, multiply color with current pixel color
+					intersectionColor += closest.material.diffuse * light.radiance * dot( closest.norm / length(closest.norm), lightVector ); //If light source can be seen, multiply color with current pixel color
 			}
 
 			screen->pixels[i + j * screen->width] = FloatToIntColor( intersectionColor );
