@@ -110,9 +110,6 @@ float3 Raytracer::Trace(Ray ray)
 {
 	Intersection intersection = nearestIntersection( ray );
 
-	//Case of no intersections
-	if ( intersection.t > 10e29 )
-		return make_float3( 1 );
 
 	//Case of completely diffuse material
 	if (intersection.material.isdiffuse)

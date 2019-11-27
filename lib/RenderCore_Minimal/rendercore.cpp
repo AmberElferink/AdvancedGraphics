@@ -49,6 +49,7 @@ void RenderCore::SetTextures(const CoreTexDesc* tex, const int textures)
 	printf("loaded textures in %5.3fs\n", timer.elapsed());
 }
 
+int firstMetallic = 0;
 void RenderCore::SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, const int materialCount) // textures must be in sync when calling this
 {
 	Timer timer;
@@ -64,13 +65,21 @@ void RenderCore::SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, co
 		if (texID == -1)
 		{
 			//parameters encapsulated in host_material.cpp
-			uint metallic = mat->parameters.x & 0x000000ff;
-			if (metallic >= 1)
-				m->metallic = true;
-			else
-				m->metallic = false;
+			//uint metallic = (mat->parameters.x & 255);
+			//if (metallic >= 1)
+			//	m->metallic = true;
+			//else
+			//	m->metallic = false;
+			//if (firstMetallic == 0)
+			//{
+			//	m->metallic = false;
+			//	firstMetallic++;
+			//}
+			//else
+			//	m->metallic = true;
 
-			m->diffuse = make_float3(mat[i].diffuse_r, mat[i].diffuse_g, mat[i].diffuse_b);
+			m->diffuse = make_float3(float(mat[i].diffuse_r), float(mat[i].diffuse_g), float(mat[i].diffuse_b));
+			int w = 0;
 		}
 		else
 		{

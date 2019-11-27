@@ -42,9 +42,9 @@ void PrepareScene()
 {
 	// initialize scene
 	//materialFile = string( "data/pica/pica_materials.xml" );
-	//renderer->AddScene("AnimatedCube.gltf", "data/animatedCube/", mat4::Translate(-6, -3.2f, -5));
+	renderer->AddScene("AnimatedCube.gltf", "data/animatedCube/", mat4::Translate(-6, -3.2f, -5));
 	//renderer->AddScene( "twocubes.gltf", "data/twoCubes/", mat4::Translate( -6, -3.2f, -5 ) );
-	renderer->AddScene("Cube-Pyramid.gltf", "data/reflectTest/", mat4::Translate(-6, -3.2f, -5));
+	//renderer->AddScene("Cube-Pyramid.gltf", "data/reflectTest/", mat4::Translate(10, -20.2f, -5));
 	//renderer->AddScene("AnimatedCube.gltf", "data/animatedCube/", mat4::Translate(1, -10.2f, 1));
 	int rootNode = renderer->FindNode("RootNode (gltf orientation matrix)");
 	//renderer->SetNodeTransform(rootNode, mat4::RotateX(-PI / 2));
@@ -138,7 +138,7 @@ int main()
 	// renderer = RenderAPI::CreateRenderAPI( "RenderCore_Optix7" );			// OPTIX7 core, best for RTX devices
 	// renderer = RenderAPI::CreateRenderAPI( "RenderCore_OptixPrime_B" );		// OPTIX PRIME, best for pre-RTX CUDA devices
 	// renderer = RenderAPI::CreateRenderAPI( "RenderCore_PrimeRef" );			// REFERENCE, for image validation
-	//renderer = RenderAPI::CreateRenderAPI("RenderCore_SoftRasterizer");	// RASTERIZER, your only option if not on NVidia
+	// renderer = RenderAPI::CreateRenderAPI("RenderCore_SoftRasterizer");	// RASTERIZER, your only option if not on NVidia
     renderer = RenderAPI::CreateRenderAPI( "RenderCore_Minimal" );				// MINIMAL example, to get you started on your own core
    // renderer = RenderAPI::CreateRenderAPI( "RenderCore_Vulkan_RT" );			// Meir's Vulkan / RTX core
    // renderer = RenderAPI::CreateRenderAPI( "RenderCore_OptixPrime_BDPT" );	// Peter's OptixPrime / BDPT core

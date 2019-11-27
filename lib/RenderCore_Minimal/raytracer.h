@@ -54,8 +54,8 @@ class Material
 
 	float3 diffuse = make_float3( 0.5 ); // diffuse material color
 	Texture *texture = 0;			   // texture
-	bool isdiffuse = false;
-	bool metallic = true;
+	bool isdiffuse = true;
+	bool metallic = false;
 	float specularity = 0.8;
 
 	float3 GetColor()
