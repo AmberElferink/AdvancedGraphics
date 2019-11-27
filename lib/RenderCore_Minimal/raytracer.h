@@ -127,7 +127,7 @@ class Raytracer
 	void Render( const mat4 &transform );
 	bool Intersect( const Ray &ray, const CoreTri &triangle, Intersection &intersection );
 	bool IsOccluded( const Ray &ray, const Light &light);
-	bool viewLight(Intersection intersection, const Light &light, float3 &lightVector);
+	bool viewLight(Intersection intersection, const Light &light, float3 &lightVector, float &dist);
 	void rayTrace( Bitmap *screen, const ViewPyramid &view, const int targetTextureID);
 	uint FloatToIntColor( float3 floatColor );
 };

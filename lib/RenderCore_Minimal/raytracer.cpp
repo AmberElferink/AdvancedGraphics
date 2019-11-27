@@ -56,10 +56,11 @@ bool Raytracer::IsOccluded( const Ray &ray, const Light &light)
 }
 
 /*Method that shoots a shadow ray and checks whether there are objects between the current intersection point and a light source*/
-bool Raytracer::viewLight( Intersection intersection, const Light &light, float3 &lightVector )
+bool Raytracer::viewLight( Intersection intersection, const Light &light, float3 &lightVector, float &dist )
 {
 	float3 dir = light.position - intersection.point; //vector between light and intersection point
-	lightVector = dir / length( dir ); //normalized vector
+	dist = length(dir);
+	lightVector = dir / dist; //normalized vector
 
 
 	Ray shadowRay = Ray( intersection.point + intersection.norm * 0.001f, lightVector ); //shadow ray from origin to light point
@@ -133,8 +134,21 @@ void Raytracer::rayTrace(Bitmap *screen, const ViewPyramid &view, const int targ
 			{
 				//std::cout << closest.material.diffuse.x << " " << closest.material.diffuse.y << " " << closest.material.diffuse.z << endl;
 				float3 lightVector;
-				if (viewLight(closest, light, lightVector))
-					intersectionColor += closest.material.diffuse * light.radiance * dot( closest.norm / length(closest.norm), lightVector ); //If light source can be seen, multiply color with current pixel color
+				float dist;
+				if (viewLight(closest, light, lightVector, dist))
+				{
+					float lightDotPr = dot(closest.norm, lightVector);
+					if(lightDotPr > 0)
+						intersectionColor += closest.material.diffuse * light.radiance * lightDotPr * (1 / (dist * dist)) ; //If light source can be seen, multiply color with current pixel color
+				}
+			
+				//if (closest.material.diffuse.x != 0 || closest.material.diffuse.y != 0 || closest.material.diffuse.z != 0)
+				//{
+				//	std::cout << "material color " << closest.material.diffuse.x << " " << closest.material.diffuse.y << " " << closest.material.diffuse.z;
+				//	cout << " light radiance: " << light.radiance.x << " " << light.radiance.y << " " << light.radiance.z;
+				//	cout << " intersection color: " << intersectionColor.x << " " << intersectionColor.y << " " << intersectionColor.z;
+				//	cout << " pixel color: " << FloatToIntColor(intersectionColor) << endl;
+				//}
 			}
 
 			screen->pixels[i + j * screen->width] = FloatToIntColor( intersectionColor );
