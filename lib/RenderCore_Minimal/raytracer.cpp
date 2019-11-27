@@ -119,7 +119,7 @@ float3 Raytracer::Trace(Ray ray)
 		return DirectIllumination( intersection );
 
 	//Case of (partially) reflective material
-	else if (intersection.material.reflective)
+	else if (intersection.material.metallic)
 		{
 		//s denotes the amount of light that is reflected and d the amount that is absorbed
 		float s = intersection.material.specularity;
@@ -149,7 +149,7 @@ float3 Raytracer::DirectIllumination(Intersection intersection)
 		if ( viewLight( intersection, light, lightVector ) )
 		{
 			float dist = length( light.position - intersection.point );
-			intersectionColor += intersection.material.diffuse * light.radiance * 1 / ( dist * dist ) * dot( intersection.norm, lightVector ); //If light source can be seen, multiply color with current pixel color
+			intersectionColor += intersection.material.diffuse * light.radiance * (1 / ( dist * dist )) * dot( intersection.norm, lightVector ); //If light source can be seen, multiply color with current pixel color
 		}
 	}
 	return intersectionColor;

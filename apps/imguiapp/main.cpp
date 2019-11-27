@@ -41,9 +41,10 @@ static CoreStats coreStats;
 void PrepareScene()
 {
 	// initialize scene
-	materialFile = string( "data/pica/pica_materials.xml" );
+	//materialFile = string( "data/pica/pica_materials.xml" );
 	//renderer->AddScene("AnimatedCube.gltf", "data/animatedCube/", mat4::Translate(-6, -3.2f, -5));
-	renderer->AddScene( "twocubes.gltf", "data/twoCubes/", mat4::Translate( -6, -3.2f, -5 ) );
+	//renderer->AddScene( "twocubes.gltf", "data/twoCubes/", mat4::Translate( -6, -3.2f, -5 ) );
+	renderer->AddScene("Cube-Pyramid.gltf", "data/reflectTest/", mat4::Translate(-6, -3.2f, -5));
 	//renderer->AddScene("AnimatedCube.gltf", "data/animatedCube/", mat4::Translate(1, -10.2f, 1));
 	int rootNode = renderer->FindNode("RootNode (gltf orientation matrix)");
 	//renderer->SetNodeTransform(rootNode, mat4::RotateX(-PI / 2));

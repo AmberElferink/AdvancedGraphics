@@ -63,6 +63,13 @@ void RenderCore::SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, co
 		int texID = matEx[i].texture[TEXTURE0];
 		if (texID == -1)
 		{
+			//parameters encapsulated in host_material.cpp
+			uint metallic = mat->parameters.x & 0x000000ff;
+			if (metallic >= 1)
+				m->metallic = true;
+			else
+				m->metallic = false;
+
 			m->diffuse = make_float3(mat[i].diffuse_r, mat[i].diffuse_g, mat[i].diffuse_b);
 		}
 		else
