@@ -56,10 +56,11 @@ bool Raytracer::IsOccluded( const Ray &ray, const Light &light)
 }
 
 /*Method that shoots a shadow ray and checks whether there are objects between the current intersection point and a light source*/
-bool Raytracer::viewLight( Intersection intersection, const Light &light, float3 &lightVector )
+bool Raytracer::viewLight( Intersection intersection, const Light &light, float3 &lightVector, float &dist )
 {
 	float3 dir = light.position - intersection.point; //vector between light and intersection point
-	lightVector = dir / length( dir ); //normalized vector
+	dist = length(dir);
+	lightVector = dir / dist; //normalized vector
 
 
 	Ray shadowRay = Ray( intersection.point + intersection.norm * 0.001f, lightVector ); //shadow ray from origin to light point
