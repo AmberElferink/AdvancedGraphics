@@ -13,7 +13,7 @@
    limitations under the License.
 */
 #include "core_settings.h"
-
+#include "vld.h"
 
 
 //#include "common_classes.h"

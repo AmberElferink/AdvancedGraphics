@@ -1,5 +1,5 @@
 #include "core_settings.h"
-
+#include <iostream>
 // adapted from Möller–Trumbore intersection algorithm: https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
 bool Raytracer::Intersect(const Ray &ray, const CoreTri &triangle, Intersection &intersection)
 {
@@ -31,7 +31,7 @@ bool Raytracer::Intersect(const Ray &ray, const CoreTri &triangle, Intersection 
 		float3 intersectionPoint = ray.O + ray.E * t;
 		float3 normal = make_float3(triangle.Nx, triangle.Ny, triangle.Nz); //TODO maybe use mesh N
 		intersection = Intersection(t, intersectionPoint, normal, triangle);
-		intersection.material = scene.matList[triangle.material];
+		intersection.material = *scene.matList[triangle.material];
 		return true;
 	}
 	else // This means that there is a line intersection but not a ray intersection.
@@ -48,7 +48,7 @@ bool Raytracer::IsOccluded( const Ray &ray, const Light &light)
 		{
 			Intersection intersection;
 			if ( Intersect( ray, mesh.triangles[i], intersection ) ) //If there are intersections
-				if (length(intersection.point - ray.O) <  length(ray.O - light.position)) //Between the light and the origin, not after
+				if (length(intersection.point - ray.O) <  length(light.position - ray.O)) //Between the light and the origin, not after
 					return true;
 		}
 		return false; //false if no intersections are found
@@ -58,12 +58,11 @@ bool Raytracer::IsOccluded( const Ray &ray, const Light &light)
 /*Method that shoots a shadow ray and checks whether there are objects between the current intersection point and a light source*/
 bool Raytracer::viewLight( Intersection intersection, const Light &light, float3 &lightVector )
 {
-	float3 dir = intersection.point - light.position; //vector between light and intersection point
-	float3 D = dir / length( dir ); //normalized vector
+	float3 dir = light.position - intersection.point; //vector between light and intersection point
+	lightVector = dir / length( dir ); //normalized vector
 
-	lightVector = D;
 
-	Ray shadowRay = Ray( intersection.point + intersection.norm * 0.001f, D ); //shadow ray from origin to light point
+	Ray shadowRay = Ray( intersection.point + intersection.norm * 0.001f, lightVector ); //shadow ray from origin to light point
 
 	Intersection closest;
 
@@ -75,7 +74,10 @@ bool Raytracer::viewLight( Intersection intersection, const Light &light, float3
 
 uint Raytracer::FloatToIntColor( float3 floatColor )
 {
-	return ( (uint)( floatColor.x * 255.0f ) << 16 + (uint)( floatColor.y * 255.0f ) << 8 + (uint)( floatColor.z * 255.0f ) );
+	float r = min(floatColor.x, 1.0f);
+	float g = min(floatColor.y, 1.0f);
+	float b = min(floatColor.z, 1.0f);
+	return ( (uint)( r * 255.0f ) << 16 + (uint)(g * 255.0f ) << 8 + (uint)( b * 255.0f ) );
 }
 
 //-----------------------------------------------------
@@ -106,7 +108,7 @@ void Raytracer::rayTrace(Bitmap *screen, const ViewPyramid &view, const int targ
 
 			Intersection closest; //this will be your closest intersection of which you want to know the color
 			closest.t = 10e30;
-			closest.material = new Material( make_float3( 0, 0, 0 ) ); //default black (background)
+			closest.material = Material( make_float3( 0, 0, 0 ) ); //default black (background)
 
 			//Find closest intersection point for all meshes
 			for ( Mesh &mesh : scene.meshList )
@@ -129,9 +131,10 @@ void Raytracer::rayTrace(Bitmap *screen, const ViewPyramid &view, const int targ
 			/*Check for all lights whether they can be seen from the current intersection point*/
 			for (Light &light : scene.lightList)
 			{
+				std::cout << closest.material.diffuse.x << " " << closest.material.diffuse.y << " " << closest.material.diffuse.z << endl;
 				float3 lightVector;
-				if ( viewLight( closest, light, lightVector ) )
-					intersectionColor += closest.material->diffuse * light.radiance * dot( closest.norm, lightVector ); //If light source can be seen, multiply color with current pixel color
+				if (viewLight(closest, light, lightVector))
+					intersectionColor += closest.material.diffuse * light.radiance * dot( closest.norm, lightVector ); //If light source can be seen, multiply color with current pixel color
 			}
 
 			screen->pixels[i + j * screen->width] = FloatToIntColor( intersectionColor );

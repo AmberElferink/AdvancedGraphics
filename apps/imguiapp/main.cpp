@@ -42,8 +42,8 @@ void PrepareScene()
 {
 	// initialize scene
 	materialFile = string( "data/pica/pica_materials.xml" );
-	renderer->AddScene("AnimatedCube.gltf", "data/animatedCube/", mat4::Translate(0, -10.2f, 0));
-	renderer->AddScene("AnimatedCube.gltf", "data/animatedCube/", mat4::Translate(1, -10.2f, 1));
+	renderer->AddScene("AnimatedCube.gltf", "data/animatedCube/", mat4::Translate(-6, -3.2f, -5));
+	//renderer->AddScene("AnimatedCube.gltf", "data/animatedCube/", mat4::Translate(1, -10.2f, 1));
 	int rootNode = renderer->FindNode("RootNode (gltf orientation matrix)");
 	//renderer->SetNodeTransform(rootNode, mat4::RotateX(-PI / 2));
 #if 1

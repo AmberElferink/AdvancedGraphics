@@ -90,7 +90,7 @@ class Intersection
 	float t;								 // distance from starting point to intersection point
 	float3 point;							 // intersection point
 	float3 norm = make_float3( -1, -1, -1 ); // normal at intersection point
-	Material *material;
+	Material material;
 
 	Intersection( const float t, const float3 &point, const float3 &norm, const CoreTri &triangle ) : t( t ), point( point ), norm( norm )
 	{
