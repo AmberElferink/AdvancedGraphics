@@ -104,20 +104,35 @@ Intersection Raytracer::nearestIntersection(Ray ray)
 	return closest;
 }
 
+//Method that sends a ray into a scene and returns the color of the hitted objects
 float3 Raytracer::Trace(Ray ray)
 {
 	Intersection intersection = nearestIntersection( ray );
+
+	//Case of no intersections
 	if ( intersection.t > 10e29 )
 		return make_float3( 1 );
 
+	//Case of completely diffuse material
 	if (intersection.material.isdiffuse)
 		return DirectIllumination( intersection );
+
+	//Case of (partially) reflective material
 	else if (intersection.material.reflective)
 		{
+		//s denotes the amount of light that is reflected and d the amount that is absorbed
+		float s = intersection.material.specularity;
+		float d = 1 - intersection.material.specularity;
+
+		//Computes the direction of the reflected ray
 		float3 reflectedDir = ray.E - 2 * dot( ray.E, intersection.norm ) * intersection.norm;
 		Ray reflectedRay = Ray(intersection.point, reflectedDir);
-		float3 color = intersection.material.diffuse * Trace(reflectedRay);
-		return color;
+
+		if ( s == 0 ) //no reflection
+			return DirectIllumination( intersection );
+		else if ( d == 0 ) //no absorption
+			return Trace( reflectedRay );
+		else return s * intersection.material.diffuse * Trace(reflectedRay) + d * DirectIllumination(intersection);
 		}
 }
 
