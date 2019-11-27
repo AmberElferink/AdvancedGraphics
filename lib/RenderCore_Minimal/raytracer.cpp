@@ -80,6 +80,65 @@ uint Raytracer::FloatToIntColor( float3 floatColor )
 	return ( ((uint)( r * 255.0f ) << 16) + ((uint)(g * 255.0f ) << 8) + (uint)( b * 255.0f ) );
 	}
 
+Intersection Raytracer::nearestIntersection(Ray ray)
+{
+	Intersection closest; //this will be your closest intersection of which you want to know the color
+	closest.t = 10e30;
+	closest.material = Material( make_float3( 0, 0, 0 ) ); //default black (background)
+
+	//Find closest intersection point for all meshes
+	for ( Mesh &mesh : scene.meshList )
+	{
+		int triangleCount = mesh.vcount / 3;
+		for ( int i = 0; i < triangleCount; i++ ) //find the closest triangle intersection for all triangles
+		{
+			Intersection intersection;
+			if ( Intersect( ray, mesh.triangles[i], intersection ) )
+			{
+				if ( intersection.t < closest.t ) //update closest intersection point only if distance to intersection point is shorter
+					closest = intersection;
+			}
+		}
+	}
+
+	return closest;
+}
+
+float3 Raytracer::Trace(Ray ray)
+{
+	Intersection intersection = nearestIntersection( ray );
+	if ( intersection.t > 10e29 )
+		return make_float3( 1 );
+
+	if (intersection.material.isdiffuse)
+		return DirectIllumination( intersection );
+	else if (intersection.material.reflective)
+		{
+		float3 reflectedDir = ray.E - 2 * dot( ray.E, intersection.norm ) * intersection.norm;
+		Ray reflectedRay = Ray(intersection.point, reflectedDir);
+		float3 color = intersection.material.diffuse * Trace(reflectedRay);
+		return color;
+		}
+}
+
+float3 Raytracer::DirectIllumination(Intersection intersection)
+{
+	float3 intersectionColor = make_float3( 0, 0, 0 );
+
+	/*Check for all lights whether they can be seen from the current intersection point*/
+	for ( Light &light : scene.lightList )
+	{
+		//std::cout << closest.material.diffuse.x << " " << closest.material.diffuse.y << " " << closest.material.diffuse.z << endl;
+		float3 lightVector;
+		if ( viewLight( intersection, light, lightVector ) )
+		{
+			float dist = length( light.position - intersection.point );
+			intersectionColor += intersection.material.diffuse * light.radiance * 1 / ( dist * dist ) * dot( intersection.norm, lightVector ); //If light source can be seen, multiply color with current pixel color
+		}
+	}
+	return intersectionColor;
+}
+
 //-----------------------------------------------------
 // shoot a ray through point p to intersect the scene.
 //  p3 |------------------| 
@@ -106,36 +165,7 @@ void Raytracer::rayTrace(Bitmap *screen, const ViewPyramid &view, const int targ
 
 			Ray ray = Ray( view.pos, D ); 
 
-			Intersection closest; //this will be your closest intersection of which you want to know the color
-			closest.t = 10e30;
-			closest.material = Material( make_float3( 0, 0, 0 ) ); //default black (background)
-
-			//Find closest intersection point for all meshes
-			for ( Mesh &mesh : scene.meshList )
-			{
-				t.reset();
-				int triangleCount = mesh.vcount / 3;
-				for ( int i = 0; i < triangleCount; i++ ) //find the closest triangle intersection for all triangles
-				{
-					Intersection intersection;
-					if (Intersect( ray, mesh.triangles[i], intersection ) )
-					{
-						if ( intersection.t < closest.t ) //update closest intersection point only if distance to intersection point is shorter
-							closest = intersection; 
-					}
-				}
-			}
-
-			float3 intersectionColor = make_float3(0,0,0);
-
-			/*Check for all lights whether they can be seen from the current intersection point*/
-			for (Light &light : scene.lightList)
-			{
-				//std::cout << closest.material.diffuse.x << " " << closest.material.diffuse.y << " " << closest.material.diffuse.z << endl;
-				float3 lightVector;
-				if (viewLight(closest, light, lightVector))
-					intersectionColor += closest.material.diffuse * light.radiance * dot( closest.norm / length(closest.norm), lightVector ); //If light source can be seen, multiply color with current pixel color
-			}
+			float3 intersectionColor = Trace( ray );
 
 			screen->pixels[i + j * screen->width] = FloatToIntColor( intersectionColor );
 		}

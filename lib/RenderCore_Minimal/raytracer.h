@@ -52,8 +52,10 @@ class Material
 	}
 	// data members
 
-	float3 diffuse = make_float3( 1 ); // diffuse material color
+	float3 diffuse = make_float3( 0.9 ); // diffuse material color
 	Texture *texture = 0;			   // texture
+	bool isdiffuse = false;
+	bool reflective = true;
 
 	float3 GetColor()
 	{
@@ -126,9 +128,12 @@ class Raytracer
 	void Reinit( int w, int h, Surface *screen );
 	void Render( const mat4 &transform );
 	bool Intersect( const Ray &ray, const CoreTri &triangle, Intersection &intersection );
-	bool IsOccluded( const Ray &ray, const Light &light);
-	bool viewLight(Intersection intersection, const Light &light, float3 &lightVector);
-	void rayTrace( Bitmap *screen, const ViewPyramid &view, const int targetTextureID);
+	bool IsOccluded( const Ray &ray, const Light &light );
+	bool viewLight( Intersection intersection, const Light &light, float3 &lightVector );
+	void rayTrace( Bitmap *screen, const ViewPyramid &view, const int targetTextureID );
 	uint FloatToIntColor( float3 floatColor );
+	Intersection nearestIntersection(Ray ray );
+	float3 DirectIllumination( Intersection intersection );
+	float3 Trace( Ray ray );
 };
 } // namespace lh2core
