@@ -113,13 +113,9 @@ float3 Raytracer::Trace(Ray ray)
 	if (intersection.t > 10e29)
 		return make_float3(0, 0, 0);
 
-	//Case of completely diffuse material
-	if (intersection.material.isdiffuse)
-		return DirectIllumination( intersection );
-
 	//Case of (partially) reflective material
-	else if (intersection.material.metallic)
-		{
+	if (intersection.material.metallic)
+	{
 		//s denotes the amount of light that is reflected and d the amount that is absorbed
 		float s = intersection.material.specularity;
 		float d = 1 - intersection.material.specularity;
@@ -133,7 +129,9 @@ float3 Raytracer::Trace(Ray ray)
 		else if ( d == 0 ) //no absorption
 			return Trace( reflectedRay );
 		else return s * intersection.material.diffuse * Trace(reflectedRay) + d * DirectIllumination(intersection);
-		}
+	}
+	else //completely diffuse
+		return DirectIllumination(intersection);
 }
 
 float3 Raytracer::DirectIllumination(Intersection intersection)

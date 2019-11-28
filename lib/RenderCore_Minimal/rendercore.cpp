@@ -72,7 +72,6 @@ void RenderCore::SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, co
 				m->metallic = false;
 
 			m->diffuse = make_float3(float(mat[i].diffuse_r), float(mat[i].diffuse_g), float(mat[i].diffuse_b));
-			int w = 0;
 		}
 		else
 		{
