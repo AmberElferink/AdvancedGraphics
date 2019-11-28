@@ -132,6 +132,7 @@ class Raytracer
 	bool IsOccluded( const Ray &ray, const Light &light );
 	bool viewLight( Intersection intersection, const Light &light, float3 &lightVector );
 	void rayTrace( Bitmap *screen, const ViewPyramid &view, const int targetTextureID );
+	void rayTraceLine(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, const int lineNr);
 	uint FloatToIntColor( float3 floatColor );
 	Intersection nearestIntersection(Ray ray );
 	float3 DirectIllumination( Intersection intersection );

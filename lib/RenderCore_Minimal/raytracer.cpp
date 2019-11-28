@@ -110,6 +110,8 @@ float3 Raytracer::Trace(Ray ray)
 {
 	Intersection intersection = nearestIntersection( ray );
 
+	if (intersection.t > 10e29)
+		return make_float3(0, 0, 0);
 
 	//Case of completely diffuse material
 	if (intersection.material.isdiffuse)
@@ -165,24 +167,28 @@ void Raytracer::rayTrace(Bitmap *screen, const ViewPyramid &view, const int targ
 	Timer t;
 	for ( int j = 0; j < screen->height; j++ )
 	{
-		for (int i = 0; i < screen->width; i++) //TODO niet in loop berekenen
-		{
+		rayTraceLine(screen, view, targetTextureID, j);
+	}
+}
 
-			//u and v are the vectors within the virtual screen scaled between 0 and 1, so u = px / screenwidth and y = py / screenwidth
-			float u = (float)i / (float)screen->width; 
-			float v = (float)j / (float)screen->height;
-			float3 P = view.p1 + u * ( view.p2 - view.p1 ) + v * ( view.p3 - view.p1 );
+void Raytracer::rayTraceLine(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, const int lineNr)
+{
+	int j = lineNr;
+	for (int i = 0; i < screen->width; i++) //TODO niet in loop berekenen
+	{
 
-			float3 dir = P - view.pos; // vector in the direction you want to shoot your ray
-			float3 D = dir / length( dir ); //normalize it
+		//u and v are the vectors within the virtual screen scaled between 0 and 1, so u = px / screenwidth and y = py / screenwidth
+		float u = (float)i / (float)screen->width;
+		float v = (float)j / (float)screen->height;
+		float3 P = view.p1 + u * (view.p2 - view.p1) + v * (view.p3 - view.p1);
 
-			Ray ray = Ray( view.pos, D ); 
+		float3 dir = P - view.pos; // vector in the direction you want to shoot your ray
+		float3 D = dir / length(dir); //normalize it
 
-			float3 intersectionColor = Trace( ray );
+		Ray ray = Ray(view.pos, D);
 
-			screen->pixels[i + j * screen->width] = FloatToIntColor( intersectionColor );
-		}
-		glBindTexture(GL_TEXTURE_2D, targetTextureID);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, screen->width, screen->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, screen->pixels);
+		float3 intersectionColor = Trace(ray);
+
+		screen->pixels[i + j * screen->width] = FloatToIntColor(intersectionColor);
 	}
 }
