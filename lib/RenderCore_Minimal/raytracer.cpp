@@ -51,22 +51,22 @@ bool Raytracer::IsOccluded( const Ray &ray, const Light &light)
 				if (length(intersection.point - ray.O) <  length(light.position - ray.O)) //Between the light and the origin, not after
 					return true;
 		}
-		return false; //false if no intersections are found
 	}
+	return false; //false if no intersections are found
 }
 
 /*Method that shoots a shadow ray and checks whether there are objects between the current intersection point and a light source*/
 bool Raytracer::viewLight( Intersection intersection, const Light &light, float3 &lightVector )
 {
-	float3 dir = light.position - intersection.point; //vector between light and intersection point
+	float3 dir = intersection.point - light.position; //vector between light and intersection point
 	float dist = length(dir);
 	lightVector = dir / dist; //normalized vector
 
 
-	Ray shadowRay = Ray( intersection.point + intersection.norm * 0.001f, lightVector ); //shadow ray from origin to light point
+	Ray shadowRay = Ray( intersection.point + lightVector * 0.0002f, lightVector ); //shadow ray from origin to light point
 
 	Intersection closest;
-
+	
 	if ( IsOccluded( shadowRay, light ) ) 
 		return false; //cannot see light source
 	else
@@ -148,7 +148,9 @@ float3 Raytracer::DirectIllumination(Intersection intersection)
 		if ( viewLight( intersection, light, lightVector ) )
 		{
 			float dist = length( light.position - intersection.point );
-			intersectionColor += intersection.material.diffuse * light.radiance * (1 / ( dist * dist )) * dot( intersection.norm, lightVector ); //If light source can be seen, multiply color with current pixel color
+			float dotPr = dot(intersection.norm, lightVector);
+			if(dotPr > 0)
+				intersectionColor += intersection.material.diffuse * light.radiance * (1 / ( dist * dist )) * dotPr; //If light source can be seen, multiply color with current pixel color
 		}
 	}
 	return intersectionColor;
