@@ -52,8 +52,8 @@ void PrepareScene()
 	// overhead light, use regular PT
 	//int lightMat = renderer->AddMaterial(make_float3(100, 100, 80));
 	//int lightQuad = renderer->AddQuad(make_float3(0, -1, 0), make_float3(0, 26.0f, 0), 6.9f, 6.9f, lightMat);
-	int lightBulb = renderer->AddPointLight( make_float3( -10, -9, -4 ), make_float3( 0, 500, 500), true );
-	int lightBulb2 = renderer->AddPointLight( make_float3( 10, -8, 4 ), make_float3( 100, 500, 0), true );
+	int lightBulb = renderer->AddPointLight(make_float3(-10, -9, -4), make_float3(100, 100, 100), true);
+	int lightBulb2 = renderer->AddPointLight(make_float3(10, -8, 4), make_float3(100, 100, 100), true);
 #else
 	// difficult light; use BDPT
 	//int lightMat = renderer->AddMaterial(make_float3(500, 500, 400));
