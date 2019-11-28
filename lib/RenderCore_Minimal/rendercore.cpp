@@ -65,18 +65,11 @@ void RenderCore::SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, co
 		if (texID == -1)
 		{
 			//parameters encapsulated in host_material.cpp
-			//uint metallic = (mat->parameters.x & 255);
-			//if (metallic >= 1)
-			//	m->metallic = true;
-			//else
-			//	m->metallic = false;
-			//if (firstMetallic == 0)
-			//{
-			//	m->metallic = false;
-			//	firstMetallic++;
-			//}
-			//else
-			//	m->metallic = true;
+			uint metallic = (mat[i].parameters.x & 255);
+			if (metallic >= 1)
+				m->metallic = true;
+			else
+				m->metallic = false;
 
 			m->diffuse = make_float3(float(mat[i].diffuse_r), float(mat[i].diffuse_g), float(mat[i].diffuse_b));
 			int w = 0;
@@ -105,7 +98,7 @@ void RenderCore::SetTarget( GLTexture *target )
 	screen = new Bitmap( target->width, target->height );
 }
 
-bool firsttime = true;
+
 //  +-----------------------------------------------------------------------------+
 //  |  RenderCore::SetGeometry                                                    |
 //  |  Set the geometry data for a model.                                   LH2'19|
@@ -116,9 +109,6 @@ bool firsttime = true;
 //copy data to new mesh, want je kan niet garanderen dat de data niet verandert terwijl je tekent. Daarom moet je een kopie maken.
 void RenderCore::SetGeometry( const int meshIdx, const float4 *vertexData, const int vertexCount, const int triangleCount, const CoreTri *triangleData, const uint *alphaFlags )
 {
-
-	if (firsttime) //meshes were loaded two times. For now only load it the first time the program is started.
-	{
 		Timer timer;
 		timer.reset();
 		Mesh newMesh;
@@ -132,8 +122,6 @@ void RenderCore::SetGeometry( const int meshIdx, const float4 *vertexData, const
 		memcpy(newMesh.triangles, triangleData, (vertexCount / 3) * sizeof(CoreTri));
 		raytracer.scene.meshList.push_back(newMesh);
 		printf("loaded geometry in %5.3fs\n", timer.elapsed());
-	}
-	firsttime = false;
 
 }
 
