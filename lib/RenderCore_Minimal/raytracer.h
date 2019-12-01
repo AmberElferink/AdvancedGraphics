@@ -83,9 +83,12 @@ class Light
 	// data members
 	bool pointLight = false;
 	bool directionalLight = false;
+	bool spotLight = false;
 	float3 direction = make_float3( 0, 0, 0 );
 	float3 position = make_float3( 0, 0, 0 );
 	float3 radiance = make_float3( 0, 0, 0 );
+	float cosInner = 0;
+	float cosOuter = 0;
 	float energy = 1.0;
 	int dummy = 1;
 };
@@ -135,6 +138,7 @@ class Raytracer
 	bool IsOccluded( const Ray &ray, const Light &light );
 	bool viewLight( Intersection intersection, const Light &light, float3 &lightVector );
 	bool viewDirLight( Intersection intersection, const Light &light, float3 &lightVector );
+	int viewSpotLight( Intersection intersection, const Light &light, float3 &lightVector );
 	void rayTrace( Bitmap *screen, const ViewPyramid &view, const int targetTextureID );
 	void rayTraceLine(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, const int lineNr);
 	uint FloatToIntColor( float3 floatColor );
