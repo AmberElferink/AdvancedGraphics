@@ -139,7 +139,16 @@ void RenderCore::SetLights( const CoreLightTri *areaLights, const int areaLightC
 		Light l;
 		l.position = pointLights[i].position;
 		l.radiance = pointLights[i].radiance;
-		l.energy = pointLights[i].energy;
+		l.pointLight = true;
+		raytracer.scene.lightList.push_back( l );
+	}
+
+	for (int i = 0; i < directionalLightCount; i++)
+	{
+		Light l;
+		l.direction = directionalLights[i].direction;
+		l.radiance = directionalLights[i].radiance;
+		l.directionalLight = true;
 		raytracer.scene.lightList.push_back( l );
 	}
 }

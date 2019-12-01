@@ -48,8 +48,15 @@ bool Raytracer::IsOccluded( const Ray &ray, const Light &light)
 		{
 			Intersection intersection;
 			if ( Intersect( ray, mesh.triangles[i], intersection ) ) //If there are intersections
-				if (length(intersection.point - ray.O) <  length(light.position - ray.O)) //Between the light and the origin, not after
-					return true;
+				{
+					if ( light.pointLight )
+					{
+						if ( length( intersection.point - ray.O ) < length( light.position - ray.O ) ) //Between the light and the origin, not after
+							return true;
+					}
+					else if ( light.directionalLight )
+						return true;
+				}
 		}
 	}
 	return false; //false if no intersections are found
@@ -64,10 +71,20 @@ bool Raytracer::viewLight( Intersection intersection, const Light &light, float3
 
 
 	Ray shadowRay = Ray( intersection.point + lightVector * 0.0002f, lightVector ); //shadow ray from origin to light point
-
-	Intersection closest;
 	
 	if ( IsOccluded( shadowRay, light ) ) 
+		return false; //cannot see light source
+	else
+		return true; //no objects that obstruct view of light source
+}
+
+bool Raytracer::viewDirLight( Intersection intersection, const Light &light, float3 &lightVector )
+{
+	lightVector = light.direction / length(light.direction); //normalized vector
+
+	Ray shadowRay = Ray( intersection.point + lightVector * 0.0002f, lightVector ); //shadow ray from origin to light point
+
+	if ( IsOccluded( shadowRay, light ) )
 		return false; //cannot see light source
 	else
 		return true; //no objects that obstruct view of light source
@@ -145,12 +162,22 @@ float3 Raytracer::DirectIllumination(Intersection intersection)
 	{
 		//std::cout << closest.material.diffuse.x << " " << closest.material.diffuse.y << " " << closest.material.diffuse.z << endl;
 		float3 lightVector;
-		if ( viewLight( intersection, light, lightVector ) )
+		if (light.pointLight)
 		{
-			float dist = length( light.position - intersection.point );
-			float dotPr = dot(intersection.norm, lightVector);
-			if(dotPr > 0)
+			if (viewLight( intersection, light, lightVector))
+			{
+				float dist = length( light.position - intersection.point );
+				float dotPr = dot(intersection.norm, lightVector);
 				intersectionColor += intersection.material.diffuse * light.radiance * (1 / ( dist * dist )) * dotPr; //If light source can be seen, multiply color with current pixel color
+			}
+		}
+		else if (light.directionalLight)
+		{
+			if( viewDirLight(intersection, light, lightVector))
+			{
+				float dotPr = dot(intersection.norm, lightVector);
+				intersectionColor += intersection.material.diffuse * light.radiance * dotPr;
+			}
 		}
 	}
 	return intersectionColor;
