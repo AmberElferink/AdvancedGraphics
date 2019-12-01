@@ -105,36 +105,65 @@ Intersection Raytracer::nearestIntersection(Ray ray)
 	return closest;
 }
 
+int maxReflectionDepth = 15;
+int reflectionDepth = -1;
 //Method that sends a ray into a scene and returns the color of the hitted objects
 float3 Raytracer::Trace(Ray ray)
 {
+	reflectionDepth++;
+
 	Intersection intersection = nearestIntersection( ray );
 
 	if (intersection.t > 10e29)
+	{
+		reflectionDepth = 0;
 		return make_float3(0, 0, 0);
+	}
 
 	//Case of (partially) reflective material
 	if (intersection.material.metallic)
 	{
 		//s denotes the amount of light that is reflected and d the amount that is absorbed
 		float s = intersection.material.specularity;
+
+		if (s == 0) //no reflection
+		{
+			reflectionDepth = 0;
+			return TotalLight( intersection );
+		}
+
 		float d = 1 - intersection.material.specularity;
 
 		//Computes the direction of the reflected ray
-		float3 reflectedDir = ray.E - 2 * dot( ray.E, intersection.norm ) * intersection.norm;
-		Ray reflectedRay = Ray(intersection.point, reflectedDir);
+		float3 reflectedDir = ray.E - 2 * dot(ray.E, intersection.norm) * intersection.norm;
+		Ray reflectedRay = Ray(intersection.point + EPSILON * reflectedDir, reflectedDir);
 
-		if ( s == 0 ) //no reflection
-			return DirectIllumination( intersection );
-		else if ( d == 0 ) //no absorption
-			return Trace( reflectedRay );
-		else return s * intersection.material.diffuse * Trace(reflectedRay) + d * DirectIllumination(intersection);
+		
+		if (reflectionDepth < maxReflectionDepth)
+		{
+			if (d == 0) //no absorption
+			{
+				return Trace(reflectedRay);
+			}
+			else
+			{
+				return s * intersection.material.diffuse * Trace(reflectedRay) + d * TotalLight(intersection);
+			}
+		}
+		else
+		{
+			//somehow the top of the cube does a lot of reflections even though it should be black
+			//enable to paint it black.
+			//return make_float3(0);
+		}
+
 	}
-	else //completely diffuse
-		return DirectIllumination(intersection);
+	reflectionDepth = 0;
+	//completely diffuse or maximum reflection depth
+	return TotalLight(intersection);
 }
 
-float3 Raytracer::DirectIllumination(Intersection intersection)
+float3 Raytracer::TotalLight(Intersection intersection)
 {
 	float3 intersectionColor = make_float3( 0, 0, 0 );
 

@@ -134,7 +134,7 @@ class Raytracer
 	void rayTraceLine(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, const int lineNr);
 	uint FloatToIntColor( float3 floatColor );
 	Intersection nearestIntersection(Ray ray );
-	float3 DirectIllumination( Intersection intersection );
+	float3 TotalLight( Intersection intersection );
 	float3 Trace( Ray ray );
 };
 } // namespace lh2core
