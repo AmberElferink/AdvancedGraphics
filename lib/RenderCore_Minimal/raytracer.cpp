@@ -105,8 +105,8 @@ Intersection Raytracer::nearestIntersection(Ray ray)
 	return closest;
 }
 
-int maxReflectionDepth = 15;
-int reflectionDepth = -1;
+int maxReflectionDepth = 10;
+int reflectionDepth = -1; //start at -1, the first trace is no reflection
 //Method that sends a ray into a scene and returns the color of the hitted objects
 float3 Raytracer::Trace(Ray ray)
 {
@@ -117,7 +117,7 @@ float3 Raytracer::Trace(Ray ray)
 	if (intersection.t > 10e29)
 	{
 		reflectionDepth = 0;
-		return make_float3(0, 0, 0);
+		return make_float3(0.2, 0.2, 0.2);
 	}
 
 	//Case of (partially) reflective material
@@ -128,7 +128,7 @@ float3 Raytracer::Trace(Ray ray)
 
 		if (s == 0) //no reflection
 		{
-			reflectionDepth = 0;
+			reflectionDepth = -1;
 			return TotalLight( intersection );
 		}
 
@@ -138,7 +138,6 @@ float3 Raytracer::Trace(Ray ray)
 		float3 reflectedDir = ray.E - 2 * dot(ray.E, intersection.norm) * intersection.norm;
 		Ray reflectedRay = Ray(intersection.point + EPSILON * reflectedDir, reflectedDir);
 
-		
 		if (reflectionDepth < maxReflectionDepth)
 		{
 			if (d == 0) //no absorption
@@ -150,15 +149,8 @@ float3 Raytracer::Trace(Ray ray)
 				return s * intersection.material.diffuse * Trace(reflectedRay) + d * TotalLight(intersection);
 			}
 		}
-		else
-		{
-			//somehow the top of the cube does a lot of reflections even though it should be black
-			//enable to paint it black.
-			//return make_float3(0);
-		}
-
 	}
-	reflectionDepth = 0;
+	reflectionDepth = -1;
 	//completely diffuse or maximum reflection depth
 	return TotalLight(intersection);
 }
