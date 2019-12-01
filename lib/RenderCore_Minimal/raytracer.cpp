@@ -185,7 +185,6 @@ float3 Raytracer::TotalLight(Intersection intersection)
 //-----------------------------------------------------
 void Raytracer::rayTrace(Bitmap *screen, const ViewPyramid &view, const int targetTextureID)
 {
-	Timer t;
 	for ( int j = 0; j < screen->height; j++ )
 	{
 		rayTraceLine(screen, view, targetTextureID, j);
@@ -195,7 +194,7 @@ void Raytracer::rayTrace(Bitmap *screen, const ViewPyramid &view, const int targ
 void Raytracer::rayTraceLine(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, const int lineNr)
 {
 	int j = lineNr;
-	for (int i = 0; i < screen->width; i++) //TODO niet in loop berekenen
+	for (int i = 0; i < screen->width; i++)
 	{
 
 		//u and v are the vectors within the virtual screen scaled between 0 and 1, so u = px / screenwidth and y = py / screenwidth

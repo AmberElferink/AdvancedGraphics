@@ -21,9 +21,10 @@
 //  |  RenderCore::Init                                                           |
 //  |  Initialization.                                                      LH2'19|
 //  +-----------------------------------------------------------------------------+
+Timer t;
 void RenderCore::Init()
 {
-
+	t.reset();
 }
 
 //  +-----------------------------------------------------------------------------+
@@ -147,14 +148,24 @@ void RenderCore::SetLights( const CoreLightTri *areaLights, const int areaLightC
 //  |  RenderCore::Render                                                         |
 //  |  Produce one image.                                                   LH2'19|
 //  +-----------------------------------------------------------------------------+
+int lineNr = 0;
 void RenderCore::Render( const ViewPyramid& view, const Convergence converge )
 {
-	// render
-	screen->Clear();
-	Timer t;
-	t.reset();
-	raytracer.rayTrace( screen, view, targetTextureID );
-	printf("raytraced in %5.3fs\n", t.elapsed());
+	
+	//raytracer.rayTrace( screen, view, targetTextureID );
+	if (lineNr < screen->height)
+	{
+		raytracer.rayTraceLine(screen, view, targetTextureID, lineNr);
+		lineNr++;
+	}
+	else
+	{
+		lineNr = 0;
+		screen->Clear();
+		printf("raytraced in %5.3fs\n", t.elapsed());
+		t.reset();
+	}
+
 
 	glBindTexture( GL_TEXTURE_2D, targetTextureID );
 	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, screen->width, screen->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, screen->pixels );
