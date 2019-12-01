@@ -117,7 +117,7 @@ float3 Raytracer::Trace(Ray ray)
 	if (intersection.t > 10e29)
 	{
 		reflectionDepth = 0;
-		return make_float3(0.2, 0.2, 0.2);
+		return make_float3(0.2, 0.2, 0.2); //background color
 	}
 
 	//Case of (partially) reflective material
@@ -141,15 +141,15 @@ float3 Raytracer::Trace(Ray ray)
 		if (reflectionDepth < maxReflectionDepth)
 		{
 			if (d == 0) //no absorption
-			{
 				return Trace(reflectedRay);
-			}
 			else
-			{
 				return s * intersection.material.diffuse * Trace(reflectedRay) + d * TotalLight(intersection);
-			}
 		}
 	}
+	
+
+
+
 	reflectionDepth = -1;
 	//completely diffuse or maximum reflection depth
 	return TotalLight(intersection);

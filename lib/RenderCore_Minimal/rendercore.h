@@ -41,7 +41,7 @@ public:
 		const CoreDirectionalLight* directionalLights, const int directionalLightCount);
 	void SetSkyData(const float3* pixels, const uint width, const uint height);
 
-	void Render( const ViewPyramid& view, const Convergence converge, const float brightness, const float contrast );
+	void Render(const ViewPyramid& view, const Convergence converge);
 	void Shutdown();
 	// internal methods
 private:

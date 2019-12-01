@@ -147,8 +147,7 @@ void RenderCore::SetLights( const CoreLightTri *areaLights, const int areaLightC
 //  |  RenderCore::Render                                                         |
 //  |  Produce one image.                                                   LH2'19|
 //  +-----------------------------------------------------------------------------+
-// its not a raytracer, maar gaat over de vertices in de meshes en tekent een 2d versie of the level met dots voor je vertices. Zodra hij klaar is, tekent hij het naar de texture die wordt gerendert.
-void RenderCore::Render( const ViewPyramid &view, const Convergence converge, const float brightness, const float contrast )
+void RenderCore::Render( const ViewPyramid& view, const Convergence converge )
 {
 	// render
 	screen->Clear();
