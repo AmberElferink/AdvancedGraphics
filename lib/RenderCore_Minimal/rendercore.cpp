@@ -153,6 +153,8 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge )
 {
 	
 	//raytracer.rayTrace( screen, view, targetTextureID );
+
+	//draw raytracer line by line
 	if (lineNr < screen->height)
 	{
 		raytracer.rayTraceLine(screen, view, targetTextureID, lineNr);
