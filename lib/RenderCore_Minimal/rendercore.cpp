@@ -163,6 +163,14 @@ void RenderCore::SetLights( const CoreLightTri *areaLights, const int areaLightC
 		l.spotLight = true;
 		raytracer.scene.lightList.push_back( l );
 	}
+
+	for (int i = 0; i < areaLightCount; i++)
+	{
+		Light l;
+		l.areaLight = true;
+		l.triangle = areaLights[i];
+		raytracer.scene.lightList.push_back( l );
+	}
 }
 
 //  +-----------------------------------------------------------------------------+
