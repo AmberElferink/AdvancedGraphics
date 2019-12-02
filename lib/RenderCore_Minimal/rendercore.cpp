@@ -50,7 +50,7 @@ void RenderCore::SetTextures(const CoreTexDesc* tex, const int textures)
 	printf("loaded textures in %5.3fs\n", timer.elapsed());
 }
 
-int firstMetallic = 0;
+int glassIndex = 0;
 void RenderCore::SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, const int materialCount) // textures must be in sync when calling this
 {
 	Timer timer;
@@ -71,6 +71,15 @@ void RenderCore::SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, co
 				m->metallic = true;
 			else
 				m->metallic = false;
+
+
+			if (glassIndex == 1)
+			{
+				m->dielectric = true;
+				m->metallic = false;
+				m->indexOfRefraction = 1.6; //glass
+			}
+			glassIndex++;
 
 			m->diffuse = make_float3(float(mat[i].diffuse_r), float(mat[i].diffuse_g), float(mat[i].diffuse_b));
 		}

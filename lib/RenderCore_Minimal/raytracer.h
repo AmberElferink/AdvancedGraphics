@@ -55,7 +55,9 @@ class Material
 	float3 diffuse = make_float3( 0.5 ); // diffuse material color
 	Texture *texture = 0;			   // texture
 	bool metallic = false;
+	bool dielectric = false;
 	float specularity = 0.8;
+	float indexOfRefraction = 1.0003; //air
 
 	float3 GetColor()
 	{
@@ -134,7 +136,10 @@ class Raytracer
 	void rayTraceLine(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, const int lineNr);
 	uint FloatToIntColor( float3 floatColor );
 	Intersection nearestIntersection(Ray ray );
+
+	float3 Reflect(const Ray &ray, const Intersection &intersection);
+	float3 calcDielectric(const Ray &ray, const Intersection &intersection, const float n1 = 1.0002f); //only adjust n1 if previous trace is also a dielectric material
 	float3 TotalLight( Intersection intersection );
-	float3 Trace( Ray ray );
+	float3 Trace(const Ray &ray, float prevRefractionIndex = 1.0007); //default: air
 };
 } // namespace lh2core

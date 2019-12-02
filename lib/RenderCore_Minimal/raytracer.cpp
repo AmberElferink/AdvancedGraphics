@@ -105,51 +105,118 @@ Intersection Raytracer::nearestIntersection(Ray ray)
 	return closest;
 }
 
-int maxReflectionDepth = 10;
+int maxReflectionDepth = 15;
 int reflectionDepth = -1; //start at -1, the first trace is no reflection
-//Method that sends a ray into a scene and returns the color of the hitted objects
-float3 Raytracer::Trace(Ray ray)
+//n1 default is air refraction index
+//eta in lighthouse is 1/n of that material
+float3 Raytracer::calcDielectric(const Ray &ray, const Intersection &intersection, float n1)
 {
-	reflectionDepth++;
+	//Snells law:
+	//formula: Advanced Graphics slides lecture 2 - Whitted Style - slide 18 
+	//or For a full derivation, see http://www.flipcode.com/archives/reflection_transmission.pdf
+	
+	float cosi = dot(intersection.norm, make_float3(-ray.E.x, -ray.E.y, -ray.E.z));
+	float n2;
+	if (cosi >= 0) 	 //you're going from n2 into n1, which makes them switch	
+	{
+		n2 = n1;
+		n1 = intersection.material.indexOfRefraction;
+	}
+	else //you're going from n1 into n2.
+	{
+		n2 = intersection.material.indexOfRefraction;
+		cosi = abs(cosi);
+	}
+	 
+	float ncalc = n1 / n2;
 
+	//number within the root
+	float k = 1 - (ncalc * ncalc) * (1 - (cosi * cosi));
+
+	if (k < 0) //total internal reflection
+		return Reflect(ray, intersection);
+
+	float3 T = ncalc * ray.E + intersection.norm * (ncalc * cosi - sqrtf(k));
+	Ray transmissionRay( intersection.point + 2 * EPSILON * T, T);
+
+	//Fresnels law (how much reflects vs transmits).
+	//slide 20
+	//precalculations:
+	float m = ncalc * sin(acos(cosi)); // (n1/n2) * sin(theta i)
+	float coso = sqrtf(1 - (m*m));
+	float n1i = n1 * cosi;
+	float n2t = n2 * coso;
+	float n1t = n1 * coso;
+	float n2i = n2 * cosi;
+	float sPolarisedRoot = (n1i - n2t) / (n1i + n2t);
+	float pPolarisedRoot = (n1t - n2i) / (n1t + n2i);
+
+	//refracted light
+	float Fr = 0.5f * (sPolarisedRoot * sPolarisedRoot + pPolarisedRoot * pPolarisedRoot);
+	float Ft = 1 - Fr; //transmitted light
+
+
+	float3 transmissionColor = Ft * Trace(transmissionRay, intersection.material.indexOfRefraction);
+	float3 reflectionColor = Fr * Reflect(ray, intersection);
+	return transmissionColor + reflectionColor;
+
+	return make_float3(0); //return black if max recursiondepth has been reached.
+	
+}
+
+
+
+float3 Raytracer::Reflect(const Ray &ray, const Intersection &intersection)
+{
+	//s denotes the amount of light that is reflected and d the amount that is absorbed
+	float s = intersection.material.specularity;
+
+	if (s == 0) //no reflection
+		return TotalLight(intersection);
+
+	float d = 1 - intersection.material.specularity;
+
+	//Computes the direction of the reflected ray
+	float3 reflectedDir = ray.E - 2 * dot(ray.E, intersection.norm) * intersection.norm;
+	Ray reflectedRay = Ray(intersection.point + 2 * EPSILON * reflectedDir, reflectedDir);
+
+
+	if (d == 0) //no absorption
+		return Trace(reflectedRay);
+	else
+	{
+		return s * intersection.material.diffuse * Trace(reflectedRay) + d * TotalLight(intersection);
+	}
+}
+
+
+//Method that sends a ray into a scene and returns the color of the hitted objects
+//prevIntersection is only used for dieelectric n2.
+float3 Raytracer::Trace(const Ray &ray, const float prevRefractionIndex)
+{
+
+	reflectionDepth++;
 	Intersection intersection = nearestIntersection( ray );
 
 	if (intersection.t > 10e29)
 	{
-		reflectionDepth = 0;
+		reflectionDepth = -1;
 		return make_float3(0.2, 0.2, 0.2); //background color
 	}
 
-	//Case of (partially) reflective material
-	if (intersection.material.metallic)
+	if (reflectionDepth < maxReflectionDepth)
 	{
-		//s denotes the amount of light that is reflected and d the amount that is absorbed
-		float s = intersection.material.specularity;
-
-		if (s == 0) //no reflection
+		//Case of (partially) reflective material
+		if (intersection.material.metallic)
 		{
-			reflectionDepth = -1;
-			return TotalLight( intersection );
+			return Reflect(ray, intersection);
 		}
-
-		float d = 1 - intersection.material.specularity;
-
-		//Computes the direction of the reflected ray
-		float3 reflectedDir = ray.E - 2 * dot(ray.E, intersection.norm) * intersection.norm;
-		Ray reflectedRay = Ray(intersection.point + EPSILON * reflectedDir, reflectedDir);
-
-		if (reflectionDepth < maxReflectionDepth)
+		else if (intersection.material.dielectric)
 		{
-			if (d == 0) //no absorption
-				return Trace(reflectedRay);
-			else
-				return s * intersection.material.diffuse * Trace(reflectedRay) + d * TotalLight(intersection);
+			return calcDielectric(ray, intersection, prevRefractionIndex);
 		}
 	}
 	
-
-
-
 	reflectionDepth = -1;
 	//completely diffuse or maximum reflection depth
 	return TotalLight(intersection);
