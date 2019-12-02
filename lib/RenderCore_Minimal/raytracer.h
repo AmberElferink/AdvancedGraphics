@@ -77,6 +77,8 @@ class Mesh
 	CoreTri *triangles = 0; // 'fat' triangle data
 };
 
+
+
 class Light
 {
   public:
@@ -137,9 +139,9 @@ class Raytracer
 	uint FloatToIntColor( float3 floatColor );
 	Intersection nearestIntersection(Ray ray );
 
-	float3 Reflect(const Ray &ray, const Intersection &intersection);
-	float3 calcDielectric(const Ray &ray, const Intersection &intersection, const float n1 = 1.0002f); //only adjust n1 if previous trace is also a dielectric material
+	float3 Reflect(const Ray &ray, const Intersection &intersection, int reflectionDepth);
+	float3 calcDielectric(const Ray &ray, const Intersection &intersection, int reflectionDepth, const float n1 = 1.0002f); //only adjust n1 if previous trace is also a dielectric material
 	float3 TotalLight( Intersection intersection );
-	float3 Trace(const Ray &ray, float prevRefractionIndex = 1.0007); //default: air
+	float3 Trace(const Ray &ray, int reflectionDepth); //default: air
 };
 } // namespace lh2core

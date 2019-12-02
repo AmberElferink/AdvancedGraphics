@@ -105,11 +105,11 @@ Intersection Raytracer::nearestIntersection(Ray ray)
 	return closest;
 }
 
-int maxReflectionDepth = 15;
+int maxReflectionDepth = 2;
 int reflectionDepth = -1; //start at -1, the first trace is no reflection
 //n1 default is air refraction index
 //eta in lighthouse is 1/n of that material
-float3 Raytracer::calcDielectric(const Ray &ray, const Intersection &intersection, float n1)
+float3 Raytracer::calcDielectric(const Ray &ray, const Intersection &intersection, int reflectionDepth, float n1)
 {
 	//Snells law:
 	//formula: Advanced Graphics slides lecture 2 - Whitted Style - slide 18 
@@ -134,7 +134,7 @@ float3 Raytracer::calcDielectric(const Ray &ray, const Intersection &intersectio
 	float k = 1 - (ncalc * ncalc) * (1 - (cosi * cosi));
 
 	if (k < 0) //total internal reflection
-		return Reflect(ray, intersection);
+		return Reflect(ray, intersection, reflectionDepth);
 
 	float3 T = ncalc * ray.E + intersection.norm * (ncalc * cosi - sqrtf(k));
 	Ray transmissionRay( intersection.point + 2 * EPSILON * T, T);
@@ -156,8 +156,8 @@ float3 Raytracer::calcDielectric(const Ray &ray, const Intersection &intersectio
 	float Ft = 1 - Fr; //transmitted light
 
 
-	float3 transmissionColor = Ft * Trace(transmissionRay, intersection.material.indexOfRefraction);
-	float3 reflectionColor = Fr * Reflect(ray, intersection);
+	float3 transmissionColor = Ft * Trace(transmissionRay, reflectionDepth);
+	float3 reflectionColor = Fr * Reflect(ray, intersection, reflectionDepth);
 	return transmissionColor + reflectionColor;
 
 	return make_float3(0); //return black if max recursiondepth has been reached.
@@ -166,7 +166,7 @@ float3 Raytracer::calcDielectric(const Ray &ray, const Intersection &intersectio
 
 
 
-float3 Raytracer::Reflect(const Ray &ray, const Intersection &intersection)
+float3 Raytracer::Reflect(const Ray &ray, const Intersection &intersection, int reflectionDepth)
 {
 	//s denotes the amount of light that is reflected and d the amount that is absorbed
 	float s = intersection.material.specularity;
@@ -182,20 +182,20 @@ float3 Raytracer::Reflect(const Ray &ray, const Intersection &intersection)
 
 
 	if (d == 0) //no absorption
-		return Trace(reflectedRay);
+		return Trace(reflectedRay, ++reflectionDepth);
 	else
 	{
-		return s * intersection.material.diffuse * Trace(reflectedRay) + d * TotalLight(intersection);
+		return s * intersection.material.diffuse * Trace(reflectedRay, ++reflectionDepth) + d * TotalLight(intersection);
 	}
 }
 
 
 //Method that sends a ray into a scene and returns the color of the hitted objects
 //prevIntersection is only used for dieelectric n2.
-float3 Raytracer::Trace(const Ray &ray, const float prevRefractionIndex)
+float3 Raytracer::Trace(const Ray &ray, int reflectionDepth)
 {
-
-	reflectionDepth++;
+	/*if(reflectionDepth > 10)
+		printf("reflectionDepth: %i\n", reflectionDepth);*/
 	Intersection intersection = nearestIntersection( ray );
 
 	if (intersection.t > 10e29)
@@ -206,14 +206,16 @@ float3 Raytracer::Trace(const Ray &ray, const float prevRefractionIndex)
 
 	if (reflectionDepth < maxReflectionDepth)
 	{
+
 		//Case of (partially) reflective material
 		if (intersection.material.metallic)
 		{
-			return Reflect(ray, intersection);
+			return Reflect(ray, intersection, reflectionDepth);
 		}
 		else if (intersection.material.dielectric)
 		{
-			return calcDielectric(ray, intersection, prevRefractionIndex);
+
+			return calcDielectric(ray, intersection, reflectionDepth);
 		}
 	}
 	
@@ -258,6 +260,7 @@ void Raytracer::rayTrace(Bitmap *screen, const ViewPyramid &view, const int targ
 	}
 }
 
+
 void Raytracer::rayTraceLine(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, const int lineNr)
 {
 	int j = lineNr;
@@ -274,7 +277,7 @@ void Raytracer::rayTraceLine(Bitmap *screen, const ViewPyramid &view, const int 
 
 		Ray ray = Ray(view.pos, D);
 
-		float3 intersectionColor = Trace(ray);
+		float3 intersectionColor = Trace(ray, 0);
 
 		screen->pixels[i + j * screen->width] = FloatToIntColor(intersectionColor);
 	}

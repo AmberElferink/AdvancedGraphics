@@ -27,6 +27,7 @@ void RenderCore::Init()
 	t.reset();
 }
 
+
 //  +-----------------------------------------------------------------------------+
 //  |  RenderCore::SetTextures                                                    |
 //  |  Set the texture data.                                                LH2'19|
@@ -53,6 +54,7 @@ void RenderCore::SetTextures(const CoreTexDesc* tex, const int textures)
 int glassIndex = 0;
 void RenderCore::SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, const int materialCount) // textures must be in sync when calling this
 {
+
 	Timer timer;
 	timer.reset();
 	// copy the supplied array of materials
@@ -118,6 +120,7 @@ void RenderCore::SetTarget( GLTexture *target )
 //copy data to new mesh, want je kan niet garanderen dat de data niet verandert terwijl je tekent. Daarom moet je een kopie maken.
 void RenderCore::SetGeometry( const int meshIdx, const float4 *vertexData, const int vertexCount, const int triangleCount, const CoreTri *triangleData, const uint *alphaFlags )
 {
+	
 		Timer timer;
 		timer.reset();
 		Mesh newMesh;
