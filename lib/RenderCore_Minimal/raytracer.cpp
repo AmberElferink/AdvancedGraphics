@@ -1,7 +1,7 @@
 #include "core_settings.h"
 #include <iostream>
 // adapted from Möller–Trumbore intersection algorithm: https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
-bool Raytracer::Intersect(const Ray &ray, const CoreTri &triangle, Intersection &intersection)
+bool Raytracer::Intersect( const Ray &ray, const CoreTri &triangle, Intersection &intersection )
 {
 	//TODO: het kan zijn dat een aantal dingen al geprecalculate zijn in CoreTri. Kijk daarnaar voor versnelling
 	float3 vertex0 = triangle.vertex0;
@@ -11,26 +11,30 @@ bool Raytracer::Intersect(const Ray &ray, const CoreTri &triangle, Intersection 
 	float a, f, u, v;
 	edge1 = vertex1 - vertex0;
 	edge2 = vertex2 - vertex0;
-	h = cross(ray.E, edge2);
-	a = dot(edge1, h);
-	if (a > -EPSILON && a < EPSILON)
+	h = cross( ray.D, edge2 );
+	a = dot( edge1, h );
+	if ( a > -EPSILON && a < EPSILON )
 		return false; // This ray is parallel to this triangle.
 	f = 1.0 / a;
 	s = ray.O - vertex0;
-	u = f * dot(s, h);
-	if (u < 0.0 || u > 1.0)
+	u = f * dot( s, h );
+	if ( u < 0.0 || u > 1.0 )
 		return false;
-	q = cross(s, edge1);
-	v = f * dot(ray.E, q);
-	if (v < 0.0 || u + v > 1.0)
+	q = cross( s, edge1 );
+	v = f * dot( ray.D, q );
+	if ( v < 0.0 || u + v > 1.0 )
 		return false;
 	// At this stage we can compute t to find out where the intersection point is on the line.
-	float t = f * dot(edge2, q);
-	if (t > EPSILON && t < 1 / EPSILON) // ray intersection
+	float t = f * dot( edge2, q );
+	if ( t > EPSILON && t < 1 / EPSILON ) // ray intersection
 	{
-		float3 intersectionPoint = ray.O + ray.E * t;
-		float3 normal = make_float3(triangle.Nx, triangle.Ny, triangle.Nz); //TODO maybe use mesh N
-		intersection = Intersection(t, intersectionPoint, normal, triangle);
+		float3 intersectionPoint = ray.O + ray.D * t;
+		float3 dir = ray.O - intersectionPoint;
+		dir = dir / length( dir );
+		float3 normal = make_float3( triangle.Nx, triangle.Ny, triangle.Nz ); //TODO maybe use mesh N
+		//if ( dot( dir, normal ) < 0 ) //angle between normal and vector to the ray origin has to be smaller than 90 degrees
+			//normal = -normal; //therefore we flip the angle if this is not the case
+		intersection = Intersection( t, intersectionPoint, normal, triangle );
 		intersection.material = *scene.matList[triangle.material];
 		return true;
 	}
@@ -39,7 +43,7 @@ bool Raytracer::Intersect(const Ray &ray, const CoreTri &triangle, Intersection 
 }
 
 /* Method that checks whether there are any objects between a light point and the origin of a shadowray */
-bool Raytracer::IsOccluded( const Ray &ray, const Light &light)
+bool Raytracer::IsOccluded( const Ray &ray, const Light &light )
 {
 	for ( Mesh &mesh : scene.meshList )
 	{
@@ -48,8 +52,16 @@ bool Raytracer::IsOccluded( const Ray &ray, const Light &light)
 		{
 			Intersection intersection;
 			if ( Intersect( ray, mesh.triangles[i], intersection ) ) //If there are intersections
-				if (length(intersection.point - ray.O) <  length(light.position - ray.O)) //Between the light and the origin, not after
+			{
+				//light comes from infinetely far away
+				if ( light.directionalLight )
 					return true;
+				else //light comes from a given point
+				{
+					if ( length( intersection.point - ray.O ) < length( light.position - ray.O ) ) //Between the light and the origin, not after
+						return true;
+				}
+			}
 		}
 	}
 	return false; //false if no intersections are found
@@ -58,30 +70,123 @@ bool Raytracer::IsOccluded( const Ray &ray, const Light &light)
 /*Method that shoots a shadow ray and checks whether there are objects between the current intersection point and a light source*/
 bool Raytracer::viewLight( Intersection intersection, const Light &light, float3 &lightVector )
 {
-	float3 dir = intersection.point - light.position; //vector between light and intersection point
-	float dist = length(dir);
+	float3 dir = light.position - intersection.point; //vector between light and intersection point
+	float dist = length( dir );
 	lightVector = dir / dist; //normalized vector
 
+	Ray shadowRay = Ray( intersection.point + intersection.norm * 0.0002f, lightVector ); //shadow ray from origin to light point
 
-	Ray shadowRay = Ray( intersection.point + lightVector * 0.0002f, lightVector ); //shadow ray from origin to light point
-
-	Intersection closest;
-	
-	if ( IsOccluded( shadowRay, light ) ) 
+	if ( IsOccluded( shadowRay, light ) )
 		return false; //cannot see light source
 	else
 		return true; //no objects that obstruct view of light source
 }
 
+/*Method that checks whether a directional light source can be viewed*/
+bool Raytracer::viewDirLight( Intersection intersection, const Light &light, float3 &lightVector )
+{
+	lightVector = light.direction / length( light.direction ); //normalized vector
+
+	Ray shadowRay = Ray( intersection.point + intersection.norm * 0.0002f, lightVector ); //shadow ray from origin to light point
+
+	if ( IsOccluded( shadowRay, light ) )
+		return false; //cannot see light source
+	else
+		return true; //no objects that obstruct view of light source
+}
+
+/*Method that checks whether the current intersection point can be seen from a spot light.
+  It returns 0 if the spot light is occluded,
+  1 if it can see the outer circle of light
+  and 2 if it can also see the inner circle. */
+int Raytracer::viewSpotLight( Intersection intersection, const Light &light, float3 &lightVector )
+{
+	//Normalized spotlight vector
+	float3 spotDir = light.direction / length( light.direction );
+
+	//Normalized vector from origin of the spot light to the intersection point
+	float3 intersectionDir = light.position - intersection.point;
+	intersectionDir = intersectionDir / length( intersectionDir );
+
+	//Angle between the two vectors
+	float cosInt = dot( spotDir, intersectionDir );
+
+	//Point is not in the circle of light, so no need to check whether the point is occluded
+	if ( cosInt < light.cosOuter )
+		return false;
+
+	lightVector = 1 * intersectionDir;
+
+	Ray shadowRay = Ray( intersection.point + intersection.norm * 0.0002f, lightVector );
+
+	if ( IsOccluded( shadowRay, light ) ) //not visible
+		return 0;
+	else if ( cosInt < light.cosInner ) //visible, but in outer circle
+		return 1;
+	else //in inner circle
+		return 2;
+}
+
+/*Method that returns a random point on a triangle */
+float3 Raytracer::randomPointTri( const CoreLightTri &triangle )
+{
+	//Generate two random floats between 0 and 1
+	float u1 = ( (float)rand() ) / (float)RAND_MAX;
+	float u2 = ( (float)rand() ) / (float)RAND_MAX;
+	//Compute a random point on the quadrileteral that consists of the original triangle and the reflection of that triangle
+	float3 point = triangle.vertex0 + u1 * (triangle.vertex1 - triangle.vertex0) + u2 * (triangle.vertex2 - triangle.vertex0);
+
+	//Compute a point p on the edge between vertex1 and vertex2 that forms a perpendicular line from the random point to p
+	float3 A = point - triangle.vertex1;
+	float3 normA = A / length( A );
+	float3 edge = triangle.vertex2 - triangle.vertex1;
+	float3 normEdge = edge / length( edge );
+
+	float cosTheta = dot( normA, normEdge );
+
+	float3 p = cosTheta * A;
+
+	//compute the angle between the vector from p to the point and from p to vertex0 
+	float3 dirV0 = triangle.vertex0 - p;
+	float3 normV0 = dirV0 / length( dirV0 );
+	float3 dirA = A - p;
+	float3 normVA = dirA / length( dirA );
+	cosTheta = dot( normV0, normVA );
+
+	//if this angle is larger than 90 degrees (and thus cosTheta < 0), then the random point is in the reflected triangle
+	if ( cosTheta >= 0)
+		return point;
+	else
+		return point - 2 * p; //therefore, we reflect the point over p
+}
+
+/*method that checks whether a random point in an area of light is visible*/
+bool Raytracer::viewAreaLight(const Intersection intersection, Light &light)
+{
+	//Random point on the triangle
+	float3 point = randomPointTri( light.triangle );
+
+	//normalized vector from intersection point to the random point on the triangle
+	float3 dir = point - intersection.point;
+	dir = dir / length( dir );
+
+	Ray shadowRay = Ray( intersection.point + intersection.norm * 0.0002f, dir );
+
+	//update position of current point on the light source
+	light.position = point;
+
+	return !IsOccluded( shadowRay , light ); //if not obstructed return true
+}
+
 uint Raytracer::FloatToIntColor( float3 floatColor )
 {
-	float r = min(floatColor.x, 1.0f);
-	float g = min(floatColor.y, 1.0f);
-	float b = min(floatColor.z, 1.0f);
-	return ( ((uint)( r * 255.0f ) << 16) + ((uint)(g * 255.0f ) << 8) + (uint)( b * 255.0f ) );
-	}
+	float r = min( floatColor.x, 1.0f );
+	float g = min( floatColor.y, 1.0f );
+	float b = min( floatColor.z, 1.0f );
+	return ( ( ( uint )( r * 255.0f ) << 16 ) + ( ( uint )( g * 255.0f ) << 8 ) + ( uint )( b * 255.0f ) );
+}
 
-Intersection Raytracer::nearestIntersection(Ray ray)
+Intersection Raytracer::nearestIntersection( Ray ray )
 {
 	Intersection closest; //this will be your closest intersection of which you want to know the color
 	closest.t = 10e30;
@@ -115,7 +220,7 @@ float3 Raytracer::calcDielectric(const Ray &ray, const Intersection &intersectio
 	//formula: Advanced Graphics slides lecture 2 - Whitted Style - slide 18 
 	//or For a full derivation, see http://www.flipcode.com/archives/reflection_transmission.pdf
 	
-	float cosi = dot(intersection.norm, make_float3(-ray.E.x, -ray.E.y, -ray.E.z));
+	float cosi = dot(intersection.norm, make_float3(-ray.D.x, -ray.D.y, -ray.D.z));
 	float n2;
 	if (cosi >= 0) 	 //you're going from n2 into n1, which makes them switch	
 	{
@@ -136,7 +241,7 @@ float3 Raytracer::calcDielectric(const Ray &ray, const Intersection &intersectio
 	if (k < 0) //total internal reflection
 		return Reflect(ray, intersection, reflectionDepth);
 
-	float3 T = ncalc * ray.E + intersection.norm * (ncalc * cosi - sqrtf(k));
+	float3 T = ncalc * ray.D + intersection.norm * (ncalc * cosi - sqrtf(k));
 	Ray transmissionRay( intersection.point + 2 * EPSILON * T, T);
 
 	//Fresnels law (how much reflects vs transmits).
@@ -159,8 +264,6 @@ float3 Raytracer::calcDielectric(const Ray &ray, const Intersection &intersectio
 	float3 transmissionColor = Ft * Trace(transmissionRay, reflectionDepth);
 	float3 reflectionColor = Fr * Reflect(ray, intersection, reflectionDepth);
 	return transmissionColor + reflectionColor;
-
-	return make_float3(0); //return black if max recursiondepth has been reached.
 	
 }
 
@@ -177,7 +280,7 @@ float3 Raytracer::Reflect(const Ray &ray, const Intersection &intersection, int 
 	float d = 1 - intersection.material.specularity;
 
 	//Computes the direction of the reflected ray
-	float3 reflectedDir = ray.E - 2 * dot(ray.E, intersection.norm) * intersection.norm;
+	float3 reflectedDir = ray.D - 2 * dot(ray.D, intersection.norm) * intersection.norm;
 	Ray reflectedRay = Ray(intersection.point + 2 * EPSILON * reflectedDir, reflectedDir);
 
 
@@ -224,7 +327,7 @@ float3 Raytracer::Trace(const Ray &ray, int reflectionDepth)
 	return DirectIllumination(intersection);
 }
 
-float3 Raytracer::DirectIllumination(Intersection intersection)
+float3 Raytracer::DirectIllumination( Intersection intersection )
 {
 	float3 intersectionColor = make_float3( 0, 0, 0 );
 
@@ -233,12 +336,57 @@ float3 Raytracer::DirectIllumination(Intersection intersection)
 	{
 		//std::cout << closest.material.diffuse.x << " " << closest.material.diffuse.y << " " << closest.material.diffuse.z << endl;
 		float3 lightVector;
-		if ( viewLight( intersection, light, lightVector ) )
+		if ( light.pointLight )
 		{
-			float dist = length( light.position - intersection.point );
-			float dotPr = dot(intersection.norm, lightVector);
-			if(dotPr > 0)
-				intersectionColor += intersection.material.diffuse * light.radiance * (1 / ( dist * dist )) * dotPr; //If light source can be seen, multiply color with current pixel color
+			if ( viewLight( intersection, light, lightVector ) )
+			{
+				float dist = length( intersection.point - light.position );
+				float dotPr = dot( intersection.norm, lightVector );
+				if (dotPr > 0)
+					intersectionColor += intersection.material.diffuse * light.radiance * ( 1 / ( dist * dist ) ) * dotPr; //If light source can be seen, multiply color with current pixel color
+			}
+		}
+		else if ( light.directionalLight )
+		{
+			if ( viewDirLight( intersection, light, lightVector ) )
+			{
+				float dotPr = dot( intersection.norm, lightVector );
+				if (dotPr > 0)
+					intersectionColor += intersection.material.diffuse * light.radiance * dotPr;
+			}
+		}
+		else if ( light.spotLight )
+		{
+			int option = viewSpotLight( intersection, light, lightVector );
+			if ( option != 0 ) //spotlight is visible
+			{
+				float dist = length( light.position - intersection.point );
+				float dotPr = dot( intersection.norm, lightVector );
+
+				//set the brightness difference between the inner and outer circle of the spotlight
+				float difference = 1;
+				if ( option == 2 )
+					difference += 0.5;
+				if (dotPr > 0)
+				intersectionColor += intersection.material.diffuse * light.radiance * dotPr * difference / ( dist * dist );
+			}
+		}
+		else //(if light.areaLight)
+		{
+			//Send a number of random rays to the areaLight
+			int visible = 0;
+			int k = 20;
+			for (int i = 0; i < k; i++)
+			{
+				if(viewAreaLight(intersection,light))
+					visible += 1; 
+			}
+			float dist = length( light.triangle.centre - intersection.point );
+			float3 lightVector = ( light.triangle.centre - intersection.point) / dist;
+			float dotPr = dot( intersection.norm, lightVector );
+
+			if ( dotPr > 0)
+				intersectionColor += intersection.material.diffuse * light.triangle.radiance * light.triangle.area * dotPr * visible / (float)k / ( dist * dist );
 		}
 	}
 	return intersectionColor;
@@ -246,17 +394,17 @@ float3 Raytracer::DirectIllumination(Intersection intersection)
 
 //-----------------------------------------------------
 // shoot a ray through point p to intersect the scene.
-//  p3 |------------------| 
+//  p3 |------------------|
 //     |        .         |
 //     |        p         | screenheight
 //  p1 |------------------| p2
 //   screenwidth
 //-----------------------------------------------------
-void Raytracer::rayTrace(Bitmap *screen, const ViewPyramid &view, const int targetTextureID)
+void Raytracer::rayTrace( Bitmap *screen, const ViewPyramid &view, const int targetTextureID )
 {
 	for ( int j = 0; j < screen->height; j++ )
 	{
-		rayTraceLine(screen, view, targetTextureID, j);
+		rayTraceLine( screen, view, targetTextureID, j );
 	}
 }
 
@@ -270,15 +418,15 @@ void Raytracer::rayTraceLine(Bitmap *screen, const ViewPyramid &view, const int 
 		//u and v are the vectors within the virtual screen scaled between 0 and 1, so u = px / screenwidth and y = py / screenwidth
 		float u = (float)i / (float)screen->width;
 		float v = (float)j / (float)screen->height;
-		float3 P = view.p1 + u * (view.p2 - view.p1) + v * (view.p3 - view.p1);
+		float3 P = view.p1 + u * ( view.p2 - view.p1 ) + v * ( view.p3 - view.p1 );
 
-		float3 dir = P - view.pos; // vector in the direction you want to shoot your ray
-		float3 D = dir / length(dir); //normalize it
+		float3 dir = P - view.pos;		// vector in the direction you want to shoot your ray
+		float3 D = dir / length( dir ); //normalize it
 
-		Ray ray = Ray(view.pos, D);
+		Ray ray = Ray( view.pos, D );
 
 		float3 intersectionColor = Trace(ray, 0);
 
-		screen->pixels[i + j * screen->width] = FloatToIntColor(intersectionColor);
+		screen->pixels[i + j * screen->width] = FloatToIntColor( intersectionColor );
 	}
 }
