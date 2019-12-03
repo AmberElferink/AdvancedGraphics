@@ -172,7 +172,7 @@ float3 Raytracer::Reflect(const Ray &ray, const Intersection &intersection, int 
 	float s = intersection.material.specularity;
 
 	if (s == 0) //no reflection
-		return TotalLight(intersection);
+		return DirectIllumination(intersection);
 
 	float d = 1 - intersection.material.specularity;
 
@@ -185,7 +185,7 @@ float3 Raytracer::Reflect(const Ray &ray, const Intersection &intersection, int 
 		return Trace(reflectedRay, ++reflectionDepth);
 	else
 	{
-		return s * intersection.material.diffuse * Trace(reflectedRay, ++reflectionDepth) + d * TotalLight(intersection);
+		return s * intersection.material.diffuse * Trace(reflectedRay, ++reflectionDepth) + d * DirectIllumination(intersection);
 	}
 }
 
@@ -221,10 +221,10 @@ float3 Raytracer::Trace(const Ray &ray, int reflectionDepth)
 	
 	reflectionDepth = -1;
 	//completely diffuse or maximum reflection depth
-	return TotalLight(intersection);
+	return DirectIllumination(intersection);
 }
 
-float3 Raytracer::TotalLight(Intersection intersection)
+float3 Raytracer::DirectIllumination(Intersection intersection)
 {
 	float3 intersectionColor = make_float3( 0, 0, 0 );
 

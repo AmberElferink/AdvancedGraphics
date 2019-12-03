@@ -173,7 +173,6 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge )
 	else
 	{
 		lineNr = 0;
-		screen->Clear();
 		printf("raytraced in %5.3fs\n", t.elapsed());
 		t.reset();
 	}
