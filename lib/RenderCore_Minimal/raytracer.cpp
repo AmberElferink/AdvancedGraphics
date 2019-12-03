@@ -210,7 +210,7 @@ Intersection Raytracer::nearestIntersection( Ray ray )
 	return closest;
 }
 
-int maxReflectionDepth = 2;
+int maxReflectionDepth = 10;
 int reflectionDepth = -1; //start at -1, the first trace is no reflection
 //n1 default is air refraction index
 //eta in lighthouse is 1/n of that material
@@ -222,15 +222,15 @@ float3 Raytracer::calcDielectric(const Ray &ray, const Intersection &intersectio
 	
 	float cosi = dot(intersection.norm, make_float3(-ray.D.x, -ray.D.y, -ray.D.z));
 	float n2;
-	if (cosi >= 0) 	 //you're going from n2 into n1, which makes them switch	
+	if (cosi < 0) 	 //you're going from n2 into n1, which makes them switch	
 	{
 		n2 = n1;
 		n1 = intersection.material.indexOfRefraction;
+		cosi = abs(cosi);
 	}
 	else //you're going from n1 into n2.
 	{
 		n2 = intersection.material.indexOfRefraction;
-		cosi = abs(cosi);
 	}
 	 
 	float ncalc = n1 / n2;
@@ -261,7 +261,7 @@ float3 Raytracer::calcDielectric(const Ray &ray, const Intersection &intersectio
 	float Ft = 1 - Fr; //transmitted light
 
 
-	float3 transmissionColor = Ft * Trace(transmissionRay, reflectionDepth);
+	float3 transmissionColor = Ft * Trace(transmissionRay, ++reflectionDepth);
 	float3 reflectionColor = Fr * Reflect(ray, intersection, reflectionDepth);
 	return transmissionColor + reflectionColor;
 	
@@ -414,7 +414,6 @@ void Raytracer::rayTraceLine(Bitmap *screen, const ViewPyramid &view, const int 
 	int j = lineNr;
 	for (int i = 0; i < screen->width; i++)
 	{
-
 		//u and v are the vectors within the virtual screen scaled between 0 and 1, so u = px / screenwidth and y = py / screenwidth
 		float u = (float)i / (float)screen->width;
 		float v = (float)j / (float)screen->height;
