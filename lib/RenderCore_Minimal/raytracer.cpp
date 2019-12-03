@@ -210,6 +210,24 @@ Intersection Raytracer::nearestIntersection( Ray ray )
 	return closest;
 }
 
+float Raytracer::Fresnel(const float cosi, const float ncalc, const float n1, const float n2)
+{
+	//Fresnels law (how much reflects vs transmits).
+//slide 20
+//precalculations:
+	float m = ncalc * sin(acos(cosi)); // (n1/n2) * sin(theta i)
+	float coso = sqrtf(1 - (m*m));
+	float n1i = n1 * cosi;
+	float n2t = n2 * coso;
+	float n1t = n1 * coso;
+	float n2i = n2 * cosi;
+	float sPolarisedRoot = (n1i - n2t) / (n1i + n2t);
+	float pPolarisedRoot = (n1t - n2i) / (n1t + n2i);
+
+	//refracted light
+	return 0.5f * (sPolarisedRoot * sPolarisedRoot + pPolarisedRoot * pPolarisedRoot);
+}
+
 int maxReflectionDepth = 10;
 int reflectionDepth = -1; //start at -1, the first trace is no reflection
 //n1 default is air refraction index
@@ -244,20 +262,7 @@ float3 Raytracer::calcDielectric(const Ray &ray, const Intersection &intersectio
 	float3 T = ncalc * ray.D + intersection.norm * (ncalc * cosi - sqrtf(k));
 	Ray transmissionRay( intersection.point + 2 * EPSILON * T, T);
 
-	//Fresnels law (how much reflects vs transmits).
-	//slide 20
-	//precalculations:
-	float m = ncalc * sin(acos(cosi)); // (n1/n2) * sin(theta i)
-	float coso = sqrtf(1 - (m*m));
-	float n1i = n1 * cosi;
-	float n2t = n2 * coso;
-	float n1t = n1 * coso;
-	float n2i = n2 * cosi;
-	float sPolarisedRoot = (n1i - n2t) / (n1i + n2t);
-	float pPolarisedRoot = (n1t - n2i) / (n1t + n2i);
-
-	//refracted light
-	float Fr = 0.5f * (sPolarisedRoot * sPolarisedRoot + pPolarisedRoot * pPolarisedRoot);
+	float Fr = Fresnel(cosi, ncalc, n1, n2);
 	float Ft = 1 - Fr; //transmitted light
 
 
