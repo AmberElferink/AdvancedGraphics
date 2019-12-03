@@ -32,8 +32,8 @@ bool Raytracer::Intersect( const Ray &ray, const CoreTri &triangle, Intersection
 		float3 dir = ray.O - intersectionPoint;
 		dir = dir / length( dir );
 		float3 normal = make_float3( triangle.Nx, triangle.Ny, triangle.Nz ); //TODO maybe use mesh N
-		if ( dot( dir, normal ) < 0 ) //angle between normal and vector to the ray origin has to be smaller than 90 degrees
-			normal = -normal; //therefore we flip the angle if this is not the case
+		//if ( dot( dir, normal ) < 0 ) //angle between normal and vector to the ray origin has to be smaller than 90 degrees
+			//normal = -normal; //therefore we flip the angle if this is not the case
 		intersection = Intersection( t, intersectionPoint, normal, triangle );
 		intersection.material = *scene.matList[triangle.material];
 		return true;
@@ -257,7 +257,8 @@ float3 Raytracer::DirectIllumination( Intersection intersection )
 			{
 				float dist = length( intersection.point - light.position );
 				float dotPr = dot( intersection.norm, lightVector );
-				intersectionColor += intersection.material.diffuse * light.radiance * ( 1 / ( dist * dist ) ) * dotPr; //If light source can be seen, multiply color with current pixel color
+				if (dotPr > 0)
+					intersectionColor += intersection.material.diffuse * light.radiance * ( 1 / ( dist * dist ) ) * dotPr; //If light source can be seen, multiply color with current pixel color
 			}
 		}
 		else if ( light.directionalLight )
@@ -265,7 +266,8 @@ float3 Raytracer::DirectIllumination( Intersection intersection )
 			if ( viewDirLight( intersection, light, lightVector ) )
 			{
 				float dotPr = dot( intersection.norm, lightVector );
-				intersectionColor += intersection.material.diffuse * light.radiance * dotPr;
+				if (dotPr > 0)
+					intersectionColor += intersection.material.diffuse * light.radiance * dotPr;
 			}
 		}
 		else if ( light.spotLight )
@@ -280,6 +282,7 @@ float3 Raytracer::DirectIllumination( Intersection intersection )
 				float difference = 1;
 				if ( option == 2 )
 					difference += 0.5;
+				if (dotPr > 0)
 				intersectionColor += intersection.material.diffuse * light.radiance * dotPr * difference / ( dist * dist );
 			}
 		}
@@ -297,7 +300,8 @@ float3 Raytracer::DirectIllumination( Intersection intersection )
 			float3 lightVector = ( light.triangle.centre - intersection.point) / dist;
 			float dotPr = dot( intersection.norm, lightVector );
 
-			intersectionColor += intersection.material.diffuse * light.triangle.radiance * dotPr * visible / (float)k / ( dist * dist );
+			if ( dotPr > 0)
+				intersectionColor += intersection.material.diffuse * light.triangle.radiance * light.triangle.area * dotPr * visible / (float)k / ( dist * dist );
 		}
 	}
 	return intersectionColor;
