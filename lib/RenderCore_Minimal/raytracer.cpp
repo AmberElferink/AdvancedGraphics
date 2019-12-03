@@ -228,7 +228,7 @@ float Raytracer::Fresnel(const float cosi, const float ncalc, const float n1, co
 	return 0.5f * (sPolarisedRoot * sPolarisedRoot + pPolarisedRoot * pPolarisedRoot);
 }
 
-int maxReflectionDepth = 10;
+int maxReflectionDepth = 5;
 int reflectionDepth = -1; //start at -1, the first trace is no reflection
 //n1 default is air refraction index
 //eta in lighthouse is 1/n of that material
