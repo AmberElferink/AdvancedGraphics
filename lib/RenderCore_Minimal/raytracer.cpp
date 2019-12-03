@@ -232,12 +232,14 @@ int maxReflectionDepth = 5;
 int reflectionDepth = -1; //start at -1, the first trace is no reflection
 //n1 default is air refraction index
 //eta in lighthouse is 1/n of that material
-float3 Raytracer::calcDielectric(const Ray &ray, const Intersection &intersection, int reflectionDepth, float n1)
+float3 Raytracer::calcDielectric(const Ray &ray, Intersection intersection, int reflectionDepth, float n1)
 {
 	//Snells law:
 	//formula: Advanced Graphics slides lecture 2 - Whitted Style - slide 18 
 	//or For a full derivation, see http://www.flipcode.com/archives/reflection_transmission.pdf
 	
+
+
 	float cosi = dot(intersection.norm, make_float3(-ray.D.x, -ray.D.y, -ray.D.z));
 	float n2;
 	if (cosi < 0) 	 //you're going from n2 into n1, which makes them switch	
@@ -245,6 +247,7 @@ float3 Raytracer::calcDielectric(const Ray &ray, const Intersection &intersectio
 		n2 = n1;
 		n1 = intersection.material.indexOfRefraction;
 		cosi = abs(cosi);
+		intersection.norm = -intersection.norm;
 	}
 	else //you're going from n1 into n2.
 	{

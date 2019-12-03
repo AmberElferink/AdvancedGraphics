@@ -152,7 +152,7 @@ class Raytracer
 	Intersection nearestIntersection(Ray ray );
 
 	float3 Reflect(const Ray &ray, const Intersection &intersection, int reflectionDepth);
-	float3 calcDielectric(const Ray &ray, const Intersection &intersection, int reflectionDepth, const float n1 = 1.0002f); //only adjust n1 if previous trace is also a dielectric material
+	float3 calcDielectric(const Ray &ray, Intersection intersection, int reflectionDepth, const float n1 = 1.0002f); //only adjust n1 if previous trace is also a dielectric material
 	float Fresnel(const float cosi, const float ncalc, const float n1, const float n2);
 	Ray TransmissionRay(const Intersection &intersection, const Ray &ray, const float ncalc, const float cosi);
 	float3 DirectIllumination( Intersection intersection );
