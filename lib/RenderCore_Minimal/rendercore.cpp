@@ -37,7 +37,7 @@ void RenderCore::SetTextures(const CoreTexDesc* tex, const int textures)
 {
 	Timer timer;
 	timer.reset();
-	
+
 	// copy the supplied array of texture descriptors
 	for (int i = 0; i < textures; i++)
 	{
@@ -102,14 +102,14 @@ void RenderCore::SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, co
 //  |  RenderCore::SetTarget                                                      |
 //  |  Set the OpenGL texture that serves as the render target.             LH2'19|
 //  +-----------------------------------------------------------------------------+
-void RenderCore::SetTarget( GLTexture *target )
+void RenderCore::SetTarget(GLTexture *target)
 {
 	//accepts opengl texture
 	// synchronize OpenGL viewport
 	targetTextureID = target->ID;
-	if ( screen != 0 && target->width == screen->width && target->height == screen->height ) return; // nothing changed
+	if (screen != 0 && target->width == screen->width && target->height == screen->height) return; // nothing changed
 	delete screen;
-	screen = new Bitmap( target->width, target->height );
+	screen = new Bitmap(target->width, target->height);
 	delete raytracer.buffer;
 	raytracer.buffer = new Bitmap(screen->width, screen->height);
 }
@@ -123,22 +123,22 @@ void RenderCore::SetTarget( GLTexture *target )
 //triangle count is vertex count/3.
 //core triangles: 3 vertices kun je uit de rest halen, daarmee kun je al een intersection doen, maar de normal ed zit in de coreTriangles
 //copy data to new mesh, want je kan niet garanderen dat de data niet verandert terwijl je tekent. Daarom moet je een kopie maken.
-void RenderCore::SetGeometry( const int meshIdx, const float4 *vertexData, const int vertexCount, const int triangleCount, const CoreTri *triangleData, const uint *alphaFlags )
+void RenderCore::SetGeometry(const int meshIdx, const float4 *vertexData, const int vertexCount, const int triangleCount, const CoreTri *triangleData, const uint *alphaFlags)
 {
-	
-		Timer timer;
-		timer.reset();
-		Mesh newMesh;
-		// copy the supplied vertices; we cannot assume that the render system does not modify
-		// the original data after we leave this function.
-		newMesh.vertices = new float4[vertexCount];
-		newMesh.vcount = vertexCount;
-		memcpy(newMesh.vertices, vertexData, vertexCount * sizeof(float4));
-		// copy the supplied 'fat triangles'
-		newMesh.triangles = new CoreTri[vertexCount / 3];
-		memcpy(newMesh.triangles, triangleData, (vertexCount / 3) * sizeof(CoreTri));
-		raytracer.scene.meshList.push_back(newMesh);
-		printf("loaded geometry in %5.3fs\n", timer.elapsed());
+
+	Timer timer;
+	timer.reset();
+	Mesh newMesh;
+	// copy the supplied vertices; we cannot assume that the render system does not modify
+	// the original data after we leave this function.
+	newMesh.vertices = new float4[vertexCount];
+	newMesh.vcount = vertexCount;
+	memcpy(newMesh.vertices, vertexData, vertexCount * sizeof(float4));
+	// copy the supplied 'fat triangles'
+	newMesh.triangles = new CoreTri[vertexCount / 3];
+	memcpy(newMesh.triangles, triangleData, (vertexCount / 3) * sizeof(CoreTri));
+	raytracer.scene.meshList.push_back(newMesh);
+	printf("loaded geometry in %5.3fs\n", timer.elapsed());
 }
 
 
@@ -146,19 +146,19 @@ void RenderCore::SetGeometry( const int meshIdx, const float4 *vertexData, const
 //  |  RenderCore::SetLights                                                      |
 //  |  Set the light data.                                                  LH2'19|
 //  +-----------------------------------------------------------------------------+
-void RenderCore::SetLights( const CoreLightTri *areaLights, const int areaLightCount,
-							const CorePointLight *pointLights, const int pointLightCount,
-							const CoreSpotLight *spotLights, const int spotLightCount,
-							const CoreDirectionalLight *directionalLights, const int directionalLightCount )
+void RenderCore::SetLights(const CoreLightTri *areaLights, const int areaLightCount,
+	const CorePointLight *pointLights, const int pointLightCount,
+	const CoreSpotLight *spotLights, const int spotLightCount,
+	const CoreDirectionalLight *directionalLights, const int directionalLightCount)
 {
 	printf("setlights\n");
-	for ( int i = 0; i < pointLightCount; i++ )
+	for (int i = 0; i < pointLightCount; i++)
 	{
 		Light l;
 		l.position = pointLights[i].position;
 		l.radiance = pointLights[i].radiance;
 		l.pointLight = true;
-		raytracer.scene.lightList.push_back( l );
+		raytracer.scene.lightList.push_back(l);
 	}
 
 	for (int i = 0; i < directionalLightCount; i++)
@@ -167,7 +167,7 @@ void RenderCore::SetLights( const CoreLightTri *areaLights, const int areaLightC
 		l.direction = directionalLights[i].direction;
 		l.radiance = directionalLights[i].radiance;
 		l.directionalLight = true;
-		raytracer.scene.lightList.push_back( l );
+		raytracer.scene.lightList.push_back(l);
 	}
 
 	for (int i = 0; i < spotLightCount; i++)
@@ -179,7 +179,7 @@ void RenderCore::SetLights( const CoreLightTri *areaLights, const int areaLightC
 		l.cosInner = spotLights[i].cosInner;
 		l.cosOuter = spotLights[i].cosOuter;
 		l.spotLight = true;
-		raytracer.scene.lightList.push_back( l );
+		raytracer.scene.lightList.push_back(l);
 	}
 
 	for (int i = 0; i < areaLightCount; i++)
@@ -187,7 +187,7 @@ void RenderCore::SetLights( const CoreLightTri *areaLights, const int areaLightC
 		Light l;
 		l.areaLight = true;
 		l.triangle = areaLights[i];
-		raytracer.scene.lightList.push_back( l );
+		raytracer.scene.lightList.push_back(l);
 	}
 }
 
@@ -197,10 +197,12 @@ void RenderCore::SetLights( const CoreLightTri *areaLights, const int areaLightC
 //  +-----------------------------------------------------------------------------+
 int lineNr = 0;
 int frameCounter = 0;
-void RenderCore::Render( const ViewPyramid& view, const Convergence converge )
+void RenderCore::Render(const ViewPyramid& view, const Convergence converge)
 {
-	
-	raytracer.rayTrace( screen, view, targetTextureID );
+
+	//raytracer.rayTrace(screen, view, targetTextureID);
+
+
 	if (lineNr < screen->height)
 	{
 		raytracer.rayTraceLine(screen, view, targetTextureID, lineNr);
@@ -212,6 +214,7 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge )
 		printf("raytraced in %5.3fs\n", t.elapsed());
 		t.reset();
 	}
+
 	//raytracer.rayTraceRandom(view, targetTextureID, frameCounter);
 	//int screenSize = screen->width * screen->height;
 	//for (int j = 0; j < screenSize; j++)
@@ -221,8 +224,8 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge )
 
 
 
-	glBindTexture( GL_TEXTURE_2D, targetTextureID );
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, screen->width, screen->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, screen->pixels );
+	glBindTexture(GL_TEXTURE_2D, targetTextureID);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, screen->width, screen->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, screen->pixels);
 }
 
 //  +-----------------------------------------------------------------------------+
