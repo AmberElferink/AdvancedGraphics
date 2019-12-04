@@ -444,6 +444,14 @@ void Raytracer::rayTraceLine(Bitmap *screen, const ViewPyramid &view, const int 
 	}
 }
 
+void Raytracer::rayTraceBlock(const ViewPyramid &view, Bitmap *screen, const int targetTextureID, int lineStart, int lineEnd)
+{
+	for (int i =lineStart; i < lineEnd; i++)
+	{
+		rayTraceLine(screen, view, targetTextureID, i);
+	}
+}
+
 //-----------------------------------------------------
 // shoot a ray through point p to intersect the scene.
 //  p3 |------------------|
