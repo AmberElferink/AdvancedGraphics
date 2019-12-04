@@ -81,7 +81,7 @@ void RenderCore::SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, co
 				m->dielectric = true;
 				m->metallic = false;
 				m->indexOfRefraction = 1.05; //glass
-				m->absorption = make_float3(0.6, 0, 0);
+				m->absorption = make_float3(0.8, 0.8, 0);
 				m->color = make_float3(1, 1, 1);
 			}
 			glassIndex++;
