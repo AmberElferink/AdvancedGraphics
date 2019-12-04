@@ -345,10 +345,10 @@ float3 Raytracer::Reflect( const Ray &ray, const Intersection &intersection, int
 	Ray reflectedRay = Ray( intersection.point + 2 * EPSILON * reflectedDir, reflectedDir );
 
 	if ( d == 0 ) //no absorption
-		return Trace( reflectedRay, ++reflectionDepth );
+		return Trace( reflectedRay, intersection, ++reflectionDepth );
 	else
 	{
-		return s * intersection.material.diffuse * Trace( reflectedRay, ++reflectionDepth ) + d * DirectIllumination( intersection );
+		return s * intersection.material.color * Trace( reflectedRay, intersection, ++reflectionDepth ) + d * DirectIllumination( intersection );
 	}
 }
 
@@ -383,7 +383,7 @@ float3 Raytracer::Trace(const Ray &ray, const Intersection prevIntersection, int
 float3 Raytracer::DirectIllumination( Intersection intersection )
 {
 	float3 intersectionColor = make_float3( 0, 0, 0 );
-	float3 materialColor = intersection.material.diffuse;
+	float3 materialColor = intersection.material.color;
 	if ( intersection.material.texture )
 		{
 		uint color = 0;
