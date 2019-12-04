@@ -1,5 +1,6 @@
 #include "core_settings.h"
 #include <iostream>
+
 // adapted from Möller–Trumbore intersection algorithm: https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
 bool Raytracer::Intersect( const Ray &ray, const CoreTri &triangle, Intersection &intersection )
 {
@@ -15,25 +16,24 @@ bool Raytracer::Intersect( const Ray &ray, const CoreTri &triangle, Intersection
 	a = dot( edge1, h );
 	if ( a > -EPSILON && a < EPSILON )
 		return false; // This ray is parallel to this triangle.
-	f = 1.0 / a;
+	f = 1.0f / a;
 	s = ray.O - vertex0;
 	u = f * dot( s, h );
-	if ( u < 0.0 || u > 1.0 )
+	if ( u < 0.0f || u > 1.0f )
 		return false;
 	q = cross( s, edge1 );
 	v = f * dot( ray.D, q );
-	if ( v < 0.0 || u + v > 1.0 )
+	if ( v < 0.0f || u + v > 1.0f )
 		return false;
 	// At this stage we can compute t to find out where the intersection point is on the line.
 	float t = f * dot( edge2, q );
-	if ( t > EPSILON && t < 1 / EPSILON ) // ray intersection
+	if ( t > EPSILON && t < 1.0f / EPSILON ) // ray intersection
 	{
 		float3 intersectionPoint = ray.O + ray.D * t;
 		float3 dir = ray.O - intersectionPoint;
 		dir = dir / length( dir );
-		float3 normal = make_float3( triangle.Nx, triangle.Ny, triangle.Nz ); //TODO maybe use mesh N
-		//if ( dot( dir, normal ) < 0 ) //angle between normal and vector to the ray origin has to be smaller than 90 degrees
-		//normal = -normal; //therefore we flip the angle if this is not the case
+		float3 normal = make_float3( triangle.Nx, triangle.Ny, triangle.Nz ); 
+	
 		intersection = Intersection( t, intersectionPoint, normal, triangle );
 		intersection.material = *scene.matList[triangle.material];
 		intersection.triangle = triangle;
@@ -211,11 +211,29 @@ Intersection Raytracer::nearestIntersection( Ray ray )
 	return closest;
 }
 
-int maxReflectionDepth = 2;
-int reflectionDepth = -1; //start at -1, the first trace is no reflection
+float Raytracer::Fresnel(const float cosi, const float ncalc, const float n1, const float n2)
+{
+	//Fresnels law (how much reflects vs transmits).
+//slide 20
+//precalculations:
+	float m = ncalc * sin(acos(cosi)); // (n1/n2) * sin(theta i)
+	float coso = sqrtf(1 - (m*m));
+	float n1i = n1 * cosi;
+	float n2t = n2 * coso;
+	float n1t = n1 * coso;
+	float n2i = n2 * cosi;
+	float sPolarisedRoot = (n1i - n2t) / (n1i + n2t);
+	float pPolarisedRoot = (n1t - n2i) / (n1t + n2i);
+
+	//refracted light percentage
+	return 0.5f * (sPolarisedRoot * sPolarisedRoot + pPolarisedRoot * pPolarisedRoot);
+}
+
+int maxReflectionDepth = 7;
+int reflectionDepth = 0;
 //n1 default is air refraction index
 //eta in lighthouse is 1/n of that material
-float3 Raytracer::calcDielectric( const Ray &ray, const Intersection &intersection, int reflectionDepth, float n1 )
+float3 Raytracer::calcDielectric(Ray ray, Intersection intersection, const Intersection prevIntersection, int reflectionDepth, float n1)
 {
 	//Snells law:
 	//formula: Advanced Graphics slides lecture 2 - Whitted Style - slide 18
@@ -223,15 +241,16 @@ float3 Raytracer::calcDielectric( const Ray &ray, const Intersection &intersecti
 
 	float cosi = dot( intersection.norm, make_float3( -ray.D.x, -ray.D.y, -ray.D.z ) );
 	float n2;
-	if ( cosi >= 0 ) //you're going from n2 into n1, which makes them switch
+	if (cosi <= 0) 	 //you're going from n2 into n1, which makes them switch	
 	{
 		n2 = n1;
 		n1 = intersection.material.indexOfRefraction;
+		cosi = -cosi;
+		intersection.norm = -intersection.norm;
 	}
 	else //you're going from n1 into n2.
 	{
 		n2 = intersection.material.indexOfRefraction;
-		cosi = abs( cosi );
 	}
 
 	float ncalc = n1 / n2;
@@ -239,30 +258,32 @@ float3 Raytracer::calcDielectric( const Ray &ray, const Intersection &intersecti
 	//number within the root
 	float k = 1 - ( ncalc * ncalc ) * ( 1 - ( cosi * cosi ) );
 
-	if ( k < 0 ) //total internal reflection
-		return Reflect( ray, intersection, reflectionDepth );
+	if (k < 0) //total internal reflection
+	{
+		return Reflect(ray, intersection, reflectionDepth); //make_float3(1, 0, 0);// 
+	}
 
-	float3 T = ncalc * ray.D + intersection.norm * ( ncalc * cosi - sqrtf( k ) );
-	Ray transmissionRay( intersection.point + 2 * EPSILON * T, T );
 
-	//Fresnels law (how much reflects vs transmits).
-	//slide 20
-	//precalculations:
-	float m = ncalc * sin( acos( cosi ) ); // (n1/n2) * sin(theta i)
-	float coso = sqrtf( 1 - ( m * m ) );
-	float n1i = n1 * cosi;
-	float n2t = n2 * coso;
-	float n1t = n1 * coso;
-	float n2i = n2 * cosi;
-	float sPolarisedRoot = ( n1i - n2t ) / ( n1i + n2t );
-	float pPolarisedRoot = ( n1t - n2i ) / ( n1t + n2i );
+	float3 T = ncalc * ray.D + intersection.norm * (ncalc * cosi - sqrtf(k));
+	Ray transmissionRay( intersection.point + 2 * EPSILON * T, T);
 
-	//refracted light
-	float Fr = 0.5f * ( sPolarisedRoot * sPolarisedRoot + pPolarisedRoot * pPolarisedRoot );
-	float Ft = 1 - Fr; //transmitted light
+	float Fr = Fresnel(cosi, ncalc, n1, n2);
+	float Ft = 1 - Fr; //transmitted light percentage
 
-	float3 transmissionColor = Ft * Trace( transmissionRay, reflectionDepth );
-	float3 reflectionColor = Fr * Reflect( ray, intersection, reflectionDepth );
+	//Beers law:
+	if (prevIntersection.material.dielectric) //there was a previous intersection in dielectric
+	{
+		float distance = length(intersection.point - prevIntersection.point);
+		float3 I;
+		I.x = exp(-intersection.material.absorption.x * distance);
+		I.y = exp(-intersection.material.absorption.y * distance);
+		I.z = exp(-intersection.material.absorption.z * distance);
+		transmissionRay.I *= I;
+		ray.I *= I;
+	}
+
+	float3 transmissionColor = Ft * Trace(transmissionRay, intersection, ++reflectionDepth);
+	float3 reflectionColor = Fr * Reflect(ray, intersection, reflectionDepth); //Fr * make_float3(0, 0, 1);
 	return transmissionColor + reflectionColor;
 }
 
@@ -333,37 +354,31 @@ float3 Raytracer::Reflect( const Ray &ray, const Intersection &intersection, int
 
 //Method that sends a ray into a scene and returns the color of the hitted objects
 //prevIntersection is only used for dieelectric n2.
-float3 Raytracer::Trace( const Ray &ray, int reflectionDepth )
+float3 Raytracer::Trace(const Ray &ray, const Intersection prevIntersection, int reflectionDepth)
 {
-	/*if(reflectionDepth > 10)
-		printf("reflectionDepth: %i\n", reflectionDepth);*/
 	Intersection intersection = nearestIntersection( ray );
 
 	if ( intersection.t > 10e29 )
 	{
 		reflectionDepth = -1;
-		return make_float3( 0.2, 0.2, 0.2 ); //background color
+		return make_float3(0.3, 0.3, 0.3) * ray.I; //background color
 	}
 
 	if ( reflectionDepth < maxReflectionDepth )
 	{
-
 		//Case of (partially) reflective material
-		if ( intersection.material.metallic )
-		{
-			return Reflect( ray, intersection, reflectionDepth );
-		}
-		else if ( intersection.material.dielectric )
-		{
-
-			return calcDielectric( ray, intersection, reflectionDepth );
-		}
+		if (intersection.material.metallic)
+			return Reflect(ray, intersection, reflectionDepth);
+		else if (intersection.material.dielectric)
+			return calcDielectric(ray, intersection, prevIntersection, reflectionDepth);
 	}
 
 	reflectionDepth = -1;
 	//completely diffuse or maximum reflection depth
-	return DirectIllumination( intersection );
+	return DirectIllumination(intersection) * ray.I; // ray.I is the intensity that comes through glass if it has passed through
 }
+
+
 
 float3 Raytracer::DirectIllumination( Intersection intersection )
 {
@@ -439,14 +454,7 @@ float3 Raytracer::DirectIllumination( Intersection intersection )
 	return intersectionColor;
 }
 
-//-----------------------------------------------------
-// shoot a ray through point p to intersect the scene.
-//  p3 |------------------|
-//     |        .         |
-//     |        p         | screenheight
-//  p1 |------------------| p2
-//   screenwidth
-//-----------------------------------------------------
+
 void Raytracer::rayTrace( Bitmap *screen, const ViewPyramid &view, const int targetTextureID )
 {
 	for ( int j = 0; j < screen->height; j++ )
@@ -455,12 +463,19 @@ void Raytracer::rayTrace( Bitmap *screen, const ViewPyramid &view, const int tar
 	}
 }
 
-void Raytracer::rayTraceLine( Bitmap *screen, const ViewPyramid &view, const int targetTextureID, const int lineNr )
+//-----------------------------------------------------
+// shoot a ray through point p to intersect the scene.
+//  p3 |------------------|
+//     |        .         |
+//     |        p         | screenheight
+//  p1 |------------------| p2
+//   screenwidth
+//-----------------------------------------------------
+void Raytracer::rayTraceLine(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, const int lineNr)
 {
 	int j = lineNr;
 	for ( int i = 0; i < screen->width; i++ )
 	{
-
 		//u and v are the vectors within the virtual screen scaled between 0 and 1, so u = px / screenwidth and y = py / screenwidth
 		float u = (float)i / (float)screen->width;
 		float v = (float)j / (float)screen->height;
@@ -471,8 +486,51 @@ void Raytracer::rayTraceLine( Bitmap *screen, const ViewPyramid &view, const int
 
 		Ray ray = Ray( view.pos, D );
 
-		float3 intersectionColor = Trace( ray, 0 );
+		float3 intersectionColor = Trace(ray, Intersection(), 0);
 
 		screen->pixels[i + j * screen->width] = FloatToIntColor( intersectionColor );
 	}
+}
+
+//-----------------------------------------------------
+// shoot a ray through point p to intersect the scene.
+//  p3 |------------------|
+//     |        .         |
+//     |        p         | screenheight
+//  p1 |------------------| p2
+//   screenwidth
+//-----------------------------------------------------
+float3 prevp1 = make_float3(1000000); //random thingy
+int framecounter = 0;
+
+Bitmap* Raytracer::rayTraceRandom(const ViewPyramid &view, const int targetTextureID, int &frameCounter)
+{
+	//1 ray per light source geeft noisy image, maar andere random numbers = different numbers, optellen bij de accumulator. 
+	//Die is 2x zo bright, maar /2 geeft weer normaal antwoord. Dat blijf je doen.
+
+	if (!(view.p1.x == prevp1.x && view.p1.y == prevp1.y && view.p1.z == prevp1.z))
+	{
+		buffer->Clear();
+		framecounter = 1;
+	}
+
+	for (int i = 0; i < 100; i++) 
+	{
+
+		//u and v are the vectors within the virtual screen scaled between 0 and 1, so u = px / screenwidth and y = py / screenwidth
+		float u = RandomFloat();
+		float v = RandomFloat();
+		float3 P = view.p1 + u * (view.p2 - view.p1) + v * (view.p3 - view.p1);
+
+		float3 dir = P - view.pos;		// vector in the direction you want to shoot your ray
+		float3 D = dir / length(dir); //normalize it
+
+		Ray ray = Ray(view.pos, D);
+
+		float3 intersectionColor = Trace(ray, Intersection(), 0);
+		int index = (int)((u * buffer->height) + (v * buffer->height) * buffer->width);
+		buffer->pixels[index] += FloatToIntColor(intersectionColor);
+	}
+	framecounter++;
+	return buffer;
 }

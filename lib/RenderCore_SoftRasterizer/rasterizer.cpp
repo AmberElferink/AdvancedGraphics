@@ -89,7 +89,7 @@ void Mesh::Render( const mat4& T )
 		Material* mat = Rasterizer::scene.matList[material[i]];
 		static uint p;
 		uint* src = mat->texture ? mat->texture->pixels : &p;
-		if (!mat->texture) p = mat->diffuse;
+		if (!mat->texture) p = mat->color;
 		float* zbuffer = Rasterizer::zbuffer, f;
 		const float tw = mat->texture ? (float)mat->texture->width : 1;
 		const float th = mat->texture ? (float)mat->texture->height : 1;

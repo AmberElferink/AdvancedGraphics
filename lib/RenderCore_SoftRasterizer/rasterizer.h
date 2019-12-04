@@ -61,7 +61,7 @@ public:
 	// constructor / destructor
 	Material() = default;
 	// data members
-	uint diffuse = 0xffffffff;		// diffuse material color
+	uint color = 0xffffffff;		// diffuse material color
 	Texture* texture = 0;			// texture
 };
 
