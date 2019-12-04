@@ -33,9 +33,10 @@ bool Raytracer::Intersect( const Ray &ray, const CoreTri &triangle, Intersection
 		dir = dir / length( dir );
 		float3 normal = make_float3( triangle.Nx, triangle.Ny, triangle.Nz ); //TODO maybe use mesh N
 		//if ( dot( dir, normal ) < 0 ) //angle between normal and vector to the ray origin has to be smaller than 90 degrees
-			//normal = -normal; //therefore we flip the angle if this is not the case
+		//normal = -normal; //therefore we flip the angle if this is not the case
 		intersection = Intersection( t, intersectionPoint, normal, triangle );
 		intersection.material = *scene.matList[triangle.material];
+		intersection.triangle = triangle;
 		return true;
 	}
 	else // This means that there is a line intersection but not a ray intersection.
@@ -134,7 +135,7 @@ float3 Raytracer::randomPointTri( const CoreLightTri &triangle )
 	float u1 = ( (float)rand() ) / (float)RAND_MAX;
 	float u2 = ( (float)rand() ) / (float)RAND_MAX;
 	//Compute a random point on the quadrileteral that consists of the original triangle and the reflection of that triangle
-	float3 point = triangle.vertex0 + u1 * (triangle.vertex1 - triangle.vertex0) + u2 * (triangle.vertex2 - triangle.vertex0);
+	float3 point = triangle.vertex0 + u1 * ( triangle.vertex1 - triangle.vertex0 ) + u2 * ( triangle.vertex2 - triangle.vertex0 );
 
 	//Compute a point p on the edge between vertex1 and vertex2 that forms a perpendicular line from the random point to p
 	float3 A = point - triangle.vertex1;
@@ -146,7 +147,7 @@ float3 Raytracer::randomPointTri( const CoreLightTri &triangle )
 
 	float3 p = cosTheta * A;
 
-	//compute the angle between the vector from p to the point and from p to vertex0 
+	//compute the angle between the vector from p to the point and from p to vertex0
 	float3 dirV0 = triangle.vertex0 - p;
 	float3 normV0 = dirV0 / length( dirV0 );
 	float3 dirA = A - p;
@@ -154,14 +155,14 @@ float3 Raytracer::randomPointTri( const CoreLightTri &triangle )
 	cosTheta = dot( normV0, normVA );
 
 	//if this angle is larger than 90 degrees (and thus cosTheta < 0), then the random point is in the reflected triangle
-	if ( cosTheta >= 0)
+	if ( cosTheta >= 0 )
 		return point;
 	else
 		return point - 2 * p; //therefore, we reflect the point over p
 }
 
 /*method that checks whether a random point in an area of light is visible*/
-bool Raytracer::viewAreaLight(const Intersection intersection, Light &light)
+bool Raytracer::viewAreaLight( const Intersection intersection, Light &light )
 {
 	//Random point on the triangle
 	float3 point = randomPointTri( light.triangle );
@@ -175,7 +176,7 @@ bool Raytracer::viewAreaLight(const Intersection intersection, Light &light)
 	//update position of current point on the light source
 	light.position = point;
 
-	return !IsOccluded( shadowRay , light ); //if not obstructed return true
+	return !IsOccluded( shadowRay, light ); //if not obstructed return true
 }
 
 uint Raytracer::FloatToIntColor( float3 floatColor )
@@ -214,15 +215,15 @@ int maxReflectionDepth = 2;
 int reflectionDepth = -1; //start at -1, the first trace is no reflection
 //n1 default is air refraction index
 //eta in lighthouse is 1/n of that material
-float3 Raytracer::calcDielectric(const Ray &ray, const Intersection &intersection, int reflectionDepth, float n1)
+float3 Raytracer::calcDielectric( const Ray &ray, const Intersection &intersection, int reflectionDepth, float n1 )
 {
 	//Snells law:
-	//formula: Advanced Graphics slides lecture 2 - Whitted Style - slide 18 
+	//formula: Advanced Graphics slides lecture 2 - Whitted Style - slide 18
 	//or For a full derivation, see http://www.flipcode.com/archives/reflection_transmission.pdf
-	
-	float cosi = dot(intersection.norm, make_float3(-ray.D.x, -ray.D.y, -ray.D.z));
+
+	float cosi = dot( intersection.norm, make_float3( -ray.D.x, -ray.D.y, -ray.D.z ) );
 	float n2;
-	if (cosi >= 0) 	 //you're going from n2 into n1, which makes them switch	
+	if ( cosi >= 0 ) //you're going from n2 into n1, which makes them switch
 	{
 		n2 = n1;
 		n1 = intersection.material.indexOfRefraction;
@@ -230,106 +231,152 @@ float3 Raytracer::calcDielectric(const Ray &ray, const Intersection &intersectio
 	else //you're going from n1 into n2.
 	{
 		n2 = intersection.material.indexOfRefraction;
-		cosi = abs(cosi);
+		cosi = abs( cosi );
 	}
-	 
+
 	float ncalc = n1 / n2;
 
 	//number within the root
-	float k = 1 - (ncalc * ncalc) * (1 - (cosi * cosi));
+	float k = 1 - ( ncalc * ncalc ) * ( 1 - ( cosi * cosi ) );
 
-	if (k < 0) //total internal reflection
-		return Reflect(ray, intersection, reflectionDepth);
+	if ( k < 0 ) //total internal reflection
+		return Reflect( ray, intersection, reflectionDepth );
 
-	float3 T = ncalc * ray.D + intersection.norm * (ncalc * cosi - sqrtf(k));
-	Ray transmissionRay( intersection.point + 2 * EPSILON * T, T);
+	float3 T = ncalc * ray.D + intersection.norm * ( ncalc * cosi - sqrtf( k ) );
+	Ray transmissionRay( intersection.point + 2 * EPSILON * T, T );
 
 	//Fresnels law (how much reflects vs transmits).
 	//slide 20
 	//precalculations:
-	float m = ncalc * sin(acos(cosi)); // (n1/n2) * sin(theta i)
-	float coso = sqrtf(1 - (m*m));
+	float m = ncalc * sin( acos( cosi ) ); // (n1/n2) * sin(theta i)
+	float coso = sqrtf( 1 - ( m * m ) );
 	float n1i = n1 * cosi;
 	float n2t = n2 * coso;
 	float n1t = n1 * coso;
 	float n2i = n2 * cosi;
-	float sPolarisedRoot = (n1i - n2t) / (n1i + n2t);
-	float pPolarisedRoot = (n1t - n2i) / (n1t + n2i);
+	float sPolarisedRoot = ( n1i - n2t ) / ( n1i + n2t );
+	float pPolarisedRoot = ( n1t - n2i ) / ( n1t + n2i );
 
 	//refracted light
-	float Fr = 0.5f * (sPolarisedRoot * sPolarisedRoot + pPolarisedRoot * pPolarisedRoot);
+	float Fr = 0.5f * ( sPolarisedRoot * sPolarisedRoot + pPolarisedRoot * pPolarisedRoot );
 	float Ft = 1 - Fr; //transmitted light
 
-
-	float3 transmissionColor = Ft * Trace(transmissionRay, reflectionDepth);
-	float3 reflectionColor = Fr * Reflect(ray, intersection, reflectionDepth);
+	float3 transmissionColor = Ft * Trace( transmissionRay, reflectionDepth );
+	float3 reflectionColor = Fr * Reflect( ray, intersection, reflectionDepth );
 	return transmissionColor + reflectionColor;
-	
 }
 
+void Raytracer::TextureColor( Intersection &intersection, const CoreTri &triangle, uint &color )
+{
+	Texture tex = Texture( intersection.material.texture->width, intersection.material.texture->height );
 
+	int height = tex.height;
+	int width = tex.width;
 
-float3 Raytracer::Reflect(const Ray &ray, const Intersection &intersection, int reflectionDepth)
+	//normalized vector from v0 to p
+	float3 S = intersection.point - triangle.vertex0;
+	float3 normS = S / length( S );
+
+	//normalized vector from v0 to the point closest to p on edge(v0,v1)
+	float3 U = triangle.vertex1 - triangle.vertex0;
+	float3 normU = U / length( U );
+	float lengthU = length( U );
+
+	//normalized vector from v0 to the point closest to p on edge(v0,v2)
+	float3 V = triangle.vertex2 - triangle.vertex0;
+	float3 normV = V / length( V );
+	float lengthV = length( V );
+
+	//respective angles with vector (v0,p)
+	float cosX = dot( normS, normU );
+	float cosY = dot( normS, normV );
+
+	float u = length( intersection.point - triangle.vertex0 ) * cosX;
+	float v = length( intersection.point - triangle.vertex0 ) * cosY;
+
+	uint totalPixels = width * height;
+	float scaleX = (float)width / length( triangle.vertex1 - triangle.vertex0 );
+	float scaleY = (float)height / length( triangle.vertex2 - triangle.vertex0 );
+
+	//if ( intersection.point.x < triangle.v0 && intersection.point.y < triangle.v0 )
+	//{
+	//	u = lengthU - u;
+	//	v = lengthV - v;
+	//}
+
+	uint index = ( v * scaleY * width + u * scaleX );
+
+	color = intersection.material.texture->pixels[index];
+}
+
+float3 Raytracer::Reflect( const Ray &ray, const Intersection &intersection, int reflectionDepth )
 {
 	//s denotes the amount of light that is reflected and d the amount that is absorbed
 	float s = intersection.material.specularity;
 
-	if (s == 0) //no reflection
-		return DirectIllumination(intersection);
+	if ( s == 0 ) //no reflection
+		return DirectIllumination( intersection );
 
 	float d = 1 - intersection.material.specularity;
 
 	//Computes the direction of the reflected ray
-	float3 reflectedDir = ray.D - 2 * dot(ray.D, intersection.norm) * intersection.norm;
-	Ray reflectedRay = Ray(intersection.point + 2 * EPSILON * reflectedDir, reflectedDir);
+	float3 reflectedDir = ray.D - 2 * dot( ray.D, intersection.norm ) * intersection.norm;
+	Ray reflectedRay = Ray( intersection.point + 2 * EPSILON * reflectedDir, reflectedDir );
 
-
-	if (d == 0) //no absorption
-		return Trace(reflectedRay, ++reflectionDepth);
+	if ( d == 0 ) //no absorption
+		return Trace( reflectedRay, ++reflectionDepth );
 	else
 	{
-		return s * intersection.material.diffuse * Trace(reflectedRay, ++reflectionDepth) + d * DirectIllumination(intersection);
+		return s * intersection.material.diffuse * Trace( reflectedRay, ++reflectionDepth ) + d * DirectIllumination( intersection );
 	}
 }
 
-
 //Method that sends a ray into a scene and returns the color of the hitted objects
 //prevIntersection is only used for dieelectric n2.
-float3 Raytracer::Trace(const Ray &ray, int reflectionDepth)
+float3 Raytracer::Trace( const Ray &ray, int reflectionDepth )
 {
 	/*if(reflectionDepth > 10)
 		printf("reflectionDepth: %i\n", reflectionDepth);*/
 	Intersection intersection = nearestIntersection( ray );
 
-	if (intersection.t > 10e29)
+	if ( intersection.t > 10e29 )
 	{
 		reflectionDepth = -1;
-		return make_float3(0.2, 0.2, 0.2); //background color
+		return make_float3( 0.2, 0.2, 0.2 ); //background color
 	}
 
-	if (reflectionDepth < maxReflectionDepth)
+	if ( reflectionDepth < maxReflectionDepth )
 	{
 
 		//Case of (partially) reflective material
-		if (intersection.material.metallic)
+		if ( intersection.material.metallic )
 		{
-			return Reflect(ray, intersection, reflectionDepth);
+			return Reflect( ray, intersection, reflectionDepth );
 		}
-		else if (intersection.material.dielectric)
+		else if ( intersection.material.dielectric )
 		{
 
-			return calcDielectric(ray, intersection, reflectionDepth);
+			return calcDielectric( ray, intersection, reflectionDepth );
 		}
 	}
-	
+
 	reflectionDepth = -1;
 	//completely diffuse or maximum reflection depth
-	return DirectIllumination(intersection);
+	return DirectIllumination( intersection );
 }
 
 float3 Raytracer::DirectIllumination( Intersection intersection )
 {
 	float3 intersectionColor = make_float3( 0, 0, 0 );
+	float3 materialColor = intersection.material.diffuse;
+	if ( intersection.material.texture )
+		{
+		uint color = 0;
+		TextureColor( intersection, intersection.triangle, color );
+		materialColor.x = (float)((color >> 16) & 0x0000ff)/255.f;
+		materialColor.y = (float)(( color >> 8 ) & 0x0000ff) / 255.f;
+		materialColor.z = (float)(color & 0x0000ff) / 255.f;
+		}
 
 	/*Check for all lights whether they can be seen from the current intersection point*/
 	for ( Light &light : scene.lightList )
@@ -342,8 +389,8 @@ float3 Raytracer::DirectIllumination( Intersection intersection )
 			{
 				float dist = length( intersection.point - light.position );
 				float dotPr = dot( intersection.norm, lightVector );
-				if (dotPr > 0)
-					intersectionColor += intersection.material.diffuse * light.radiance * ( 1 / ( dist * dist ) ) * dotPr; //If light source can be seen, multiply color with current pixel color
+				if ( dotPr > 0 )
+					intersectionColor += materialColor * light.radiance * ( 1 / ( dist * dist ) ) * dotPr; //If light source can be seen, multiply color with current pixel color
 			}
 		}
 		else if ( light.directionalLight )
@@ -351,8 +398,8 @@ float3 Raytracer::DirectIllumination( Intersection intersection )
 			if ( viewDirLight( intersection, light, lightVector ) )
 			{
 				float dotPr = dot( intersection.norm, lightVector );
-				if (dotPr > 0)
-					intersectionColor += intersection.material.diffuse * light.radiance * dotPr;
+				if ( dotPr > 0 )
+					intersectionColor += materialColor * light.radiance * dotPr;
 			}
 		}
 		else if ( light.spotLight )
@@ -367,8 +414,8 @@ float3 Raytracer::DirectIllumination( Intersection intersection )
 				float difference = 1;
 				if ( option == 2 )
 					difference += 0.5;
-				if (dotPr > 0)
-				intersectionColor += intersection.material.diffuse * light.radiance * dotPr * difference / ( dist * dist );
+				if ( dotPr > 0 )
+					intersectionColor += materialColor * light.radiance * dotPr * difference / ( dist * dist );
 			}
 		}
 		else //(if light.areaLight)
@@ -376,17 +423,17 @@ float3 Raytracer::DirectIllumination( Intersection intersection )
 			//Send a number of random rays to the areaLight
 			int visible = 0;
 			int k = 20;
-			for (int i = 0; i < k; i++)
+			for ( int i = 0; i < k; i++ )
 			{
-				if(viewAreaLight(intersection,light))
-					visible += 1; 
+				if ( viewAreaLight( intersection, light ) )
+					visible += 1;
 			}
 			float dist = length( light.triangle.centre - intersection.point );
-			float3 lightVector = ( light.triangle.centre - intersection.point) / dist;
+			float3 lightVector = ( light.triangle.centre - intersection.point ) / dist;
 			float dotPr = dot( intersection.norm, lightVector );
 
-			if ( dotPr > 0)
-				intersectionColor += intersection.material.diffuse * light.triangle.radiance * light.triangle.area * dotPr * visible / (float)k / ( dist * dist );
+			if ( dotPr > 0 )
+				intersectionColor += materialColor * light.triangle.radiance * light.triangle.area * dotPr * visible / (float)k / ( dist * dist );
 		}
 	}
 	return intersectionColor;
@@ -408,11 +455,10 @@ void Raytracer::rayTrace( Bitmap *screen, const ViewPyramid &view, const int tar
 	}
 }
 
-
-void Raytracer::rayTraceLine(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, const int lineNr)
+void Raytracer::rayTraceLine( Bitmap *screen, const ViewPyramid &view, const int targetTextureID, const int lineNr )
 {
 	int j = lineNr;
-	for (int i = 0; i < screen->width; i++)
+	for ( int i = 0; i < screen->width; i++ )
 	{
 
 		//u and v are the vectors within the virtual screen scaled between 0 and 1, so u = px / screenwidth and y = py / screenwidth
@@ -425,7 +471,7 @@ void Raytracer::rayTraceLine(Bitmap *screen, const ViewPyramid &view, const int 
 
 		Ray ray = Ray( view.pos, D );
 
-		float3 intersectionColor = Trace(ray, 0);
+		float3 intersectionColor = Trace( ray, 0 );
 
 		screen->pixels[i + j * screen->width] = FloatToIntColor( intersectionColor );
 	}

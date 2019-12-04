@@ -75,13 +75,13 @@ void RenderCore::SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, co
 				m->metallic = false;
 
 
-			if (glassIndex == 1)
-			{
-				m->dielectric = true;
-				m->metallic = false;
-				m->indexOfRefraction = 1.6; //glass
-			}
-			glassIndex++;
+			//if (glassIndex == 1)
+			//{
+			//	m->dielectric = true;
+			//	m->metallic = false;
+			//	m->indexOfRefraction = 1.6; //glass
+			//}
+			//glassIndex++;
 
 			m->diffuse = make_float3(float(mat[i].diffuse_r), float(mat[i].diffuse_g), float(mat[i].diffuse_b));
 		}

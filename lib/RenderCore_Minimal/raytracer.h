@@ -105,6 +105,7 @@ class Intersection
 	float3 point;							 // intersection point
 	float3 norm = make_float3( -1, -1, -1 ); // normal at intersection point
 	Material material;
+	CoreTri triangle;
 
 	Intersection( const float t, const float3 &point, const float3 &norm, const CoreTri &triangle ) : t( t ), point( point ), norm( norm )
 	{
@@ -150,6 +151,7 @@ class Raytracer
 	void rayTraceLine(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, const int lineNr);
 	uint FloatToIntColor( float3 floatColor );
 	Intersection nearestIntersection(Ray ray );
+	void TextureColor( Intersection &intersection, const CoreTri &triangle, uint &color );
 
 	float3 Reflect(const Ray &ray, const Intersection &intersection, int reflectionDepth);
 	float3 calcDielectric(const Ray &ray, const Intersection &intersection, int reflectionDepth, const float n1 = 1.0002f); //only adjust n1 if previous trace is also a dielectric material
