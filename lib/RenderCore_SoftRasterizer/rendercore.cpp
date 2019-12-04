@@ -157,7 +157,7 @@ void RenderCore::SetMaterials( CoreMaterial* mat, const CoreMaterialEx* matEx, c
 		if (texID == -1)
 		{
 			float r = mat[i].diffuse_r, g = mat[i].diffuse_g, b = mat[i].diffuse_b;
-			m->diffuse = ((int)(b * 255.0f) << 16) + ((int)(g * 255.0f) << 8) + (int)(r * 255.0f);
+			m->color = ((int)(b * 255.0f) << 16) + ((int)(g * 255.0f) << 8) + (int)(r * 255.0f);
 		}
 		else
 		{

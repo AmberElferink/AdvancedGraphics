@@ -25,6 +25,7 @@ Timer t;
 void RenderCore::Init()
 {
 	t.reset();
+
 }
 
 
@@ -54,7 +55,6 @@ void RenderCore::SetTextures(const CoreTexDesc* tex, const int textures)
 int glassIndex = 0;
 void RenderCore::SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, const int materialCount) // textures must be in sync when calling this
 {
-
 	Timer timer;
 	timer.reset();
 	// copy the supplied array of materials
@@ -74,16 +74,19 @@ void RenderCore::SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, co
 			else
 				m->metallic = false;
 
+			m->color = make_float3(float(mat[i].diffuse_b), float(mat[i].diffuse_g), float(mat[i].diffuse_r));
 
 			if (glassIndex == 1)
 			{
 				m->dielectric = true;
 				m->metallic = false;
 				m->indexOfRefraction = 1.6; //glass
+				m->absorption = make_float3(8, 0, 0);
+				m->color = make_float3(1, 1, 1);
 			}
 			glassIndex++;
 
-			m->diffuse = make_float3(float(mat[i].diffuse_r), float(mat[i].diffuse_g), float(mat[i].diffuse_b));
+
 		}
 		else
 		{
@@ -107,6 +110,8 @@ void RenderCore::SetTarget( GLTexture *target )
 	if ( screen != 0 && target->width == screen->width && target->height == screen->height ) return; // nothing changed
 	delete screen;
 	screen = new Bitmap( target->width, target->height );
+	delete raytracer.buffer;
+	raytracer.buffer = new Bitmap(screen->width, screen->height);
 }
 
 
@@ -134,8 +139,8 @@ void RenderCore::SetGeometry( const int meshIdx, const float4 *vertexData, const
 		memcpy(newMesh.triangles, triangleData, (vertexCount / 3) * sizeof(CoreTri));
 		raytracer.scene.meshList.push_back(newMesh);
 		printf("loaded geometry in %5.3fs\n", timer.elapsed());
-
 }
+
 
 //  +-----------------------------------------------------------------------------+
 //  |  RenderCore::SetLights                                                      |
@@ -146,6 +151,7 @@ void RenderCore::SetLights( const CoreLightTri *areaLights, const int areaLightC
 							const CoreSpotLight *spotLights, const int spotLightCount,
 							const CoreDirectionalLight *directionalLights, const int directionalLightCount )
 {
+	printf("setlights\n");
 	for ( int i = 0; i < pointLightCount; i++ )
 	{
 		Light l;
@@ -190,10 +196,11 @@ void RenderCore::SetLights( const CoreLightTri *areaLights, const int areaLightC
 //  |  Produce one image.                                                   LH2'19|
 //  +-----------------------------------------------------------------------------+
 int lineNr = 0;
+int frameCounter = 0;
 void RenderCore::Render( const ViewPyramid& view, const Convergence converge )
 {
 	
-	//raytracer.rayTrace( screen, view, targetTextureID );
+	raytracer.rayTrace( screen, view, targetTextureID );
 	if (lineNr < screen->height)
 	{
 		raytracer.rayTraceLine(screen, view, targetTextureID, lineNr);
@@ -205,6 +212,13 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge )
 		printf("raytraced in %5.3fs\n", t.elapsed());
 		t.reset();
 	}
+	//raytracer.rayTraceRandom(view, targetTextureID, frameCounter);
+	//int screenSize = screen->width * screen->height;
+	//for (int j = 0; j < screenSize; j++)
+	//{
+	//	screen->pixels[j] = raytracer.buffer->pixels[j] / frameCounter;
+	//}
+
 
 
 	glBindTexture( GL_TEXTURE_2D, targetTextureID );

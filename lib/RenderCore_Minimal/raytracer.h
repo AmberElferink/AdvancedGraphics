@@ -48,11 +48,12 @@ class Material
 	Material() = default;
 	Material( float3 color )
 	{
-		diffuse = color;
+		color = color;
 	}
 	// data members
 
-	float3 diffuse = make_float3( 0.5 ); // diffuse material color
+	float3 color = make_float3( 0.5 ); // diffuse and reflective material color
+	float3 absorption; //for dieelectrics
 	Texture *texture = 0;			   // texture
 	bool metallic = false;
 	bool dielectric = false;
@@ -61,7 +62,7 @@ class Material
 
 	float3 GetColor()
 	{
-		return diffuse;
+		return color;
 	}
 };
 
@@ -101,7 +102,7 @@ class Light
 class Intersection
 {
   public:
-	float t;								 // distance from starting point to intersection point
+	float t;						 // distance from starting point to intersection point
 	float3 point;							 // intersection point
 	float3 norm = make_float3( -1, -1, -1 ); // normal at intersection point
 	Material material;
@@ -132,6 +133,7 @@ class Scene
 class Raytracer
 {
   public:
+	Bitmap *buffer;
 	Scene scene;
 	// constructor / destructor
 	Raytracer() = default;
@@ -150,12 +152,12 @@ class Raytracer
 	void rayTraceLine(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, const int lineNr);
 	uint FloatToIntColor( float3 floatColor );
 	Intersection nearestIntersection(Ray ray );
+	Bitmap* rayTraceRandom(const ViewPyramid &view, const int targetTextureID, int &frameCounter);
 
 	float3 Reflect(const Ray &ray, const Intersection &intersection, int reflectionDepth);
-	float3 calcDielectric(const Ray &ray, Intersection intersection, int reflectionDepth, const float n1 = 1.0002f); //only adjust n1 if previous trace is also a dielectric material
+	float3 calcDielectric(Ray ray, Intersection intersection, const Intersection prevIntersection, int reflectionDepth, const float n1 = 1.0002f); //only adjust n1 if previous trace is also a dielectric material
 	float Fresnel(const float cosi, const float ncalc, const float n1, const float n2);
-	Ray TransmissionRay(const Intersection &intersection, const Ray &ray, const float ncalc, const float cosi);
 	float3 DirectIllumination( Intersection intersection );
-	float3 Trace(const Ray &ray, int reflectionDepth); //default: air
+	float3 Trace(const Ray &ray, const Intersection prevIntersection, int reflectionDepth); //default: air
 };
 } // namespace lh2core

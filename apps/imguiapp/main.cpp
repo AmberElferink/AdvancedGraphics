@@ -50,18 +50,20 @@ void PrepareScene()
 	//renderer->SetNodeTransform(rootNode, mat4::RotateX(-PI / 2));
 #if 1
 	// overhead light, use regular PT
-	int lightMat = renderer->AddMaterial(make_float3(10, 10, 8));
-	int lightQuad = renderer->AddQuad(make_float3(0, -1, 0), make_float3(0, 26.0f, 0), 6.9f, 6.9f, lightMat);
+	//int lightMat = renderer->AddMaterial(make_float3(10, 10, 8));
+	//int lightQuad = renderer->AddQuad(make_float3(0, -1, 0), make_float3(0, 26.0f, 0), 6.9f, 6.9f, lightMat);
+	//int lightInst = renderer->AddInstance(lightQuad);
 	int lightBulb = renderer->AddPointLight(make_float3(-10, -9, -4), make_float3(1, 1, 1), true);
+
 	//int lightBulb2 = renderer->AddPointLight(make_float3(10, -8, 4), make_float3(100, 100, 100), true);
-	//int sun = renderer->AddDirectionalLight( make_float3( 1, 1, 1 ), make_float3( 0.9, 0.9, 0.9 ), true );
-	//int spotLight = renderer->AddSpotLight(make_float3(10,9,4),make_float3(10,10,10),0.99, 0.9, make_float3(100,100,100),true);
+	int sun = renderer->AddDirectionalLight( make_float3( 1, 1, 1 ), make_float3( 0.9, 0.9, 0.9 ), true );
+	int spotLight = renderer->AddSpotLight(make_float3(10,9,4),make_float3(10,10,10),0.99, 0.9, make_float3(100,100,100),true);
 #else
 	// difficult light; use BDPT
 	//int lightMat = renderer->AddMaterial(make_float3(500, 500, 400));
 	//int lightQuad = renderer->AddQuad(make_float3(0.15188693, -0.32204545, 0.93446094), make_float3(-12.938412, -5.0068984, -25.725601), 1.9f, 1.9f, lightMat);
 #endif
-	int lightInst = renderer->AddInstance(lightQuad);
+
 	// optional animated models
 	// renderer->AddScene( "CesiumMan.glb", "data/", mat4::Translate( 0, -2, -9 ) );
 	// renderer->AddScene( "project_polly.glb", "data/", mat4::Translate( 4.5f, -5.45f, -5.2f ) * mat4::Scale( 2 ) );
