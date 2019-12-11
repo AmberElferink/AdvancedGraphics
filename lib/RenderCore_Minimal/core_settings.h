@@ -26,19 +26,19 @@
 // #define NOTEXTURES		// all texture reads will be white
 
 #ifdef _DEBUG
-#pragma comment(lib, "../platform/lib/debug/platform.lib" )
+#pragma comment( lib, "../platform/lib/debug/platform.lib" )
 #else
-#pragma comment(lib, "../platform/lib/release/platform.lib" )
+#pragma comment( lib, "../platform/lib/release/platform.lib" )
 #endif
 
 using namespace lighthouse2;
 
-#include "core_api_base.h"
 #include "core_api.h"
+#include "core_api_base.h"
 using namespace lh2core;
+#include <vector>
+#include "BVH.h"
 #include "raytracer.h"
 #include "rendercore.h"
-
-
 
 // EOF
