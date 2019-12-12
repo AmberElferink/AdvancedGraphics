@@ -36,8 +36,8 @@ using namespace lighthouse2;
 #include "core_api.h"
 #include "core_api_base.h"
 using namespace lh2core;
-#include <vector>
-#include "BVH.h"
+//#include <vector>
+//#include "BVH.h"
 #include "raytracer.h"
 #include "rendercore.h"
 

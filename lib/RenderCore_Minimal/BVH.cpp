@@ -1,4 +1,4 @@
-#include "core_settings.h"
+//#include "core_settings.h"
 
 bool BVHNode::IsLeaf()
 {
@@ -12,20 +12,45 @@ int BVHNode::Right()
 	return leftFirst + 1;
 }
 
-void BVHNode::Partition(vector<uint> &indices, const uint start, const uint end)
+void BVHNode::Partition( vector<uint> &indices, const float4 *primitives, vector<BVHNode> &pool, int &poolPtr, const float4 *vertexData, int leftF )
 {
-	
+	float split; //x- y- or z-axis split value
+	uint current = leftF; //save the index of the first primitive
+	uint current_last = leftF + count; 
+	for (int i = 0; i < count; i++)
+	{
+		if ( primitives[indices[current]*3].x < split )
+			current++;
+		else
+		{
+			uint save = indices[current];
+			indices[current] = indices[current_last];
+			indices[current_last] = save;
+			current_last--;
+		}
+	}
+	//fill left and right node with values 
+	BVHNode *left;
+	left = &pool[poolPtr - 1];
+	left->count = current - leftFirst;
+	left->leftFirst = current;
+	left->CalculateBounds( vertexData, left, left->count );
+	left->Subdivide( pool, poolPtr, indices, primitives, vertexData );
+	BVHNode *right;
+	right = &pool[poolPtr];
+	right->count = current_last - leftFirst;
+	right->leftFirst = count - current; 
+	right->CalculateBounds( vertexData, right, right->count );
+	right->Subdivide( pool, poolPtr, indices, primitives, vertexData );
 }
 
-void BVHNode::Subdivide( vector<BVHNode> &pool, int &poolPtr, vector<uint> &indices )
+void BVHNode::Subdivide( vector<BVHNode> &pool, int &poolPtr, vector<uint> &indices, const float4 *primitives, const float4 *vertexData )
 {
 	if ( count < 3 ) return; //leaf
+	int left = leftFirst;
 	leftFirst = poolPtr++;
-	poolPtr++; //update poolPtr for the right node
-	Partition(indices,start,end);
-	Subdivide( pool, poolPtr, indices ); //left
-	poolPtr--; //reset for the right child
-	Subdivide( pool, poolPtr, indices ); //right
+	poolPtr++; //for the right leaf
+	Partition(indices,primitives, pool, poolPtr, vertexData, left);
 }
 
 /*Method that computes the bounding box for a given set of primitives*/
@@ -60,7 +85,7 @@ void BVHNode::CalculateBounds( const float4 *primitives, BVHNode *node, const in
 }
 
 /*Methode that construct a BVH*/
-void BVH::ConstructBVH( const float4 *vertexData, const int vertexCount )
+void BVH::ConstructBVH( const float4 *vertexData, const int vertexCount, const float4 *primitives )
 {
 	// create index array
 	int nrTriangles = vertexCount / 3;
@@ -75,5 +100,5 @@ void BVH::ConstructBVH( const float4 *vertexData, const int vertexCount )
 	root->leftFirst = 0;
 	root->count = nrTriangles;
 	root->CalculateBounds( vertexData, root, root->count );
-	root->Subdivide( pool, poolPtr, indices );
+	root->Subdivide( pool, poolPtr, indices, primitives, vertexData );
 }
