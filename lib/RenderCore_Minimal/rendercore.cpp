@@ -139,6 +139,7 @@ void RenderCore::SetGeometry(const int meshIdx, const float4 *vertexData, const 
 	memcpy(newMesh.triangles, triangleData, (vertexCount / 3) * sizeof(CoreTri));
 	raytracer.scene.meshList.push_back(newMesh);
 	printf("loaded geometry in %5.3fs\n", timer.elapsed());
+	raytracer.bvh.ConstructBVH(vertexData, vertexCount);
 }
 
 

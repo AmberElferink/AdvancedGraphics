@@ -134,6 +134,7 @@ class Scene
 class Raytracer
 {
   public:
+	 BVH bvh;
 	Bitmap *buffer;
 	Scene scene;
 	// constructor / destructor
