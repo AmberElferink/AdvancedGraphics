@@ -1,83 +1,145 @@
 #include "core_settings.h"
 
-//bool BVHNode::isLeaf()
-//{
-//	if ( n_objs < 3 )
-//		return true;
-//	return false;
-//}
-//
-//int BVHNode::right()
-//{
-//	return index + 1;
-//}
-//
-//void BVHNode::Partition(vector<uint> &indices, const uint start, const uint end)
-//{
-//	
-//}
-//
-//void BVHNode::Subdivide( vector<BVHNode> &pool, int &poolPtr, vector<uint> &indices )
-//{
-//	if ( count < 3 ) return; //leaf
-//	leftFirst = poolPtr++;
-//	poolPtr++; //update poolPtr for the right node
-//	Partition(indices,start,end);
-//	Subdivide( pool, poolPtr, indices ); //left
-//	poolPtr--; //reset for the right child
-//	Subdivide( pool, poolPtr, indices ); //right
-//}
+bool BVHNode::IsLeaf()
+{
+	if ( count < 3 )
+		return true;
+	return false;
+}
 
-///*Method that computes the bounding box for a given set of primitives*/
-//void BVHNode::CalculateBounds( const float4 *primitives, BVHNode *node, const int count )
-//{
-//	float3 lowest;
-//	lowest.x = primitives[0].x;
-//	lowest.y = primitives[0].y;
-//	lowest.z = primitives[0].z;
-//	float3 highest;
-//	highest.x = primitives[0].x;
-//	highest.y = primitives[0].y;
-//	highest.z = primitives[0].z;
-//
-//	for ( int i = 1; i < count; i++ )
-//	{
-//		if ( lowest.x > primitives[i].x )
-//			lowest.x = primitives[i].x;
-//		if ( lowest.y > primitives[i].y )
-//			lowest.y = primitives[i].y;
-//		if ( lowest.z > primitives[i].z )
-//			lowest.z = primitives[i].z;
-//		if ( highest.x > primitives[i].x )
-//			highest.x = primitives[i].x;
-//		if ( highest.y > primitives[i].y )
-//			highest.y = primitives[i].y;
-//		if ( highest.z > primitives[i].z )
-//			highest.z = primitives[i].z;
-//	}
-//
-//	node->bounds = aabb( lowest, highest );
-//}
+int BVHNode::Right()
+{
+	return leftFirst + 1;
+}
+
+void BVHNode::Partition( vector<uint> &indices, vector<BVHNode> &pool, int &poolPtr, const vector<aabb> boundingBoxes, int leftF )
+{
+	int longest_side = 0;
+	int length_x = abs( bounds.bmax3.x - bounds.bmin3.x );
+	int length_y = abs( bounds.bmax3.y - bounds.bmin3.y );
+	int length_z = abs( bounds.bmax3.z - bounds.bmin3.z );
+	if ( length_y > length_x && length_y > length_z )
+		longest_side = 1;
+	else if ( length_z > length_x )
+		longest_side = 2;
+
+	uint current = leftF; //save the index of the first primitive
+	uint current_last = leftF + count - 1;
+
+	if (longest_side == 0)
+	{
+		float split = ( bounds.bmin3.x + bounds.bmax3.x ) / 2; //x- y- or z-axis split value
+		for ( int i = 0; i < count; i++ )
+		{
+			if ( boundingBoxes[indices[current]].Center( 0 ) < split )
+				current++;
+			else
+			{
+				//swap elements
+				uint save = indices[current];
+				indices[current] = indices[current_last];
+				indices[current_last] = save;
+				current_last--;
+			}
+		}
+	}
+	else if (longest_side == 1)
+	{
+		float split = ( bounds.bmin3.y + bounds.bmax3.y ) / 2; //x- y- or z-axis split value
+		for ( int i = 0; i < count; i++ )
+		{
+			if ( boundingBoxes[indices[current]].Center( 1 ) < split )
+			current++;
+			else
+			{
+			//swap elements
+			uint save = indices[current];
+			indices[current] = indices[current_last];
+			indices[current_last] = save;
+			current_last--;
+			}
+		}
+	}
+	else
+	{
+		float split = ( bounds.bmin3.z + bounds.bmax3.z ) / 2; //x- y- or z-axis split value
+		for ( int i = 0; i < count; i++ )
+		{
+			if ( boundingBoxes[indices[current]].Center( 2 ) < split )
+				current++;
+			else
+			{
+				//swap elements
+				uint save = indices[current];
+				indices[current] = indices[current_last];
+				indices[current_last] = save;
+				current_last--;
+			}
+		}
+	}
+
+
+	//fill left and right node with values
+	BVHNode *left;
+	left = &pool[poolPtr - 2];
+	left->count = current - leftF;
+	left->leftFirst = leftF;
+	left->CalculateBounds( boundingBoxes, left->count, indices );
+	BVHNode *right;
+	right = &pool[poolPtr - 1];
+	right->count = count - left->count;
+	right->leftFirst = leftF + left->count;
+	right->CalculateBounds( boundingBoxes, right->count, indices );
+	left->Subdivide( pool, poolPtr, indices, boundingBoxes );
+	right->Subdivide( pool, poolPtr, indices, boundingBoxes );
+}
+
+void BVHNode::Subdivide( vector<BVHNode> &pool, int &poolPtr, vector<uint> &indices, const vector<aabb> boundingBoxes )
+{
+	if ( count <= 4 ) 
+		return; //leaf
+	int left = leftFirst;
+	leftFirst = poolPtr++;
+	poolPtr++; //for the right leaf
+	Partition( indices, pool, poolPtr, boundingBoxes, left );
+}
+
+/*Method that computes the bounding box for a given set of primitives*/
+/*TODO:: vertexData omschrijven*/
+void BVHNode::CalculateBounds( const vector<aabb> boundingBoxes, const int count, vector<uint> indices )
+{
+	float3 lowest;
+	aabb bigBox = boundingBoxes[0]; // a big bounding box containing all triangles
+
+	for ( int i = 1; i < count; i++ )
+	{
+		bigBox.Grow( boundingBoxes[indices[leftFirst + i]] );
+	}
+	bounds = bigBox;
+}
 
 /*Methode that construct a BVH*/
-void BVH::ConstructBVH(const float4 *vertexData, const int vertexCount)
+void BVH::ConstructBVH( const vector<float4> vertexData, const int vertexCount )
 {
-	triangles t;
-	t.vData = vertexData;
-	int w = 0;
-	printf("hoi");
-	//// create index array
-	//int nrTriangles = vertexCount / 3;
-	//indices.resize( nrTriangles );
-	//for ( int i = 0; i < nrTriangles; i++ )
-	//	indices[i] = i;
-	//// allocate BVH root node
-	//pool.resize( nrTriangles * 2 - 1 );
-	//root = &pool[0];
-	//poolPtr = 2;
-	//// subdivide root node
-	//root->index = 0;
-	//root->n_objs = nrTriangles;
-	//root->CalculateBounds( vertexData, root, root->n_objs );
-	//root->Subdivide( pool, poolPtr, indices );
+	// create index array
+	int nrTriangles = vertexCount / 3;
+	indices.resize( nrTriangles );
+	vector<aabb> boundingBoxes;
+	boundingBoxes.resize( nrTriangles );
+	for ( int i = 0; i < nrTriangles; i++ )
+	{
+		aabb boundingBox = aabb( vertexData[3*i], vertexData[3*i+1] );
+		boundingBox.Grow( vertexData[3 * i + 2] );
+		indices[i] = i;
+		boundingBoxes[i] = boundingBox;
+	}
+	// allocate BVH root node
+	pool.resize( nrTriangles * 2 - 1 );
+	root = &pool[0];
+	poolPtr = 2;
+	// subdivide root node
+	root->leftFirst = 0;
+	root->count = nrTriangles;
+	root->CalculateBounds( boundingBoxes, root->count, indices );
+	root->Subdivide( pool, poolPtr, indices, boundingBoxes );
 }

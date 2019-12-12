@@ -73,7 +73,7 @@ class Material
 class Mesh
 {
   public:
-	float4 *vertices = 0;   // vertex data received via SetGeometry
+	vector<float4> vertices;   // vertex data received via SetGeometry
 	int vcount = 0;			// vertex count
 	CoreTri *triangles = 0; // 'fat' triangle data
 };
@@ -163,6 +163,5 @@ class Raytracer
 	float Fresnel(const float cosi, const float ncalc, const float n1, const float n2);
 	float3 DirectIllumination( Intersection intersection );
 	float3 Trace(const Ray &ray, const Intersection prevIntersection, int reflectionDepth); //default: air
-	
 };
 } // namespace lh2core

@@ -504,8 +504,12 @@ class aabb
 {
 public:
 	aabb() = default;
-	aabb( __m128 a, __m128 b ) { bmin4 = a, bmax4 = b; bmin[3] = bmax[3] = 0; }
+	aabb( const __m128 a, const __m128 b ) { bmin4 = a, bmax4 = b; bmin[3] = bmax[3] = 0; }
 	aabb( float3 a, float3 b ) { bmin[0] = a.x, bmin[1] = a.y, bmin[2] = a.z, bmin[3] = 0, bmax[0] = b.x, bmax[1] = b.y, bmax[2] = b.z, bmax[3] = 0; }
+	aabb( float4 a, float4 b )
+	{
+		bmin[0] = a.x, bmin[1] = a.y, bmin[2] = a.z, bmin[3] = a.w, bmax[0] = b.x, bmax[1] = b.y, bmax[2] = b.z, bmax[3] = b.w; 
+	}
 	__inline void Reset() { bmin4 = _mm_set_ps1( 1e34f ), bmax4 = _mm_set_ps1( -1e34f ); }
 	bool Contains( const __m128& p ) const
 	{
@@ -519,6 +523,7 @@ public:
 	__inline void Grow( const __m128& p ) { bmin4 = _mm_min_ps( bmin4, p ); bmax4 = _mm_max_ps( bmax4, p ); }
 	__inline void Grow( const __m128 min4, const __m128 max4 ) { bmin4 = _mm_min_ps( bmin4, min4 ); bmax4 = _mm_max_ps( bmax4, max4 ); }
 	__inline void Grow( const float3& p ) { __m128 p4 = _mm_setr_ps( p.x, p.y, p.z, 0 ); Grow( p4 ); }
+	__inline void Grow( const float4& p ) { __m128 p4 = _mm_setr_ps( p.x, p.y, p.z, p.w ); Grow( p4 ); }
 	aabb Union( const aabb& bb ) const { aabb r; r.bmin4 = _mm_min_ps( bmin4, bb.bmin4 ), r.bmax4 = _mm_max_ps( bmax4, bb.bmax4 ); return r; }
 	static aabb Union( const aabb& a, const aabb& b ) { aabb r; r.bmin4 = _mm_min_ps( a.bmin4, b.bmin4 ), r.bmax4 = _mm_max_ps( a.bmax4, b.bmax4 ); return r; }
 	aabb Intersection( const aabb& bb ) const { aabb r; r.bmin4 = _mm_max_ps( bmin4, bb.bmin4 ), r.bmax4 = _mm_min_ps( bmax4, bb.bmax4 ); return r; }
