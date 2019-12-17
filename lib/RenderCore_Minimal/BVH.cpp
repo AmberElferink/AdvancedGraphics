@@ -200,7 +200,6 @@ void BVHNode::Traverse( const Ray &ray, vector<BVHNode> &pool, const vector<uint
 		IntersectPrimitives( ray, indices, triangles, closest, matList );
 	else
 	{
-		Intersection intersection;
 		pool[leftFirst].Traverse( ray, pool, indices, triangles, closest, matList);
 		pool[leftFirst + 1].Traverse( ray, pool, indices, triangles, closest, matList );
 	}
@@ -214,9 +213,9 @@ void BVHNode::IntersectPrimitives( const Ray &ray, const vector<uint> &indices, 
 	for (int i = leftFirst; i < right; i++)
 	{
 		Intersection intersection;
-		Intersect( ray, triangles[indices[i]], matList, intersection );
-		if ( intersection.t < closest.t ) //check whether the current intersection is the closest intersection
-			closest = intersection;
+		if(Intersect( ray, triangles[indices[i]], matList, intersection ))
+			if ( intersection.t < closest.t ) //check whether the current intersection is the closest intersection
+				closest = intersection;
 	}	
 }
 

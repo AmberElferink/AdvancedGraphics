@@ -194,6 +194,9 @@ Intersection Raytracer::nearestIntersection( Ray ray )
 	closest.t = 10e30;
 	closest.material = Material( make_float3( 0, 0, 0 ) ); //default black (background)
 	int id = 0;
+	Intersection save;
+	save.t = 10e30;
+	save.material = Material( make_float3( 0, 0, 0 ) ); //default black (background)
 
 	//Find closest intersection point for all meshes
 	for ( Mesh &mesh : scene.meshList )
@@ -202,13 +205,15 @@ Intersection Raytracer::nearestIntersection( Ray ray )
 		for ( int i = 0; i < triangleCount; i++ ) //find the closest triangle intersection for all triangles
 		{
 			bvh[id].root->Traverse( ray, bvh[id].pool, bvh[id].indices, bvh[id].triangles, closest, scene.matList );
-			int w = 0;
+			if ( closest.t < save.t )
+				save = closest;
 		}
 		id++;
 	}
 
-	return closest;
+	return save;
 }
+
 
 float Raytracer::Fresnel(const float cosi, const float ncalc, const float n1, const float n2)
 {

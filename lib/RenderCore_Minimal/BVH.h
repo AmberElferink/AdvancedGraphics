@@ -51,13 +51,13 @@ class Material
 class Intersection
 {
   public:
-	float t;								 // distance from starting point to intersection point
-	float3 point;							 // intersection point
+	float t = 10e30;								 // distance from starting point to intersection point
+	float3 point = make_float3(0);							 // intersection point
 	float3 norm = make_float3( -1, -1, -1 ); // normal at intersection point
 	Material material;
 	CoreTri triangle;
 
-	Intersection( const float t, const float3 &point, const float3 &norm, const CoreTri &triangle ) : t( t ), point( point ), norm( norm )
+    Intersection( const float t, const float3 &point, const float3 &norm, const CoreTri &triangle ) : t( t ), point( point ), norm( norm )
 	{
 		//material = triangle.material;
 	}
@@ -81,7 +81,7 @@ class BVHNode
 	void Traverse( const Ray &ray, vector<BVHNode> &pool, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection &closest, vector<Material *> &matList );
 	void IntersectPrimitives( const Ray &ray, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection &closest, vector<Material *> &matList );
 	bool IntersectNode( const Ray &ray );
-	bool Intersect( const Ray &ray, const CoreTri &triangle, vector<Material*> &matList, Intersection &intersection );
+	static bool Intersect( const Ray &ray, const CoreTri &triangle, vector<Material*> &matList, Intersection &intersection );
 };
 
 class BVH
