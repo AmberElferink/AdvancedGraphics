@@ -457,7 +457,7 @@ float3 Raytracer::DirectIllumination( Intersection intersection )
 
 void Raytracer::rayTrace( Bitmap *screen, const ViewPyramid &view, const int targetTextureID )
 {
-	for ( int j = 0; j < screen->height; j++ )
+	for ( uint j = 0; j < screen->height; j++ )
 	{
 		rayTraceLine( screen, view, targetTextureID, j );
 	}
@@ -474,7 +474,7 @@ void Raytracer::rayTrace( Bitmap *screen, const ViewPyramid &view, const int tar
 void Raytracer::rayTraceLine(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, const int lineNr)
 {
 	int j = lineNr;
-	for ( int i = 0; i < screen->width; i++ )
+	for ( uint i = 0; i < screen->width; i++ )
 	{
 		//u and v are the vectors within the virtual screen scaled between 0 and 1, so u = px / screenwidth and y = py / screenwidth
 		float u = (float)i / (float)screen->width;

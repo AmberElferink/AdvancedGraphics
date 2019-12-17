@@ -114,7 +114,7 @@ void RenderCore::SetTarget(GLTexture *target)
 	raytracer.buffer = new Bitmap(screen->width, screen->height);
 }
 
-
+int meshcounter = 0;
 //  +-----------------------------------------------------------------------------+
 //  |  RenderCore::SetGeometry                                                    |
 //  |  Set the geometry data for a model.                                   LH2'19|
@@ -125,21 +125,28 @@ void RenderCore::SetTarget(GLTexture *target)
 //copy data to new mesh, want je kan niet garanderen dat de data niet verandert terwijl je tekent. Daarom moet je een kopie maken.
 void RenderCore::SetGeometry(const int meshIdx, const float4 *vertexData, const int vertexCount, const int triangleCount, const CoreTri *triangleData, const uint *alphaFlags)
 {
-
-	Timer timer;
-	timer.reset();
-	Mesh newMesh;
-	// copy the supplied vertices; we cannot assume that the render system does not modify
-	// the original data after we leave this function.
-	newMesh.vertices = new float4[vertexCount];
-	newMesh.vcount = vertexCount;
-	memcpy(newMesh.vertices, vertexData, vertexCount * sizeof(float4));
-	// copy the supplied 'fat triangles'
-	newMesh.triangles = new CoreTri[vertexCount / 3];
-	memcpy(newMesh.triangles, triangleData, (vertexCount / 3) * sizeof(CoreTri));
-	raytracer.scene.meshList.push_back(newMesh);
-	printf("loaded geometry in %5.3fs\n", timer.elapsed());
-	raytracer.bvh.ConstructBVH(vertexData, vertexCount);
+	if (meshcounter == 2)
+	{
+		Timer timer;
+		timer.reset();
+		Mesh newMesh;
+		// copy the supplied vertices; we cannot assume that the render system does not modify
+		// the original data after we leave this function.
+		newMesh.vertices = new float4[vertexCount];
+		newMesh.vcount = vertexCount;
+		memcpy(newMesh.vertices, vertexData, vertexCount * sizeof(float4));
+		// copy the supplied 'fat triangles'
+		newMesh.triangles = new CoreTri[vertexCount / 3];
+		memcpy(newMesh.triangles, triangleData, (vertexCount / 3) * sizeof(CoreTri));
+		raytracer.scene.meshList.push_back(newMesh);
+		printf("loaded geometry in %5.3fs\n", timer.elapsed());
+		for (int i = 0; i < vertexCount; i++)
+		{
+			printf("%f, %f, %f \n", vertexData[i].x, vertexData[i].y, vertexData[i].z);
+		}
+		raytracer.bvh.ConstructBVH(vertexData, vertexCount);
+	}
+	meshcounter++;
 }
 
 

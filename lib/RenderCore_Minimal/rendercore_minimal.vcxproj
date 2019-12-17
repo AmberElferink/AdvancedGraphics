@@ -171,6 +171,7 @@
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">core_settings.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseWithDebug|x64'">core_settings.h</PrecompiledHeaderFile>
     </ClCompile>
+    <ClCompile Include="sorting.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BVH.h" />
@@ -180,6 +181,7 @@
     <ClInclude Include="Ray.h" />
     <ClInclude Include="raytracer.h" />
     <ClInclude Include="rendercore.h" />
+    <ClInclude Include="sorting.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>
