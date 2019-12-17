@@ -1,7 +1,7 @@
 #include "core_settings.h"
 
 // adapted from Möller–Trumbore intersection algorithm: https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
-bool BVHNode::Intersect( const Ray &ray, const CoreTri &triangle, vector<Material*> &matList, Intersection &intersection )
+bool BVHNode::Intersect( const Ray &ray, const CoreTri &triangle, const vector<Material*> &matList, Intersection &intersection )
 {
 	//TODO: het kan zijn dat een aantal dingen al geprecalculate zijn in CoreTri. Kijk daarnaar voor versnelling
 	float3 vertex0 = triangle.vertex0;
@@ -192,7 +192,7 @@ void BVHNode::CalculateBounds( const vector<aabb> boundingBoxes, const vector<ui
 }
 
 /*Method that traverses trough the nodes of an BVH and returns the closest intersection*/
-void BVHNode::Traverse( const Ray &ray, vector<BVHNode> &pool, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection &closest, vector<Material *> &matList )
+void BVHNode::Traverse( const Ray &ray, vector<BVHNode> &pool, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection &closest, const vector<Material *> &matList )
 {
 	if ( !IntersectNode( ray ) )
 		return;
@@ -206,7 +206,7 @@ void BVHNode::Traverse( const Ray &ray, vector<BVHNode> &pool, const vector<uint
 }
 
 /* Method that computes the closest intersection for a set of triangles that are contained in one leaf */
-void BVHNode::IntersectPrimitives( const Ray &ray, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection &closest, vector<Material *> &matList )
+void BVHNode::IntersectPrimitives( const Ray &ray, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection &closest, const vector<Material *> &matList )
 {
     //compute last index of the array with triangles
 	int right = leftFirst + count;
