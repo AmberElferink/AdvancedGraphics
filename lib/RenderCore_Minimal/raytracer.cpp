@@ -1,5 +1,4 @@
 #include "core_settings.h"
-#include <iostream>
 
 // adapted from Möller–Trumbore intersection algorithm: https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
 /*bool Raytracer::Intersect( const Ray &ray, const CoreTri &triangle, Intersection &intersection )
@@ -46,13 +45,14 @@
 /* Method that checks whether there are any objects between a light point and the origin of a shadowray */
 bool Raytracer::IsOccluded( const Ray &ray, const Light &light )
 {
+	int id = 0;
 	for ( const Mesh &mesh : scene.meshList )
 	{
 		int vertexCount = mesh.vcount / 3;
 		for ( int i = 0; i < vertexCount; i++ )
 		{
 			Intersection intersection;
-			if ( bvh.root->Intersect( ray, mesh.triangles[i], scene.matList, intersection ) ) //If there are intersections
+			if ( bvh[id].root->Intersect( ray, mesh.triangles[i], scene.matList, intersection) ) //If there are intersections
 			{
 				//light comes from infinetely far away
 				if ( light.directionalLight )
@@ -64,6 +64,7 @@ bool Raytracer::IsOccluded( const Ray &ray, const Light &light )
 				}
 			}
 		}
+		id++;
 	}
 	return false; //false if no intersections are found
 }
@@ -192,6 +193,7 @@ Intersection Raytracer::nearestIntersection( Ray ray )
 	Intersection closest; //this will be your closest intersection of which you want to know the color
 	closest.t = 10e30;
 	closest.material = Material( make_float3( 0, 0, 0 ) ); //default black (background)
+	int id = 0;
 
 	//Find closest intersection point for all meshes
 	for ( Mesh &mesh : scene.meshList )
@@ -199,8 +201,10 @@ Intersection Raytracer::nearestIntersection( Ray ray )
 		int triangleCount = mesh.vcount / 3;
 		for ( int i = 0; i < triangleCount; i++ ) //find the closest triangle intersection for all triangles
 		{
-			mesh.bvh.root->Traverse( ray, mesh.bvh.pool, mesh.bvh.indices, mesh.bvh.triangles, closest, scene.matList );
+			bvh[id].root->Traverse( ray, bvh[id].pool, bvh[id].indices, bvh[id].triangles, closest, scene.matList );
+			int w = 0;
 		}
+		id++;
 	}
 
 	return closest;
@@ -489,6 +493,7 @@ void Raytracer::rayTraceLine(Bitmap *screen, const ViewPyramid &view, const int 
 
 void Raytracer::rayTraceBlock(const ViewPyramid &view, Bitmap *screen, const int targetTextureID, int lineStart, int lineEnd)
 {
+
 	for (int i =lineStart; i < lineEnd; i++)
 	{
 		rayTraceLine(screen, view, targetTextureID, i);
@@ -510,6 +515,8 @@ Bitmap* Raytracer::rayTraceRandom(const ViewPyramid &view, const int targetTextu
 {
 	//1 ray per light source geeft noisy image, maar andere random numbers = different numbers, optellen bij de accumulator. 
 	//Die is 2x zo bright, maar /2 geeft weer normaal antwoord. Dat blijf je doen.
+
+	storeBVH();
 
 	if (!(view.p1.x == prevp1.x && view.p1.y == prevp1.y && view.p1.z == prevp1.z))
 	{
@@ -536,4 +543,15 @@ Bitmap* Raytracer::rayTraceRandom(const ViewPyramid &view, const int targetTextu
 	}
 	framecounter++;
 	return buffer;
+}
+
+void Raytracer::storeBVH()
+{
+	bvh.resize(scene.meshList.size());
+	int i = 0;
+	for (Mesh &mesh : scene.meshList)
+	{
+		bvh[i].ConstructBVH( mesh.vertices, mesh.vcount, mesh.triangles );
+		i++;
+	}
 }

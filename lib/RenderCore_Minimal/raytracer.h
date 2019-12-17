@@ -73,10 +73,12 @@ class Material
 class Mesh
 {
   public:
-	vector<float4> vertices; // vertex data received via SetGeometry
-	int vcount = 0;			 // vertex count
-	vector<CoreTri> triangles;  // 'fat' triangle data
+
+	vector<float4> vertices;   // vertex data received via SetGeometry
+	int vcount = 0;			   // vertex count
+	vector<CoreTri> triangles; // 'fat' triangle data
 	BVH bvh;
+	//Mesh( const Mesh &obj ); // copy constructor
 };
 
 class Light
@@ -133,7 +135,7 @@ class Scene
 class Raytracer
 {
   public:
-	BVH bvh;
+	vector<BVH> bvh;
 	Bitmap *buffer;
 	Scene scene;
 	// constructor / destructor
@@ -162,5 +164,6 @@ class Raytracer
 	float Fresnel( const float cosi, const float ncalc, const float n1, const float n2 );
 	float3 DirectIllumination( Intersection intersection );
 	float3 Trace( const Ray &ray, const Intersection prevIntersection, int reflectionDepth ); //default: air
+	void storeBVH();
 };
 } // namespace lh2core

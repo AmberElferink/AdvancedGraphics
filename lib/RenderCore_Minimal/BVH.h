@@ -1,5 +1,6 @@
 #pragma once
 #include "Ray.h"
+#include <iostream>
 
 // -----------------------------------------------------------
 // Texture class
@@ -77,8 +78,8 @@ class BVHNode
 	void Partition( vector<uint> &indices, vector<BVHNode> &pool, int &poolPtr, const vector<aabb> boundingBoxes, const int leftF );
 	void CalculateBounds( const vector<aabb> boundingBoxes, const vector<uint> indices );
 	void SAH( float &total, int &axis, float &split, const vector<uint> &indices, const vector<aabb> boundingBoxes, const int leftF );
-	void Traverse( const Ray &ray, vector<BVHNode> &pool, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection closest, vector<Material *> &matList );
-	void IntersectPrimitives( const Ray &ray, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection closest, vector<Material *> &matList );
+	void Traverse( const Ray &ray, vector<BVHNode> &pool, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection &closest, vector<Material *> &matList );
+	void IntersectPrimitives( const Ray &ray, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection &closest, vector<Material *> &matList );
 	bool IntersectNode( const Ray &ray );
 	bool Intersect( const Ray &ray, const CoreTri &triangle, vector<Material*> &matList, Intersection &intersection );
 };
@@ -86,6 +87,7 @@ class BVHNode
 class BVH
 {
   public:
+	//BVH();
 	void ConstructBVH( const vector<float4> vertexData, const int vertexCount, const vector<CoreTri> triangleData );
 	vector<CoreTri> triangles;
 	float4 *vertexData;   //list with vertices of all primitives
@@ -93,4 +95,13 @@ class BVH
 	vector<BVHNode> pool; //list that contains all the BVH nodes in the BVH
 	BVHNode *root;		  //pointer to the root node of the BVH
 	int poolPtr;
+//	BVH( const BVH &obj ); // copy constructor
+//	~BVH();
 };
+
+//BVH::BVH( const BVH &obj )
+//{
+//	cout << "Copy constructor allocating root." << endl;
+//	root = new BVHNode;
+//	*root = *obj.root; // copy the value
+//}

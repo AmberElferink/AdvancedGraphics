@@ -192,7 +192,7 @@ void BVHNode::CalculateBounds( const vector<aabb> boundingBoxes, const vector<ui
 }
 
 /*Method that traverses trough the nodes of an BVH and returns the closest intersection*/
-void BVHNode::Traverse( const Ray &ray, vector<BVHNode> &pool, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection closest, vector<Material *> &matList )
+void BVHNode::Traverse( const Ray &ray, vector<BVHNode> &pool, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection &closest, vector<Material *> &matList )
 {
 	if ( !IntersectNode( ray ) )
 		return;
@@ -207,7 +207,7 @@ void BVHNode::Traverse( const Ray &ray, vector<BVHNode> &pool, const vector<uint
 }
 
 /* Method that computes the closest intersection for a set of triangles that are contained in one leaf */
-void BVHNode::IntersectPrimitives( const Ray &ray, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection closest, vector<Material *> &matList )
+void BVHNode::IntersectPrimitives( const Ray &ray, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection &closest, vector<Material *> &matList )
 {
     //compute last index of the array with triangles
 	int right = leftFirst + count;

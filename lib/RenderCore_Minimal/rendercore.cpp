@@ -141,7 +141,6 @@ void RenderCore::SetGeometry(const int meshIdx, const float4 *vertexData, const 
 	newMesh.triangles.resize( triangleCount );
 	for ( int i = 0; i < triangleCount; i++ )
 		newMesh.triangles[i] = triangleData[i];
-	newMesh.bvh.ConstructBVH( newMesh.vertices, newMesh.vcount, newMesh.triangles );
 	raytracer.scene.meshList.push_back(newMesh);
 	printf("loaded geometry in %5.3fs\n", timer.elapsed());
 	//if (meshIdx == 3)
@@ -209,6 +208,7 @@ void RenderCore::Render(const ViewPyramid& view, const Convergence converge)
 	t.reset();
 	
 	threads.clear();
+	raytracer.storeBVH();
 	for (int i = 0; i < 4; i++)
 	{
 		threads.push_back(thread([=]() {
