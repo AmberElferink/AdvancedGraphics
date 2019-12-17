@@ -1,5 +1,5 @@
 #pragma once
-#include "Ray.h"
+
 //#include "common_types.h"
 
 // The rest of this file is adapted from rasterizer
@@ -25,7 +25,7 @@ class Surface
 // encapsulates a palettized pixel surface with pre-scaled
 // palettes for fast shading
 // -----------------------------------------------------------
-class Texture
+/*class Texture
 {
   public:
 	// constructor / destructor
@@ -35,9 +35,9 @@ class Texture
 	// data members
 	int width = 0, height = 0;
 	uint *pixels = 0;
-};
+};*/
 
-// -----------------------------------------------------------
+/*// -----------------------------------------------------------
 // Material class
 // basic material properties
 // -----------------------------------------------------------
@@ -64,7 +64,7 @@ class Material
 	{
 		return color;
 	}
-};
+};*/
 
 //  +-----------------------------------------------------------------------------+
 //  |  Mesh                                                                       |
@@ -73,12 +73,11 @@ class Material
 class Mesh
 {
   public:
-	vector<float4> vertices;   // vertex data received via SetGeometry
-	int vcount = 0;			// vertex count
-	CoreTri *triangles = 0; // 'fat' triangle data
+	vector<float4> vertices; // vertex data received via SetGeometry
+	int vcount = 0;			 // vertex count
+	vector<CoreTri> triangles;  // 'fat' triangle data
+	BVH bvh;
 };
-
-
 
 class Light
 {
@@ -99,7 +98,7 @@ class Light
 	int dummy = 1;
 };
 
-class Intersection
+/*class Intersection
 {
   public:
 	float t;						 // distance from starting point to intersection point
@@ -115,7 +114,7 @@ class Intersection
 	Intersection()
 	{
 	}
-};
+}*/
 
 class Scene
 {
@@ -134,7 +133,7 @@ class Scene
 class Raytracer
 {
   public:
-	 BVH bvh;
+	BVH bvh;
 	Bitmap *buffer;
 	Scene scene;
 	// constructor / destructor
@@ -143,7 +142,7 @@ class Raytracer
 	void Init();
 	void Reinit( int w, int h, Surface *screen );
 	void Render( const mat4 &transform );
-	bool Intersect( const Ray &ray, const CoreTri &triangle, Intersection &intersection );
+	//bool Intersect( const Ray &ray, const CoreTri &triangle, Intersection &intersection );
 	bool IsOccluded( const Ray &ray, const Light &light );
 	bool viewLight( Intersection intersection, const Light &light, float3 &lightVector );
 	bool viewDirLight( Intersection intersection, const Light &light, float3 &lightVector );
@@ -151,17 +150,17 @@ class Raytracer
 	bool viewAreaLight( const Intersection intersection, Light &light );
 	float3 randomPointTri( const CoreLightTri &triangle );
 	void rayTrace( Bitmap *screen, const ViewPyramid &view, const int targetTextureID );
-	void rayTraceBlock(const ViewPyramid &view, Bitmap *screen, const int targetTextureID, int lineStart, int lineEnd);
-	void rayTraceLine(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, const int lineNr);
+	void rayTraceBlock( const ViewPyramid &view, Bitmap *screen, const int targetTextureID, int lineStart, int lineEnd );
+	void rayTraceLine( Bitmap *screen, const ViewPyramid &view, const int targetTextureID, const int lineNr );
 	uint FloatToIntColor( float3 floatColor );
-	Intersection nearestIntersection(Ray ray );
-	Bitmap* rayTraceRandom(const ViewPyramid &view, const int targetTextureID, int &frameCounter);
+	Intersection nearestIntersection( Ray ray );
+	Bitmap *rayTraceRandom( const ViewPyramid &view, const int targetTextureID, int &frameCounter );
 	void TextureColor( Intersection &intersection, const CoreTri &triangle, uint &color );
 
-	float3 Reflect(const Ray &ray, const Intersection &intersection, int reflectionDepth);
-	float3 calcDielectric(Ray ray, Intersection intersection, const Intersection prevIntersection, int reflectionDepth, const float n1 = 1.0002f); //only adjust n1 if previous trace is also a dielectric material
-	float Fresnel(const float cosi, const float ncalc, const float n1, const float n2);
+	float3 Reflect( const Ray &ray, const Intersection &intersection, int reflectionDepth );
+	float3 calcDielectric( Ray ray, Intersection intersection, const Intersection prevIntersection, int reflectionDepth, const float n1 = 1.0002f ); //only adjust n1 if previous trace is also a dielectric material
+	float Fresnel( const float cosi, const float ncalc, const float n1, const float n2 );
 	float3 DirectIllumination( Intersection intersection );
-	float3 Trace(const Ray &ray, const Intersection prevIntersection, int reflectionDepth); //default: air
+	float3 Trace( const Ray &ray, const Intersection prevIntersection, int reflectionDepth ); //default: air
 };
 } // namespace lh2core

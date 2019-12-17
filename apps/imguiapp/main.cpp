@@ -45,7 +45,7 @@ void PrepareScene()
 	//renderer->AddScene("AnimatedCube.gltf", "data/animatedCube/", mat4::Translate(-6, -3.2f, -5));
 	renderer->AddScene("test2.glb", "data/reflectionScene/", mat4::Translate(-6, -3.2f, -5));
 	//renderer->AddScene("Cube-Pyramid.gltf", "data/reflectTest/", mat4::Translate(10, -20.2f, -5));
-	renderer->AddScene("AnimatedCube.gltf", "data/animatedCube/", mat4::Translate(1, -10.2f, 1));
+	//renderer->AddScene("AnimatedCube.gltf", "data/animatedCube/", mat4::Translate(1, -10.2f, 1));
 	//int rootNode = renderer->FindNode("RootNode (gltf orientation matrix)");
 	//renderer->SetNodeTransform(rootNode, mat4::RotateX(-PI / 2));
 #if 1

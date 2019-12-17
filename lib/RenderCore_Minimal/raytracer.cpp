@@ -2,7 +2,7 @@
 #include <iostream>
 
 // adapted from Möller–Trumbore intersection algorithm: https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
-bool Raytracer::Intersect( const Ray &ray, const CoreTri &triangle, Intersection &intersection )
+/*bool Raytracer::Intersect( const Ray &ray, const CoreTri &triangle, Intersection &intersection )
 {
 	//TODO: het kan zijn dat een aantal dingen al geprecalculate zijn in CoreTri. Kijk daarnaar voor versnelling
 	float3 vertex0 = triangle.vertex0;
@@ -41,18 +41,18 @@ bool Raytracer::Intersect( const Ray &ray, const CoreTri &triangle, Intersection
 	}
 	else // This means that there is a line intersection but not a ray intersection.
 		return false;
-}
+}*/
 
 /* Method that checks whether there are any objects between a light point and the origin of a shadowray */
 bool Raytracer::IsOccluded( const Ray &ray, const Light &light )
 {
-	for ( Mesh &mesh : scene.meshList )
+	for ( const Mesh &mesh : scene.meshList )
 	{
 		int vertexCount = mesh.vcount / 3;
 		for ( int i = 0; i < vertexCount; i++ )
 		{
 			Intersection intersection;
-			if ( Intersect( ray, mesh.triangles[i], intersection ) ) //If there are intersections
+			if ( bvh.root->Intersect( ray, mesh.triangles[i], scene.matList, intersection ) ) //If there are intersections
 			{
 				//light comes from infinetely far away
 				if ( light.directionalLight )
@@ -199,12 +199,7 @@ Intersection Raytracer::nearestIntersection( Ray ray )
 		int triangleCount = mesh.vcount / 3;
 		for ( int i = 0; i < triangleCount; i++ ) //find the closest triangle intersection for all triangles
 		{
-			Intersection intersection;
-			if ( Intersect( ray, mesh.triangles[i], intersection ) )
-			{
-				if ( intersection.t < closest.t ) //update closest intersection point only if distance to intersection point is shorter
-					closest = intersection;
-			}
+			mesh.bvh.root->Traverse( ray, mesh.bvh.pool, mesh.bvh.indices, mesh.bvh.triangles, closest, scene.matList );
 		}
 	}
 

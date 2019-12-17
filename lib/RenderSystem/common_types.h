@@ -528,6 +528,13 @@ public:
 	static aabb Union( const aabb& a, const aabb& b ) { aabb r; r.bmin4 = _mm_min_ps( a.bmin4, b.bmin4 ), r.bmax4 = _mm_max_ps( a.bmax4, b.bmax4 ); return r; }
 	aabb Intersection( const aabb& bb ) const { aabb r; r.bmin4 = _mm_max_ps( bmin4, bb.bmin4 ), r.bmax4 = _mm_min_ps( bmax4, bb.bmax4 ); return r; }
 	__inline float Extend( const int axis ) const { return bmax[axis] - bmin[axis]; }
+	__inline float MinMax( const int sign, const int axis ) const
+	{
+		if ( sign == 0 )
+			return Minimum( axis );
+		else
+			return Maximum( axis );
+	}
 	__inline float Minimum( const int axis ) const { return bmin[axis]; }
 	__inline float Maximum( const int axis ) const { return bmax[axis]; }
 	float Area() const

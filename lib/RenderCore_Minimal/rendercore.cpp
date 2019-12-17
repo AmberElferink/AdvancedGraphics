@@ -128,7 +128,7 @@ void RenderCore::SetGeometry(const int meshIdx, const float4 *vertexData, const 
 
 	Timer timer;
 	timer.reset();
-	Mesh newMesh;
+	Mesh newMesh = Mesh();
 	// copy the supplied vertices; we cannot assume that the render system does not modify
 	// the original data after we leave this function.
 	newMesh.vertices.resize(vertexCount);
@@ -138,12 +138,13 @@ void RenderCore::SetGeometry(const int meshIdx, const float4 *vertexData, const 
 		newMesh.vertices[i] = vertexData[i];
 	}
 	// copy the supplied 'fat triangles'
-	newMesh.triangles = new CoreTri[vertexCount / 3];
-	memcpy(newMesh.triangles, triangleData, (vertexCount / 3) * sizeof(CoreTri));
+	newMesh.triangles.resize( triangleCount );
+	for ( int i = 0; i < triangleCount; i++ )
+		newMesh.triangles[i] = triangleData[i];
+	newMesh.bvh.ConstructBVH( newMesh.vertices, newMesh.vcount, newMesh.triangles );
 	raytracer.scene.meshList.push_back(newMesh);
 	printf("loaded geometry in %5.3fs\n", timer.elapsed());
 	//if (meshIdx == 3)
-	raytracer.bvh.ConstructBVH(newMesh.vertices, newMesh.vcount);
 }
 
 
