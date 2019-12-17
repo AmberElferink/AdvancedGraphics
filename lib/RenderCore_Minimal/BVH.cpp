@@ -79,14 +79,15 @@ void BVHNode::SetSplit(BVH &bvh, float &split_point, int &split_index)
 		if (D.x > D.z) // x is the largest
 		{
 			quickSortL1byL2X(bvh.indices, bvh.centroids, 0, bvh.nrTriangles - 1);
-			split_point = (bbox.bmax3.x - bbox.bmin3.x) / 2;
+			split_point = (bbox.bmax3.x + bbox.bmin3.x) / 2;
 			split_index = binarySearchX(bvh.indices, bvh.centroids, 0, bvh.nrTriangles - 1, split_point);
 		}
 		else // z is the largest
 		{
 			quickSortL1byL2Z(bvh.indices, bvh.centroids, 0, bvh.nrTriangles - 1);
-			split_point = (bbox.bmax3.z - bbox.bmin3.z) / 2;
+			split_point = (bbox.bmax3.z + bbox.bmin3.z) / 2;
 			split_index = binarySearchZ(bvh.indices, bvh.centroids, 0, bvh.nrTriangles - 1, split_point);
+			int w = 0;
 		}
 	}
 	else
@@ -94,13 +95,13 @@ void BVHNode::SetSplit(BVH &bvh, float &split_point, int &split_index)
 		if (D.y > D.z) //y is the largest
 		{
 			quickSortL1byL2Y(bvh.indices, bvh.centroids, 0, bvh.nrTriangles - 1);
-			split_point = (bbox.bmax3.y - bbox.bmin3.y) / 2;
+			split_point = (bbox.bmax3.y + bbox.bmin3.y) / 2;
 			split_index = binarySearchY(bvh.indices, bvh.centroids, 0, bvh.nrTriangles - 1, split_point);
 		}
 		else // z is the largest
 		{
 			quickSortL1byL2Z(bvh.indices, bvh.centroids, 0, bvh.nrTriangles - 1);
-			split_point = (bbox.bmax3.z - bbox.bmin3.z) / 2;
+			split_point = (bbox.bmax3.z + bbox.bmin3.z) / 2;
 			split_index = binarySearchZ(bvh.indices, bvh.centroids, 0, bvh.nrTriangles - 1, split_point);
 		}
 	}
@@ -110,15 +111,15 @@ void BVHNode::ConstructRoot(BVH &bvh)
 {
 	leftFirst = 0;
 	n_objs = bvh.nrTriangles;
-	(*this).CalculateBounds(bvh.vData);
+	this->CalculateBounds(bvh.vData);
 	
 	float splitpoint;
 	int split_index;
 	SetSplit(bvh, splitpoint, split_index);
 
-	(*this).makeNode(bvh, bvh.poolPtr, split_index);
+	this->makeNode(bvh, bvh.poolPtr, split_index);
 	bvh.poolPtr++;
-	(*this).makeNode(bvh, bvh.poolPtr, bvh.nrTriangles - split_index);
+	this->makeNode(bvh, bvh.poolPtr, bvh.nrTriangles - split_index);
 }
 
 void BVH::CalcCentroids()
