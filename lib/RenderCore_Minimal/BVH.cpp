@@ -4,19 +4,16 @@
 bool BVHNode::Intersect( const Ray &ray, const CoreTri &triangle, const vector<Material*> &matList, Intersection &intersection )
 {
 	//TODO: het kan zijn dat een aantal dingen al geprecalculate zijn in CoreTri. Kijk daarnaar voor versnelling
-	float3 vertex0 = triangle.vertex0;
-	float3 vertex1 = triangle.vertex1;
-	float3 vertex2 = triangle.vertex2;
 	float3 edge1, edge2, h, s, q;
 	float a, f, u, v;
-	edge1 = vertex1 - vertex0;
-	edge2 = vertex2 - vertex0;
+	edge1 = triangle.vertex1 - triangle.vertex0;
+	edge2 = triangle.vertex2 - triangle.vertex0;
 	h = cross( ray.D, edge2 );
 	a = dot( edge1, h );
 	if ( a > -EPSILON && a < EPSILON )
 		return false; // This ray is parallel to this triangle.
 	f = 1.0f / a;
-	s = ray.O - vertex0;
+	s = ray.O - triangle.vertex0;
 	u = f * dot( s, h );
 	if ( u < 0.0f || u > 1.0f )
 		return false;
