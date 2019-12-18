@@ -404,8 +404,12 @@ float3 Raytracer::DirectIllumination( Intersection intersection )
 			{
 				float dist = length( intersection.point - light.position );
 				float dotPr = dot( intersection.norm, lightVector );
-				if ( dotPr > 0 )
+				if (dotPr > 0)
+				{
 					intersectionColor += materialColor * light.radiance * ( 1 / ( dist * dist ) ) * dotPr; //If light source can be seen, multiply color with current pixel color
+					int w = 0;
+				}
+
 			}
 		}
 		else if ( light.directionalLight )
