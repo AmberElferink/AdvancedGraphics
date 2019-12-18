@@ -76,7 +76,7 @@ void RenderCore::SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, co
 
 			m->color = make_float3(float(mat[i].diffuse_b), float(mat[i].diffuse_g), float(mat[i].diffuse_r));
 
-			if (glassIndex == 1)
+			if ( false )//glassIndex == 1 )
 			{
 				m->dielectric = true;
 				m->metallic = false;
@@ -143,6 +143,8 @@ void RenderCore::SetGeometry(const int meshIdx, const float4 *vertexData, const 
 		newMesh.triangles[i] = triangleData[i];
 	raytracer.scene.meshList.push_back(newMesh);
 	printf("loaded geometry in %5.3fs\n", timer.elapsed());
+
+	raytracer.storeBVH();
 	//if (meshIdx == 3)
 }
 
@@ -205,8 +207,6 @@ int frameCounter = 0;
 vector<thread> threads;
 void RenderCore::Render(const ViewPyramid& view, const Convergence converge)
 {
-
-	raytracer.storeBVH();
 	
 	//threads.clear();
 	//t.reset();

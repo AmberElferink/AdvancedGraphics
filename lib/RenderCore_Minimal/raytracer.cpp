@@ -45,14 +45,13 @@
 /* Method that checks whether there are any objects between a light point and the origin of a shadowray */
 bool Raytracer::IsOccluded( const Ray &ray, const Light &light )
 {
-	int id = 0;
 	for ( const Mesh &mesh : scene.meshList )
 	{
 		int vertexCount = mesh.vcount / 3;
 		for ( int i = 0; i < vertexCount; i++ )
 		{
 			Intersection intersection;
-			if ( bvh[id].root->Intersect( ray, mesh.triangles[i], scene.matList, intersection) ) //If there are intersections
+			if ( BVHNode::Intersect( ray, mesh.triangles[i], scene.matList, intersection) ) //If there are intersections
 			{
 				//light comes from infinetely far away
 				if ( light.directionalLight )
@@ -64,7 +63,6 @@ bool Raytracer::IsOccluded( const Ray &ray, const Light &light )
 				}
 			}
 		}
-		id++;
 	}
 	return false; //false if no intersections are found
 }
