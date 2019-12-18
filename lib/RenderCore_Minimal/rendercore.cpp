@@ -205,22 +205,24 @@ int frameCounter = 0;
 vector<thread> threads;
 void RenderCore::Render(const ViewPyramid& view, const Convergence converge)
 {
-	t.reset();
-	
-	threads.clear();
-	raytracer.storeBVH();
-	for (int i = 0; i < 4; i++)
-	{
-		threads.push_back(thread([=]() {
-			raytracer.rayTraceBlock(view, screen, 0, i * (screen->height / 4), (i + 1) * (screen->height / 4));
-		}));
-	}
 
-	for (int i = 0; i < 4; i++)
-	{
-		if (threads[i].joinable())
-			threads[i].join();
-	}
+	raytracer.storeBVH();
+	
+	//threads.clear();
+	//t.reset();
+	//for (int i = 0; i < 4; i++)
+	//{
+	//	threads.push_back(thread([=]() {
+	//		raytracer.rayTraceBlock(view, screen, 0, i * (screen->height / 4), (i + 1) * (screen->height / 4));
+	//	}));
+	//}
+
+	//for (int i = 0; i < 4; i++)
+	//{
+	//	if (threads[i].joinable())
+	//		threads[i].join();
+	//}
+	//	printf("raytracer traced in %f\n", t.elapsed());
 
 
 	//for (int i = 0; i < 4; i++)
@@ -233,17 +235,17 @@ void RenderCore::Render(const ViewPyramid& view, const Convergence converge)
 
 	//---------per line raytracing --------
 
-	//if (lineNr < screen->height)
-	//{
-	//	raytracer.rayTraceLine(screen, view, targetTextureID, lineNr);
-	//	lineNr++;
-	//}
-	//else
-	//{
-	//	lineNr = 0;
-	//	printf("raytraced in %5.3fs\n", t.elapsed());
-	//	t.reset();
-	//}
+	if (lineNr < screen->height)
+	{
+		raytracer.rayTraceLine(screen, view, targetTextureID, lineNr);
+		lineNr++;
+	}
+	else
+	{
+		lineNr = 0;
+		printf("raytraced in %f\n", t.elapsed());
+		t.reset();
+	}
 
 	// -----------per block raytracing ---------------
 	//raytracer.rayTraceRandom(view, targetTextureID, frameCounter);
@@ -254,7 +256,7 @@ void RenderCore::Render(const ViewPyramid& view, const Convergence converge)
 	//}
 
 
-	printf("raytracer traced in %f\n", t.elapsed());
+
 	glBindTexture(GL_TEXTURE_2D, targetTextureID);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, screen->width, screen->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, screen->pixels);
 }

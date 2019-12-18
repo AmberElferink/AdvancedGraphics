@@ -56,7 +56,7 @@ int BVHNode::Right()
 
 /* Method that tries to find a split plane for which: A_left * N_left + A_right * N_right < A * N 
    axis = 0 for x-axis, axis = 1 for y-axis and axis = 2 for z-axis*/
-void BVHNode::SAH( float &total, int &axis, float &split, const vector<uint> &indices, const vector<aabb> boundingBoxes, const int leftF )
+void BVHNode::SAH( float &total, int &axis, float &split, const vector<uint> &indices, const vector<aabb> &boundingBoxes, const int leftF )
 {
 	float current_value = bounds.Area() * count;
 	for ( int a = 0; a < 3; a++ ) //do so for every axis
@@ -112,7 +112,7 @@ void BVHNode::SAH( float &total, int &axis, float &split, const vector<uint> &in
 	//If no improvement is found, return the current value
 }
 
-void BVHNode::Partition( vector<uint> &indices, vector<BVHNode> &pool, int &poolPtr, const vector<aabb> boundingBoxes, const int leftF )
+void BVHNode::Partition( vector<uint> &indices, vector<BVHNode> &pool, int &poolPtr, const vector<aabb> &boundingBoxes, const int leftF )
 {
 	int axis = bounds.LongestAxis();
 	float split = 0;
@@ -167,7 +167,7 @@ void BVHNode::Partition( vector<uint> &indices, vector<BVHNode> &pool, int &pool
 	}
 }
 
-void BVHNode::Subdivide( vector<BVHNode> &pool, int &poolPtr, vector<uint> &indices, const vector<aabb> boundingBoxes )
+void BVHNode::Subdivide( vector<BVHNode> &pool, int &poolPtr, vector<uint> &indices, const vector<aabb> &boundingBoxes )
 {
 	if ( count < 3 )
 		return; //leaf
@@ -179,7 +179,7 @@ void BVHNode::Subdivide( vector<BVHNode> &pool, int &poolPtr, vector<uint> &indi
 
 /*Method that computes the bounding box for a given set of primitives*/
 /*TODO:: vertexData omschrijven*/
-void BVHNode::CalculateBounds( const vector<aabb> boundingBoxes, const vector<uint> indices )
+void BVHNode::CalculateBounds( const vector<aabb> &boundingBoxes, const vector<uint> &indices )
 {
 	float3 lowest;
 	aabb bigBox = boundingBoxes[0]; // a big bounding box containing all triangles
@@ -202,6 +202,26 @@ void BVHNode::Traverse( const Ray &ray, vector<BVHNode> &pool, const vector<uint
 	{
 		pool[leftFirst].Traverse( ray, pool, indices, triangles, closest, matList);
 		pool[leftFirst + 1].Traverse( ray, pool, indices, triangles, closest, matList );
+	}
+}
+
+/*Method that traverses trough the nodes of an BVH and returns the closest intersection*/
+bool BVHNode::TraverseToFirst(const Ray &ray, vector<BVHNode> &pool, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection &intersection, const vector<Material *> &matList)
+{
+	if (!IntersectNode(ray))
+		return false;
+	if (IsLeaf())
+	{
+		int right = leftFirst + count;
+		for (int i = leftFirst; i < right; i++)
+		{
+			return Intersect(ray, triangles[indices[i]], matList, intersection);
+		}
+	}
+	else
+	{
+		pool[leftFirst].Traverse(ray, pool, indices, triangles, intersection, matList);
+		pool[leftFirst + 1].Traverse(ray, pool, indices, triangles, intersection, matList);
 	}
 }
 
@@ -251,7 +271,7 @@ bool BVHNode::IntersectNode(const Ray &ray)
 }
 
 /*Methode that construct a BVH*/
-void BVH::ConstructBVH( const vector<float4> vertexData, const int vertexCount, const vector<CoreTri> triangleData )
+void BVH::ConstructBVH( const vector<float4> &vertexData, const int vertexCount, const vector<CoreTri> &triangleData )
 {
 	// create index array
 	triangles = triangleData;

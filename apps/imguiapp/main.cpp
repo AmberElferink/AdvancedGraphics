@@ -42,7 +42,9 @@ void PrepareScene()
 {
 	// initialize scene
 	materialFile = string( "data/pica/pica_materials.xml" );
-	renderer->AddScene("AnimatedCube.gltf", "data/animatedCube/", mat4::Translate(-6, -3.2f, -5));
+	int meshID = renderer->AddMesh("Lootchest.obj", "data/Lootchest/", 1);
+	renderer->AddInstance(meshID, mat4::Translate(1, 1, 1));
+	//renderer->AddScene("AnimatedCube.gltf", "data/animatedCube/", mat4::Translate(-6, -3.2f, -5));
 	//renderer->AddScene("test2.glb", "data/reflectionScene/", mat4::Translate(-6, -3.2f, -5));
 	//renderer->AddScene("Cube-Pyramid.gltf", "data/reflectTest/", mat4::Translate(10, -20.2f, -5));
 	//renderer->AddScene("AnimatedCube.gltf", "data/animatedCube/", mat4::Translate(1, -10.2f, 1));
@@ -54,6 +56,7 @@ void PrepareScene()
 	//int lightQuad = renderer->AddQuad(make_float3(0, -1, 0), make_float3(0, 26.0f, 0), 6.9f, 6.9f, lightMat);
 	//int lightInst = renderer->AddInstance(lightQuad);
 	int lightBulb = renderer->AddPointLight(make_float3(-10, -9, -4), make_float3(1, 1, 1), true);
+	int lightBulb2 = renderer->AddPointLight(make_float3(168, 30, -624), make_float3(1, 1, 1), true);
 
 	//int lightBulb2 = renderer->AddPointLight(make_float3(10, -8, 4), make_float3(100, 100, 100), true);
 	int sun = renderer->AddDirectionalLight( make_float3( 1, 1, 1 ), make_float3( 0.9, 0.9, 0.9 ), true );
@@ -141,8 +144,8 @@ int main()
 	// renderer = RenderAPI::CreateRenderAPI( "RenderCore_Optix7" );			// OPTIX7 core, best for RTX devices
 	// renderer = RenderAPI::CreateRenderAPI( "RenderCore_OptixPrime_B" );		// OPTIX PRIME, best for pre-RTX CUDA devices
 	// renderer = RenderAPI::CreateRenderAPI( "RenderCore_PrimeRef" );			// REFERENCE, for image validation
-	// renderer = RenderAPI::CreateRenderAPI("RenderCore_SoftRasterizer");	// RASTERIZER, your only option if not on NVidia
-     renderer = RenderAPI::CreateRenderAPI( "RenderCore_Minimal" );				// MINIMAL example, to get you started on your own core
+	renderer = RenderAPI::CreateRenderAPI("RenderCore_SoftRasterizer");	// RASTERIZER, your only option if not on NVidia
+    // renderer = RenderAPI::CreateRenderAPI( "RenderCore_Minimal" );				// MINIMAL example, to get you started on your own core
    // renderer = RenderAPI::CreateRenderAPI( "RenderCore_Vulkan_RT" );			// Meir's Vulkan / RTX core
    // renderer = RenderAPI::CreateRenderAPI( "RenderCore_OptixPrime_BDPT" );	// Peter's OptixPrime / BDPT core
 

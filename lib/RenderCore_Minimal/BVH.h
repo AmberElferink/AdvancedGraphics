@@ -74,11 +74,12 @@ class BVHNode
 	int count;	 //number of primitives that are contained in the current node
 	inline bool IsLeaf();
 	inline int Right();
-	void Subdivide( vector<BVHNode> &pool, int &poolPtr, vector<uint> &indices, const vector<aabb> boundingBoxes );
-	void Partition( vector<uint> &indices, vector<BVHNode> &pool, int &poolPtr, const vector<aabb> boundingBoxes, const int leftF );
-	void CalculateBounds( const vector<aabb> boundingBoxes, const vector<uint> indices );
-	void SAH( float &total, int &axis, float &split, const vector<uint> &indices, const vector<aabb> boundingBoxes, const int leftF );
+	void Subdivide( vector<BVHNode> &pool, int &poolPtr, vector<uint> &indices, const vector<aabb> &boundingBoxes );
+	void Partition( vector<uint> &indices, vector<BVHNode> &pool, int &poolPtr, const vector<aabb> &boundingBoxes, const int leftF );
+	void CalculateBounds( const vector<aabb> &boundingBoxes, const vector<uint> &indices );
+	void SAH( float &total, int &axis, float &split, const vector<uint> &indices, const vector<aabb> &boundingBoxes, const int leftF );
 	void Traverse( const Ray &ray, vector<BVHNode> &pool, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection &closest, const vector<Material *> &matList );
+	bool TraverseToFirst(const Ray &ray, vector<BVHNode> &pool, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection &closest, const vector<Material *> &matList);
 	void IntersectPrimitives( const Ray &ray, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection &closest, const vector<Material *> &matList );
 	bool IntersectNode( const Ray &ray );
 	static bool Intersect( const Ray &ray, const CoreTri &triangle, const vector<Material*> &matList, Intersection &intersection );
@@ -88,7 +89,7 @@ class BVH
 {
   public:
 	//BVH();
-	void ConstructBVH( const vector<float4> vertexData, const int vertexCount, const vector<CoreTri> triangleData );
+	void ConstructBVH( const vector<float4> &vertexData, const int vertexCount, const vector<CoreTri> &triangleData );
 	vector<CoreTri> triangles;
 	float4 *vertexData;   //list with vertices of all primitives
 	vector<uint> indices; //list with indices of all primitives
