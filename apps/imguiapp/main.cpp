@@ -43,7 +43,9 @@ void PrepareScene()
 	// initialize scene
 	materialFile = string( "data/pica/pica_materials.xml" );
 	//int meshID = renderer->AddMesh("Lootchest.obj", "data/Lootchest/", 1);
-	int meshID = renderer->AddMesh("basketball_OBJ.obj", "data/basketball_ball/", 1);
+	int meshID = renderer->AddMesh("CyberpunkDeLorean.obj", "data/Delorean/", 1);
+	//int meshID = renderer->AddMesh("Lamborghini_Aventador.obj", "data/Lamborginhi5000/", 1);
+	//int meshID = renderer->AddMesh("basketball_OBJ.obj", "data/basketball_ball/", 1);
 
 	renderer->AddInstance(meshID, mat4::Translate(1, 1, 1));
 	//renderer->AddScene("AnimatedCube.gltf", "data/animatedCube/", mat4::Translate(-6, -3.2f, -5));
@@ -57,12 +59,12 @@ void PrepareScene()
 	int lightMat = renderer->AddMaterial(make_float3(10, 10, 8));
 	//int lightQuad = renderer->AddQuad(make_float3(0, -1, 0), make_float3(0, 26.0f, 0), 6.9f, 6.9f, lightMat);
 	//int lightInst = renderer->AddInstance(lightQuad);
-	int lightBulb = renderer->AddPointLight(make_float3(-10, -9, -4), make_float3(1, 1, 1), true);
-	int lightBulb2 = renderer->AddPointLight(make_float3(168, 20, -624), make_float3(100000, 100000, 100000), true);
+	int lightBulb = renderer->AddPointLight(make_float3(-100, -90, -400), make_float3(100000), true);
+	int lightBulb2 = renderer->AddPointLight(make_float3(64, -6, 21), make_float3(30000), true);
 
 	//int lightBulb2 = renderer->AddPointLight(make_float3(10, -8, 4), make_float3(100, 100, 100), true);
 	/*int sun = renderer->AddDirectionalLight( make_float3( 1, 1, 1 ), make_float3( 0.9, 0.9, 0.9 ), true );*/
-	int spotLight = renderer->AddSpotLight(make_float3(10,9,4),make_float3(10,10,10),0.99, 0.9, make_float3(100,100,100),true);
+	//int spotLight = renderer->AddSpotLight(make_float3(10,9,4),make_float3(10,10,10),0.99, 0.9, make_float3(100,100,100),true);
 #else
 	// difficult light; use BDPT
 	//int lightMat = renderer->AddMaterial(make_float3(500, 500, 400));

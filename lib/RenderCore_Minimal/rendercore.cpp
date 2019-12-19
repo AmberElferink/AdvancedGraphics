@@ -125,7 +125,6 @@ void RenderCore::SetTarget(GLTexture *target)
 //copy data to new mesh, want je kan niet garanderen dat de data niet verandert terwijl je tekent. Daarom moet je een kopie maken.
 void RenderCore::SetGeometry(const int meshIdx, const float4 *vertexData, const int vertexCount, const int triangleCount, const CoreTri *triangleData, const uint *alphaFlags)
 {
-
 	Timer timer;
 	timer.reset();
 	Mesh newMesh = Mesh();
@@ -142,8 +141,8 @@ void RenderCore::SetGeometry(const int meshIdx, const float4 *vertexData, const 
 	for ( int i = 0; i < triangleCount; i++ )
 		newMesh.triangles[i] = triangleData[i];
 	raytracer.scene.meshList.push_back(newMesh);
-	printf("loaded geometry in %5.3fs\n", timer.elapsed());
 	raytracer.storeBVH();
+	printf("loaded mesh with %i vertices in %5.3fs\n", vertexCount, timer.elapsed());
 	//if (meshIdx == 3)
 }
 
@@ -240,6 +239,7 @@ void RenderCore::Render(const ViewPyramid& view, const Convergence converge)
 	{
 		raytracer.rayTraceLine(screen, view, targetTextureID, lineNr);
 		lineNr++;
+		printf("raytraced line in %f\n", t.elapsed());
 	}
 	else
 	{

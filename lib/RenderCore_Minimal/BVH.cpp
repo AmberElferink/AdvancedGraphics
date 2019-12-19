@@ -32,7 +32,6 @@ bool BVHNode::Intersect( const Ray &ray, const CoreTri &triangle, const vector<M
 
 		intersection = Intersection( t, intersectionPoint, normal, triangle );
 		intersection.material = *matList[triangle.material];
-		intersection.triangle = triangle;
 		return true;
 	}
 	else // This means that there is a line intersection but not a ray intersection.
@@ -60,7 +59,7 @@ void BVHNode::SAH( float &total, int &axis, float &split, const vector<uint> &in
 	{
 		for ( int i = 0; i < count; i++ )
 		{
-			split = boundingBoxes[indices[i + leftF]].bmin[axis];
+			split = boundingBoxes[indices[i + leftF]].Center(axis);
 			aabb area_left;  //area on left side
 			aabb area_right; //area on right side
 			uint leftCount = 0;
@@ -101,7 +100,6 @@ void BVHNode::SAH( float &total, int &axis, float &split, const vector<uint> &in
 			total = (float)leftCount * aleft + (float)rightCount * aright;
 			if ( total < current_value)
 				return;
-			int test = 0;
 			}
 		}
 		axis = ( axis + 1 ) % 3; //switch axis
@@ -151,13 +149,13 @@ void BVHNode::Partition( vector<uint> &indices, vector<BVHNode> &pool, int &pool
 	{
 		BVHNode *left;
 		left = &pool[poolPtr - 2];
-		left->count = ceil((float)count / 2);
+		left->count = ceil((float)(count / 2));
 		left->leftFirst = leftF;
 		left->CalculateBounds( boundingBoxes, indices );
 		BVHNode *right;
 		right = &pool[poolPtr - 1];
-		right->count = floor( (float)count / 2 );
-		right->leftFirst = left->leftFirst + left->count;
+		right->count = floor( (float)(count / 2));
+		right->leftFirst = leftF + left->count;
 		right->CalculateBounds( boundingBoxes, indices );
 		left->Subdivide( pool, poolPtr, indices, boundingBoxes );
 		right->Subdivide( pool, poolPtr, indices, boundingBoxes );
@@ -179,7 +177,7 @@ void BVHNode::Subdivide( vector<BVHNode> &pool, int &poolPtr, vector<uint> &indi
 void BVHNode::CalculateBounds( const vector<aabb> &boundingBoxes, const vector<uint> &indices )
 {
 	float3 lowest;
-	aabb bigBox = boundingBoxes[0]; // a big bounding box containing all triangles
+	aabb bigBox = boundingBoxes[indices[leftFirst]]; // a big bounding box containing all triangles
 
 	for ( int i = 1; i < count; i++ )
 	{
@@ -212,8 +210,10 @@ bool BVHNode::TraverseToFirst(const Ray &ray, vector<BVHNode> &pool, const vecto
 		int right = leftFirst + count;
 		for (int i = leftFirst; i < right; i++)
 		{
-			return Intersect(ray, triangles[indices[i]], matList, intersection);
+			if (Intersect(ray, triangles[indices[i]], matList, intersection))
+				return true;
 		}
+		return false;
 	}
 	else
 	{
@@ -279,9 +279,9 @@ void BVH::ConstructBVH( const vector<float4> &vertexData, const int vertexCount,
 	for ( int i = 0; i < nrTriangles; i++ )
 	{
 
-		aabb boundingBox = aabb( vertexData[3 * i], vertexData[3 * i] );
-		boundingBox.Grow( vertexData[3 * i + 1] );
-		boundingBox.Grow( vertexData[3 * i + 2] );
+		aabb boundingBox = aabb( triangleData[i].vertex0, triangleData[i].vertex0 );
+		boundingBox.Grow( triangleData[i].vertex1 );
+		boundingBox.Grow( triangleData[i].vertex2 );
 		float area = boundingBox.Area();
 		indices[i] = i;
 		boundingBoxes[i] = boundingBox;
