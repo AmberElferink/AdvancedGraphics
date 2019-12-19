@@ -110,13 +110,78 @@ void BVHNode::SAH( float &total, int &axis, float &split, const vector<uint> &in
 	//If no improvement is found, return the current value
 }
 
+#define BINNING
+
+#ifdef BINNING
+void BVHNode::Binning(float &total, int &axis, float &split, const vector<uint> &indices, const vector<aabb> &boundingBoxes, const int leftF)
+{
+	uint k = 16; //number of bins
+	float current_value = bounds.Area() * count;
+
+	for (int a = 0; a < 3; a++) //try every axis
+	{
+		for (int i = 1; i < k; i++) //try for every bin 
+		{
+			split = bounds.bmin[axis] + bounds.AxisLength( axis )/ (float)(k / i) ;
+			aabb area_left;  //area on left side
+			aabb area_right; //area on right side
+			uint leftCount = 0;
+			uint rightCount = 0;
+			bool firstLeft = true;
+			bool firstRight = true;
+
+			//check for all elements whether they are to the left or the right of the split plane
+			for ( int j = 0; j < count; j++ )
+			{
+				aabb current_box = boundingBoxes[indices[j + leftF]];
+				if ( current_box.Center( axis ) < split ) //case primitive is on the left side
+				{
+					if ( firstLeft )
+					{
+						area_left = current_box;
+						firstLeft = false;
+					}
+					else
+						area_left.Grow( current_box );
+					leftCount++;
+				}
+				else //case primitive is on the right side
+				{
+					if ( firstRight )
+					{
+						area_right = current_box;
+						firstRight = false;
+					}
+					else
+						area_right.Grow( current_box );
+					rightCount++;
+				}
+			}
+			if ( leftCount < count && rightCount < count )
+			{
+				//Check whether we make an improvement with the current split or not
+				float aleft = area_left.Area();
+				float aright = area_right.Area();
+				total = (float)leftCount * aleft + (float)rightCount * aright;
+				if ( total < current_value )
+					return;
+			}
+		}
+		axis = ( axis + 1 ) % 3; 
+	}
+
+}
+#endif 
+
+
 void BVHNode::Partition( vector<uint> &indices, vector<BVHNode> &pool, int &poolPtr, const vector<aabb> &boundingBoxes, const int leftF )
 {
 	int axis = bounds.LongestAxis();
 	float split = 0;
 	float total = bounds.Area() * count;
 
-	SAH( total, axis, split, indices, boundingBoxes, leftF );
+	//SAH( total, axis, split, indices, boundingBoxes, leftF );
+	Binning( total, axis, split, indices, boundingBoxes, leftF );
 	if ( total < bounds.Area() * count )
 	{
 		uint current = leftF; //save the index of the first primitive
