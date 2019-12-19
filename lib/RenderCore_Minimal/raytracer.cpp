@@ -347,7 +347,7 @@ void Raytracer::TextureColor( Intersection &intersection, const CoreTri &triangl
 	//	u = lengthU - u;
 	//	v = lengthV - v;
 	//}
-
+	
 	uint index = ( v * scaleY * width + u * scaleX );
 
 	color = intersection.material.texture->pixels[index];

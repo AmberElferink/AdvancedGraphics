@@ -239,7 +239,7 @@ void RenderCore::Render(const ViewPyramid& view, const Convergence converge)
 	{
 		raytracer.rayTraceLine(screen, view, targetTextureID, lineNr);
 		lineNr++;
-		printf("raytraced line in %f\n", t.elapsed());
+		//printf("raytraced line in %f\n", t.elapsed());
 	}
 	else
 	{
