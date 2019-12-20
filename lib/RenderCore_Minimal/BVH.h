@@ -51,19 +51,28 @@ class Material
 class Intersection
 {
   public:
-	float t = 10e30;								 // distance from starting point to intersection point
-	float3 point = make_float3(0);							 // intersection point
+	float t = 10e30;						 // distance from starting point to intersection point
+	float3 point = make_float3( 0 );		 // intersection point
 	float3 norm = make_float3( -1, -1, -1 ); // normal at intersection point
 	Material material;
 	CoreTri triangle;
 
-    Intersection( const float t, const float3 &point, const float3 &norm, const CoreTri &triangle ) : t( t ), point( point ), norm( norm )
+	Intersection( const float t, const float3 &point, const float3 &norm, const CoreTri &triangle ) : t( t ), point( point ), norm( norm )
 	{
 		//material = triangle.material;
 	}
 	Intersection()
 	{
 	}
+};
+
+class Bin
+{
+  public:
+	aabb bounds; //bounding box of the primitives in the current bin
+	int first;
+	int count;
+	void Add( const aabb &prim );
 };
 
 class BVHNode
@@ -80,10 +89,10 @@ class BVHNode
 	void SAH( float &total, int &axis, float &split, const vector<uint> &indices, const vector<aabb> &boundingBoxes, const int leftF );
 	void Binning( float &total, int &axis, float &split, const vector<uint> &indices, const vector<aabb> &boundingBoxes, const int leftF );
 	void Traverse( const Ray &ray, vector<BVHNode> &pool, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection &closest, const vector<Material *> &matList );
-	bool TraverseToFirst(const Ray &ray, vector<BVHNode> &pool, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection &closest, const vector<Material *> &matList);
+	bool TraverseToFirst( const Ray &ray, vector<BVHNode> &pool, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection &closest, const vector<Material *> &matList );
 	void IntersectPrimitives( const Ray &ray, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection &closest, const vector<Material *> &matList );
 	bool IntersectNode( const Ray &ray );
-	static bool Intersect( const Ray &ray, const CoreTri &triangle, const vector<Material*> &matList, Intersection &intersection );
+	static bool Intersect( const Ray &ray, const CoreTri &triangle, const vector<Material *> &matList, Intersection &intersection );
 };
 
 class BVH
@@ -97,8 +106,8 @@ class BVH
 	vector<BVHNode> pool; //list that contains all the BVH nodes in the BVH
 	BVHNode *root;		  //pointer to the root node of the BVH
 	int poolPtr;
-//	BVH( const BVH &obj ); // copy constructor
-//	~BVH();
+	//	BVH( const BVH &obj ); // copy constructor
+	//	~BVH();
 };
 
 //BVH::BVH( const BVH &obj )

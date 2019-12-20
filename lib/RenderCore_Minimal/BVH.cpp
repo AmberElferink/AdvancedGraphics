@@ -4,19 +4,16 @@
 bool BVHNode::Intersect( const Ray &ray, const CoreTri &triangle, const vector<Material*> &matList, Intersection &intersection )
 {
 	//TODO: het kan zijn dat een aantal dingen al geprecalculate zijn in CoreTri. Kijk daarnaar voor versnelling
-	float3 vertex0 = triangle.vertex0;
-	float3 vertex1 = triangle.vertex1;
-	float3 vertex2 = triangle.vertex2;
 	float3 edge1, edge2, h, s, q;
 	float a, f, u, v;
-	edge1 = vertex1 - vertex0;
-	edge2 = vertex2 - vertex0;
+	edge1 = triangle.vertex1 - triangle.vertex0;
+	edge2 = triangle.vertex2 - triangle.vertex0;
 	h = cross( ray.D, edge2 );
 	a = dot( edge1, h );
 	if ( a > -EPSILON && a < EPSILON )
 		return false; // This ray is parallel to this triangle.
 	f = 1.0f / a;
-	s = ray.O - vertex0;
+	s = ray.O - triangle.vertex0;
 	u = f * dot( s, h );
 	if ( u < 0.0f || u > 1.0f )
 		return false;
@@ -115,64 +112,36 @@ void BVHNode::SAH( float &total, int &axis, float &split, const vector<uint> &in
 #ifdef BINNING
 void BVHNode::Binning(float &total, int &axis, float &split, const vector<uint> &indices, const vector<aabb> &boundingBoxes, const int leftF)
 {
-	uint k = 16; //number of bins
+	uint k = 8; //number of bins
 	float current_value = bounds.Area() * count;
+	vector<Bin> x_bins, y_bins, z_bins; 
+	vector<uint> xi_bins, yi_bins, zi_bins; //vectors that contain the indices for every bin
+	xi_bins.resize( count );
+	yi_bins.resize( count );
+	zi_bins.resize( count );
+	x_bins.resize( k );
+	y_bins.resize( k );
+	z_bins.resize( k );
 
-	for (int a = 0; a < 3; a++) //try every axis
+	for (int a = 0; a < 3; a++) //fill bins for every axis
 	{
-		for (int i = 1; i < k; i++) //try for every bin 
-		{
-			split = bounds.bmin[axis] + bounds.AxisLength( axis )/ (float)(k / i) ;
-			aabb area_left;  //area on left side
-			aabb area_right; //area on right side
-			uint leftCount = 0;
-			uint rightCount = 0;
-			bool firstLeft = true;
-			bool firstRight = true;
-
-			//check for all elements whether they are to the left or the right of the split plane
-			for ( int j = 0; j < count; j++ )
-			{
-				aabb current_box = boundingBoxes[indices[j + leftF]];
-				if ( current_box.Center( axis ) < split ) //case primitive is on the left side
-				{
-					if ( firstLeft )
-					{
-						area_left = current_box;
-						firstLeft = false;
-					}
-					else
-						area_left.Grow( current_box );
-					leftCount++;
-				}
-				else //case primitive is on the right side
-				{
-					if ( firstRight )
-					{
-						area_right = current_box;
-						firstRight = false;
-					}
-					else
-						area_right.Grow( current_box );
-					rightCount++;
-				}
-			}
-			if ( leftCount < count && rightCount < count )
-			{
-				//Check whether we make an improvement with the current split or not
-				float aleft = area_left.Area();
-				float aright = area_right.Area();
-				total = (float)leftCount * aleft + (float)rightCount * aright;
-				if ( total < current_value )
-					return;
-			}
-		}
+		float slab_length = bounds.AxisLength( axis ) / k;
+		float min = bounds.bmin[axis];
+		
 		axis = ( axis + 1 ) % 3; 
 	}
 
 }
-#endif 
 
+void Bin::Add(const aabb &prim)
+{
+	if ( count == 0 )
+		bounds = prim;
+	else
+		bounds.Grow( prim );
+	count++;
+}
+#endif 
 
 void BVHNode::Partition( vector<uint> &indices, vector<BVHNode> &pool, int &poolPtr, const vector<aabb> &boundingBoxes, const int leftF )
 {
@@ -180,8 +149,7 @@ void BVHNode::Partition( vector<uint> &indices, vector<BVHNode> &pool, int &pool
 	float split = 0;
 	float total = bounds.Area() * count;
 
-	//SAH( total, axis, split, indices, boundingBoxes, leftF );
-	Binning( total, axis, split, indices, boundingBoxes, leftF );
+	SAH( total, axis, split, indices, boundingBoxes, leftF );
 	if ( total < bounds.Area() * count )
 	{
 		uint current = leftF; //save the index of the first primitive
@@ -278,8 +246,10 @@ bool BVHNode::TraverseToFirst(const Ray &ray, vector<BVHNode> &pool, const vecto
 		int right = leftFirst + count;
 		for (int i = leftFirst; i < right; i++)
 		{
-			return Intersect(ray, triangles[indices[i]], matList, intersection);
+			if (Intersect(ray, triangles[indices[i]], matList, intersection))
+				return true;
 		}
+		return false;
 	}
 	else
 	{

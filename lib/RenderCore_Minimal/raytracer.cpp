@@ -43,17 +43,41 @@
 }*/
 
 /* Method that checks whether there are any objects between a light point and the origin of a shadowray */
+//bool Raytracer::IsOccluded( const Ray &ray, const Light &light )
+//{
+//	for ( const Mesh &mesh : scene.meshList )
+//	{
+//		int vertexCount = mesh.vcount / 3;
+//		for ( int i = 0; i < vertexCount; i++ )
+//		{
+//			Intersection intersection;
+//			if ( BVHNode::Intersect( ray, mesh.triangles[i], scene.matList, intersection) ) //If there are intersections
+//			{
+//				//light comes from infinetely far away
+//				if ( light.directionalLight )
+//					return true;
+//				else //light comes from a given point
+//				{
+//					if ( length( intersection.point - ray.O ) < length( light.position - ray.O ) ) //Between the light and the origin, not after
+//						return true;
+//				}
+//			}
+//		}
+//	}
+//	return false; //false if no intersections are found
+//}
+
+
+
 bool Raytracer::IsOccluded( const Ray &ray, const Light &light )
 {
-	for ( const Mesh &mesh : scene.meshList )
+	int id = 0;
+	Intersection intersection;
+	for (Mesh &mesh : scene.meshList)
 	{
-		int vertexCount = mesh.vcount / 3;
-		for ( int i = 0; i < vertexCount; i++ )
+		if (bvh[id].root->TraverseToFirst(ray, bvh[id].pool, bvh[id].indices, bvh[id].triangles, intersection, scene.matList)) // if there is at least one intersection
 		{
-			Intersection intersection;
-			if ( BVHNode::Intersect( ray, mesh.triangles[i], scene.matList, intersection) ) //If there are intersections
-			{
-				//light comes from infinetely far away
+				//light comes from infinitely far away
 				if ( light.directionalLight )
 					return true;
 				else //light comes from a given point
@@ -61,11 +85,12 @@ bool Raytracer::IsOccluded( const Ray &ray, const Light &light )
 					if ( length( intersection.point - ray.O ) < length( light.position - ray.O ) ) //Between the light and the origin, not after
 						return true;
 				}
-			}
 		}
+		id++;
 	}
 	return false; //false if no intersections are found
 }
+
 
 /*Method that shoots a shadow ray and checks whether there are objects between the current intersection point and a light source*/
 bool Raytracer::viewLight( Intersection intersection, const Light &light, float3 &lightVector )
@@ -322,7 +347,7 @@ void Raytracer::TextureColor( Intersection &intersection, const CoreTri &triangl
 	//	u = lengthU - u;
 	//	v = lengthV - v;
 	//}
-
+	
 	uint index = ( v * scaleY * width + u * scaleX );
 
 	color = intersection.material.texture->pixels[index];

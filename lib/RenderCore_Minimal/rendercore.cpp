@@ -76,15 +76,15 @@ void RenderCore::SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, co
 
 			m->color = make_float3(float(mat[i].diffuse_b), float(mat[i].diffuse_g), float(mat[i].diffuse_r));
 
-			if ( false )//glassIndex == 1 )
-			{
-				m->dielectric = true;
-				m->metallic = false;
-				m->indexOfRefraction = 1.05; //glass
-				m->absorption = make_float3(0.8, 0.8, 0);
-				m->color = make_float3(1, 1, 1);
-			}
-			glassIndex++;
+			//if (glassIndex == 1)
+			//{
+			//	m->dielectric = true;
+			//	m->metallic = false;
+			//	m->indexOfRefraction = 1.05; //glass
+			//	m->absorption = make_float3(0.8, 0.8, 0);
+			//	m->color = make_float3(1, 1, 1);
+			//}
+			//glassIndex++;
 
 
 		}
@@ -125,7 +125,6 @@ void RenderCore::SetTarget(GLTexture *target)
 //copy data to new mesh, want je kan niet garanderen dat de data niet verandert terwijl je tekent. Daarom moet je een kopie maken.
 void RenderCore::SetGeometry(const int meshIdx, const float4 *vertexData, const int vertexCount, const int triangleCount, const CoreTri *triangleData, const uint *alphaFlags)
 {
-
 	Timer timer;
 	timer.reset();
 	Mesh newMesh = Mesh();
@@ -142,9 +141,8 @@ void RenderCore::SetGeometry(const int meshIdx, const float4 *vertexData, const 
 	for ( int i = 0; i < triangleCount; i++ )
 		newMesh.triangles[i] = triangleData[i];
 	raytracer.scene.meshList.push_back(newMesh);
-	printf("loaded geometry in %5.3fs\n", timer.elapsed());
-
 	raytracer.storeBVH();
+	printf("loaded mesh with %i vertices in %5.3fs\n", vertexCount, timer.elapsed());
 	//if (meshIdx == 3)
 }
 
@@ -207,6 +205,8 @@ int frameCounter = 0;
 vector<thread> threads;
 void RenderCore::Render(const ViewPyramid& view, const Convergence converge)
 {
+
+
 	
 	//threads.clear();
 	//t.reset();
@@ -239,6 +239,7 @@ void RenderCore::Render(const ViewPyramid& view, const Convergence converge)
 	{
 		raytracer.rayTraceLine(screen, view, targetTextureID, lineNr);
 		lineNr++;
+		//printf("raytraced line in %f\n", t.elapsed());
 	}
 	else
 	{
