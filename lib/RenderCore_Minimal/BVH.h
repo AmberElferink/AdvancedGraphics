@@ -71,7 +71,7 @@ class Bin
   public:
 	aabb bounds; //bounding box of the primitives in the current bin
 	int first;
-	int count;
+	int count = 0;
 	void Add( const aabb &prim );
 };
 
@@ -87,7 +87,7 @@ class BVHNode
 	void Partition( vector<uint> &indices, vector<BVHNode> &pool, int &poolPtr, const vector<aabb> &boundingBoxes, const int leftF );
 	void CalculateBounds( const vector<aabb> &boundingBoxes, const vector<uint> &indices );
 	void SAH( float &total, int &axis, float &split, const vector<uint> &indices, const vector<aabb> &boundingBoxes, const int leftF );
-	void Binning( float &total, int &axis, float &split, const vector<uint> &indices, const vector<aabb> &boundingBoxes, const int leftF );
+	void Binning( vector<uint> &indices, const vector<aabb> &boundingBoxes, const int leftF, vector<BVHNode> &pool, int &poolPtr );
 	void Traverse( const Ray &ray, vector<BVHNode> &pool, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection &closest, const vector<Material *> &matList );
 	bool TraverseToFirst( const Ray &ray, vector<BVHNode> &pool, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection &closest, const vector<Material *> &matList );
 	void IntersectPrimitives( const Ray &ray, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection &closest, const vector<Material *> &matList );
