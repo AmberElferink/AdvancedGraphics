@@ -112,11 +112,12 @@ void BVHNode::SAH( float &total, int &axis, float &split, const vector<uint> &in
 #define BINNING
 
 #ifdef BINNING
-/* 
+/* Method that divides the three axis in k bins and then compares the 3*(k-1) possible split planes.
+   It returns the best split plane based on the SAH-heuristic. 
    based on the article: On fast Construction of SAH-based Bounding Volume Hierarchies, Wald, 2007 */
 void BVHNode::Binning( vector<uint> &indices, const vector<aabb> &boundingBoxes, const int leftF, vector<BVHNode> &pool, int &poolPtr )
 {
-	uint k = 2; //number of bins
+	uint k = 8; //number of bins
 	float current_value = bounds.Area() * count; //best SAH-value
 	vector<vector<Bin>> bins;
 	bins.resize( 3 );
