@@ -116,13 +116,14 @@ void BVHNode::SAH( float &total, int &axis, float &split, const vector<uint> &in
    based on the article: On fast Construction of SAH-based Bounding Volume Hierarchies, Wald, 2007 */
 void BVHNode::Binning( vector<uint> &indices, const vector<aabb> &boundingBoxes, const int leftF, vector<BVHNode> &pool, int &poolPtr )
 {
-	uint k = 8; //number of bins
-	float current_value = bounds.Area() * count;
+	uint k = 2; //number of bins
+	float current_value = bounds.Area() * count; //best SAH-value
 	vector<vector<Bin>> bins;
 	bins.resize( 3 );
 	vector<vector<uint>> bin_indices; //vectors that contains the corresponding bin index for every primitive
 	bin_indices.resize( 3 );
-	uint best_split = 0;
+	uint best_split = 0; //best split bin
+	uint axis; //best split axis
 
 	BVHNode *left;
 	left = &pool[poolPtr - 2];
@@ -133,7 +134,7 @@ void BVHNode::Binning( vector<uint> &indices, const vector<aabb> &boundingBoxes,
 	{
 		bins[a].resize( k );
 		for ( int i = 0; i < k; i++ )
-			bins[a][i].bounds.Reset();
+			bins[a][i].bounds.Reset(); //set aabb of bins to [INF,-INF]
 		bin_indices[a].resize( count );
 		//precalculated constants
 		float k1 = (float)k * ( 1.0f - FLT_EPSILON ) / ( bounds.bmax[a] - bounds.bmin[a] );
@@ -151,8 +152,7 @@ void BVHNode::Binning( vector<uint> &indices, const vector<aabb> &boundingBoxes,
 
 		vector<aabb> bbs_right;	//a list with the total bounding boxes of the primitives that are of the right side of the split plane for every possible split
 		bbs_right.resize( k - 1 ); //k-1 possible split planes per axis
-		bbs_right[k - 2].Reset();
-		bbs_right[k - 2].Grow( bins[a][k - 1].bounds );
+		bbs_right[k - 2] = ( bins[a][k - 1].bounds );
 
 		//first step is to fill the vector with bounding boxes for the primitives on the right
 		for ( int i = k - 3; i > -1; i-- )
@@ -170,7 +170,8 @@ void BVHNode::Binning( vector<uint> &indices, const vector<aabb> &boundingBoxes,
 			float sah = bb_left.Area() * count_left + bbs_right[0].Area() * ( count - count_left );
 			if ( sah < current_value )
 			{
-				best_split = 1 + a * 7;
+				best_split = 1;
+				axis = a;
 				left->bounds = bb_left;
 				right->bounds = bbs_right[0];
 				left->count = count_left;
@@ -189,7 +190,8 @@ void BVHNode::Binning( vector<uint> &indices, const vector<aabb> &boundingBoxes,
 				float sah = bb_left.Area() * count_left + bbs_right[i].Area() * ( count - count_left );
 				if ( sah < current_value ) //current best solution found
 				{
-					best_split = ( i + 1 ) + a * 7;
+					best_split = i + 1;
+					axis = a;
 					left->bounds = bb_left;
 					right->bounds = bbs_right[i];
 					left->count = count_left;
@@ -200,10 +202,8 @@ void BVHNode::Binning( vector<uint> &indices, const vector<aabb> &boundingBoxes,
 		}
 	}
 
-	uint axis;
-	float split;
-
-	if ( best_split == 0 ) //no improvement found, split primitives in half
+	/* if no improvement is found, we split the current node in half */
+	if ( best_split == 0 )
 	{
 		left->count = ceil( (float)( count / 2 ) );
 		left->leftFirst = leftF;
@@ -215,26 +215,11 @@ void BVHNode::Binning( vector<uint> &indices, const vector<aabb> &boundingBoxes,
 		right->Subdivide( pool, poolPtr, indices, boundingBoxes );
 		return;
 	}
-	else if ( best_split < 8 ) //x_axis
-	{
-		axis = 0;
-		split = bounds.bmin[0] +  (float)best_split * (( bounds.bmax[0] - bounds.bmin[0] )  / k);
-	}
-	else if ( best_split < 15 ) //y-axis
-	{
-		axis = 1;
-		best_split -= 7;
-		split = bounds.bmin[1] +  (float)best_split * (( bounds.bmax[1] - bounds.bmin[1] )  /k);
-	}
-	else // z-axis
-	{
-		axis = 2;
-		best_split -= 14;
-		split = bounds.bmin[2] +  (float)best_split * (( bounds.bmax[2] - bounds.bmin[2] ) / k);
-	}
+
+	/* swap that is performed with the best_split value */
 	uint pointer_low = leftF;
 	uint pointer_high = leftF + count - 1;
-	uint current = leftF;
+	uint current = leftF; //the current value in the bin_indices list that we are now considering
 	for ( int i = 0; i < count; i++ )
 	{
 		if (bin_indices[axis][current-leftF] < best_split)
@@ -257,6 +242,7 @@ void BVHNode::Binning( vector<uint> &indices, const vector<aabb> &boundingBoxes,
 	right->Subdivide( pool, poolPtr, indices, boundingBoxes );
 }
 
+/* Method that adds a primitive to a bin and updates the count and aabb accordingly */
 void Bin::Add( const aabb &prim )
 {
 	bounds.Grow( prim );
@@ -376,8 +362,8 @@ bool BVHNode::TraverseToFirst( const Ray &ray, vector<BVHNode> &pool, const vect
 	}
 	else
 	{
-		pool[leftFirst].Traverse( ray, pool, indices, triangles, intersection, matList );
-		pool[leftFirst + 1].Traverse( ray, pool, indices, triangles, intersection, matList );
+		return pool[leftFirst].TraverseToFirst( ray, pool, indices, triangles, intersection, matList );
+		return pool[leftFirst + 1].TraverseToFirst( ray, pool, indices, triangles, intersection, matList );
 	}
 }
 
