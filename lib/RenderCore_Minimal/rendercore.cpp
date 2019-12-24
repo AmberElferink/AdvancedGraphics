@@ -13,7 +13,7 @@
    limitations under the License.
 */
 #include "core_settings.h"
-
+#define THREADING
 
 //#include "common_classes.h"
 
@@ -203,12 +203,13 @@ void RenderCore::SetLights(const CoreLightTri *areaLights, const int areaLightCo
 //  +-----------------------------------------------------------------------------+
 int lineNr = 0;
 int frameCounter = 0;
+
+#ifdef THREADING
 vector<thread> threads;
+#endif
 void RenderCore::Render(const ViewPyramid& view, const Convergence converge)
 {
-
-
-	
+#ifdef THREADING
 	threads.clear();
 	t.reset();
 	for (int i = 0; i < 4; i++)
@@ -225,6 +226,23 @@ void RenderCore::Render(const ViewPyramid& view, const Convergence converge)
 	}
 		printf("raytracer traced in %f\n", t.elapsed());
 
+#else
+	//---------per line raytracing --------
+
+if (lineNr < screen->height)
+{
+	raytracer.rayTraceLine(screen, view, targetTextureID, lineNr);
+	lineNr++;
+	//printf("raytraced line in %f\n", t.elapsed());
+}
+else
+{
+	lineNr = 0;
+	printf("raytraced in %f\n", t.elapsed());
+	t.reset();
+}
+
+#endif
 
 	//for (int i = 0; i < 4; i++)
 	//{
@@ -234,20 +252,7 @@ void RenderCore::Render(const ViewPyramid& view, const Convergence converge)
 
 	//raytracer.rayTrace(screen, view, targetTextureID);
 
-	//---------per line raytracing --------
 
-	//if (lineNr < screen->height)
-	//{
-	//	raytracer.rayTraceLine(screen, view, targetTextureID, lineNr);
-	//	lineNr++;
-	//	//printf("raytraced line in %f\n", t.elapsed());
-	//}
-	//else
-	//{
-	//	lineNr = 0;
-	//	printf("raytraced in %f\n", t.elapsed());
-	//	t.reset();
-	//}
 
 	// -----------per block raytracing ---------------
 	//raytracer.rayTraceRandom(view, targetTextureID, frameCounter);
@@ -269,11 +274,13 @@ void RenderCore::Render(const ViewPyramid& view, const Convergence converge)
 //  +-----------------------------------------------------------------------------+
 void RenderCore::Shutdown()
 {
+#ifdef THREADING
 	for (int i = 0; i < 4; i++)
 	{
 		if (threads[i].joinable())
 			threads[i].join();
 	}
+#endif
 
 	delete screen;
 }
