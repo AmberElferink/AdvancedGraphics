@@ -112,6 +112,7 @@ void RenderCore::SetTarget(GLTexture *target)
 	screen = new Bitmap(target->width, target->height);
 	delete raytracer.buffer;
 	raytracer.buffer = new Bitmap(screen->width, screen->height);
+	printf("screenWidth: %u, screenHeight: %u \n", screen->width, screen->height);
 }
 
 
@@ -208,21 +209,21 @@ void RenderCore::Render(const ViewPyramid& view, const Convergence converge)
 
 
 	
-	//threads.clear();
-	//t.reset();
-	//for (int i = 0; i < 4; i++)
-	//{
-	//	threads.push_back(thread([=]() {
-	//		raytracer.rayTraceBlock(view, screen, 0, i * (screen->height / 4), (i + 1) * (screen->height / 4));
-	//	}));
-	//}
+	threads.clear();
+	t.reset();
+	for (int i = 0; i < 4; i++)
+	{
+		threads.push_back(thread([=]() {
+			raytracer.rayTraceBlock(view, screen, 0, i * (screen->height / 4), (i + 1) * (screen->height / 4));
+		}));
+	}
 
-	//for (int i = 0; i < 4; i++)
-	//{
-	//	if (threads[i].joinable())
-	//		threads[i].join();
-	//}
-	//	printf("raytracer traced in %f\n", t.elapsed());
+	for (int i = 0; i < 4; i++)
+	{
+		if (threads[i].joinable())
+			threads[i].join();
+	}
+		printf("raytracer traced in %f\n", t.elapsed());
 
 
 	//for (int i = 0; i < 4; i++)
@@ -235,18 +236,18 @@ void RenderCore::Render(const ViewPyramid& view, const Convergence converge)
 
 	//---------per line raytracing --------
 
-	if (lineNr < screen->height)
-	{
-		raytracer.rayTraceLine(screen, view, targetTextureID, lineNr);
-		lineNr++;
-		//printf("raytraced line in %f\n", t.elapsed());
-	}
-	else
-	{
-		lineNr = 0;
-		printf("raytraced in %f\n", t.elapsed());
-		t.reset();
-	}
+	//if (lineNr < screen->height)
+	//{
+	//	raytracer.rayTraceLine(screen, view, targetTextureID, lineNr);
+	//	lineNr++;
+	//	//printf("raytraced line in %f\n", t.elapsed());
+	//}
+	//else
+	//{
+	//	lineNr = 0;
+	//	printf("raytraced in %f\n", t.elapsed());
+	//	t.reset();
+	//}
 
 	// -----------per block raytracing ---------------
 	//raytracer.rayTraceRandom(view, targetTextureID, frameCounter);

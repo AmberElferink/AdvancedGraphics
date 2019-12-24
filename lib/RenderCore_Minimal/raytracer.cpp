@@ -407,14 +407,14 @@ float3 Raytracer::DirectIllumination( Intersection intersection )
 {
 	float3 intersectionColor = make_float3( 0, 0, 0 );
 	float3 materialColor = intersection.material.color;
-	if ( intersection.material.texture )
+	/*if ( intersection.material.texture ) //currently is not optimized. Works but slows down rendering a lot.
 		{
 		uint color = 0;
 		TextureColor( intersection, intersection.triangle, color );
 		materialColor.x = (float)((color >> 16) & 0x0000ff)/255.f;
 		materialColor.y = (float)(( color >> 8 ) & 0x0000ff) / 255.f;
 		materialColor.z = (float)(color & 0x0000ff) / 255.f;
-		}
+		}*/
 
 	/*Check for all lights whether they can be seen from the current intersection point*/
 	for ( Light &light : scene.lightList )
