@@ -2,6 +2,11 @@
 #include "Ray.h"
 #include <iostream>
 
+#ifdef COHERENTTRAVERSAL
+const __m256 EPS8 = _mm256_set1_ps(EPSILON);
+const __m256 MINUSEPS8 = _mm256_set1_ps(-EPSILON);
+const __m256 ONE8 = _mm256_set1_ps(1.0f);
+#endif
 // -----------------------------------------------------------
 // Texture class
 // encapsulates a palettized pixel surface with pre-scaled
@@ -66,12 +71,48 @@ class Intersection
 	}
 };
 
-class BVHNode
+class Intersection8
+{
+public:
+	Intersection intersections[8];
+	void SetMaterialsZero()
+	{
+		for (int i = 0; i < 8; i++)
+		{
+			intersections[i].material = make_float3(0);
+		}
+	}
+};
+#ifdef COHERENTTRAVERSAL
+class ALIGN(32) BVHNode
+{
+public:
+	aabb bounds;
+	int leftFirst; //left points to the index of the BVHNode in the pool (no leaf) and First is the first index of the primitive contained in the leaf (Leaf)
+	uint count;	 //number of primitives that are contained in the current node
+	inline bool IsLeaf();
+	inline int Right();
+	void Subdivide(vector<BVHNode> &pool, int &poolPtr, vector<uint> &indices, const vector<aabb> &boundingBoxes);
+	void Partition(vector<uint> &indices, vector<BVHNode> &pool, int &poolPtr, const vector<aabb> &boundingBoxes, const int leftF);
+	void CalculateBounds(const vector<aabb> &boundingBoxes, const vector<uint> &indices);
+	void SAH(float &total, int &axis, float &split, const vector<uint> &indices, const vector<aabb> &boundingBoxes, const int leftF);
+	void Traverse(const Ray &ray, vector<BVHNode> &pool, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection &closest, const vector<Material *> &matList);
+	void Traverse(const Ray8 &rays, vector<BVHNode> &pool, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection8 &closest, const vector<Material *> &matList);
+	bool TraverseToFirst(const Ray &ray, vector<BVHNode> &pool, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection &closest, const vector<Material *> &matList);
+	void IntersectPrimitives(const Ray &ray, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection &closest, const vector<Material *> &matList);
+	void IntersectPrimitives(const Ray8 &rays, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection8 &closest, const vector<Material *> &matList);
+	bool IntersectNode(const Ray &ray);
+	bool IntersectNode(const Ray8 &rays);
+	static bool Intersect(const Ray &ray, const CoreTri &triangle, const vector<Material*> &matList, Intersection &intersection);
+	static bool Intersect(const Ray8 &ray, const CoreTri &triangle, const vector<Material*> &matList, Intersection8 &intr);
+};
+#else
+class ALIGN(32) BVHNode
 {
   public:
 	aabb bounds;
 	int leftFirst; //left points to the index of the BVHNode in the pool (no leaf) and First is the first index of the primitive contained in the leaf (Leaf)
-	int count;	 //number of primitives that are contained in the current node
+	uint count;	 //number of primitives that are contained in the current node
 	inline bool IsLeaf();
 	inline int Right();
 	void Subdivide( vector<BVHNode> &pool, int &poolPtr, vector<uint> &indices, const vector<aabb> &boundingBoxes );
@@ -79,11 +120,18 @@ class BVHNode
 	void CalculateBounds( const vector<aabb> &boundingBoxes, const vector<uint> &indices );
 	void SAH( float &total, int &axis, float &split, const vector<uint> &indices, const vector<aabb> &boundingBoxes, const int leftF );
 	void Traverse( const Ray &ray, vector<BVHNode> &pool, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection &closest, const vector<Material *> &matList );
+	void Traverse( const Ray8 &rays, vector<BVHNode> &pool, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection8 &closest, const vector<Material *> &matList );
 	bool TraverseToFirst(const Ray &ray, vector<BVHNode> &pool, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection &closest, const vector<Material *> &matList);
 	void IntersectPrimitives( const Ray &ray, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection &closest, const vector<Material *> &matList );
+	void IntersectPrimitives(const Ray8 &rays, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection8 &closest, const vector<Material *> &matList);
 	bool IntersectNode( const Ray &ray );
+	bool IntersectNode( const Ray8 &rays );
 	static bool Intersect( const Ray &ray, const CoreTri &triangle, const vector<Material*> &matList, Intersection &intersection );
+	static bool Intersect(const Ray8 &ray, const CoreTri &triangle, const vector<Material*> &matList, Intersection8 &intr);
 };
+#endif
+
+
 
 class BVH
 {

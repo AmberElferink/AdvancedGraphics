@@ -211,7 +211,7 @@ uint Raytracer::FloatToIntColor( float3 floatColor )
 	return ( ( ( uint )( r * 255.0f ) << 16 ) + ( ( uint )( g * 255.0f ) << 8 ) + ( uint )( b * 255.0f ) );
 }
 
-Intersection Raytracer::nearestIntersection( Ray ray )
+Intersection Raytracer::nearestIntersection(const Ray &ray )
 {
 	Intersection closest; //this will be your closest intersection of which you want to know the color
 	closest.t = 10e30;
@@ -227,6 +227,27 @@ Intersection Raytracer::nearestIntersection( Ray ray )
 			bvh[id].root->Traverse( ray, bvh[id].pool, bvh[id].indices, bvh[id].triangles, closest, scene.matList );
 			if ( closest.t < save.t )
 				save = closest;
+		id++;
+	}
+
+	return save;
+}
+
+Intersection8 Raytracer::nearestIntersection(const Ray8 &ray)
+{
+	Intersection8 closest; //this will be your closest intersection of which you want to know the color
+	int id = 0;
+	Intersection8 save;
+
+//	Find closest intersection point for all meshes
+	for (Mesh &mesh : scene.meshList)
+	{
+		bvh[id].root->Traverse(ray, bvh[id].pool, bvh[id].indices, bvh[id].triangles, closest, scene.matList);
+		for (int i = 0; i < 8; i++)
+		{
+			if (closest.intersections[i].t < save.intersections[i].t)
+				save.intersections[i] = closest.intersections[i];
+		}
 		id++;
 	}
 
@@ -377,11 +398,65 @@ float3 Raytracer::Reflect( const Ray &ray, const Intersection &intersection, int
 
 //Method that sends a ray into a scene and returns the color of the hitted objects
 //prevIntersection is only used for dieelectric n2.
+Color8 Raytracer::Trace(Ray8 &ray, const Intersection8 prevIntersection, int reflectionDepth)
+{
+	Intersection8 ni = nearestIntersection( ray );
+
+	for (int i = 0; i < 8; i++)
+	{
+		if (ni.intersections[i].t > 10e29) //background
+		{
+			reflectionDepth = -1;
+			if (ray.activeMask[i] > 0)
+			{
+				ray.color.r[i] = 0.3f; //background color //should be * ray.I
+				ray.color.g[i] = 0.3f;
+				ray.color.b[i] = 0.3f;
+				ray.activeMask[i] = 0x00000000;
+			}
+
+		}
+		else //direct illumination
+		{
+			if (isnan( abs(ray.activeMask[i]))) //it's -nan, which means it's true.
+			{
+				float3 c1 = DirectIllumination(ni.intersections[i]); //should be * ray.I
+				ray.color.r[i] = c1.x;
+				ray.color.g[i] = c1.y;
+				ray.color.b[i] = c1.z;
+				ray.activeMask[i] = 0x00000000;
+			}
+		}
+		if (_mm256_movemask_ps(ray.activeMask8) == 0)
+		{
+			return ray.color;
+		}
+	}
+		
+
+	//if ( reflectionDepth < maxReflectionDepth )
+	//{
+	//	//Case of (partially) reflective material
+	//	if (intersection.material.metallic)
+	//		return Reflect(ray, intersection, reflectionDepth);
+	//	else if (intersection.material.dielectric)
+	//		return calcDielectric(ray, intersection, prevIntersection, reflectionDepth);
+	//}
+
+	//reflectionDepth = -1;
+
+	//completely diffuse or maximum reflection depth
+	//return DirectIllumination(intersection) * ray.I; // ray.I is the intensity that comes through glass if it has passed through
+
+}
+
+//Method that sends a ray into a scene and returns the color of the hitted objects
+//prevIntersection is only used for dieelectric n2.
 float3 Raytracer::Trace(const Ray &ray, const Intersection prevIntersection, int reflectionDepth)
 {
-	Intersection intersection = nearestIntersection( ray );
+	Intersection intersection = nearestIntersection(ray);
 
-	if ( intersection.t > 10e29 )
+	if (intersection.t > 10e29)
 	{
 		reflectionDepth = -1;
 		return make_float3(0.3, 0.3, 0.3) * ray.I; //background color
@@ -403,11 +478,12 @@ float3 Raytracer::Trace(const Ray &ray, const Intersection prevIntersection, int
 
 
 
+
 float3 Raytracer::DirectIllumination( Intersection intersection )
 {
 	float3 intersectionColor = make_float3( 0, 0, 0 );
 	float3 materialColor = intersection.material.color;
-	if ( intersection.material.texture )
+	if ( 0 )//intersection.material.texture )
 		{
 		uint color = 0;
 		TextureColor( intersection, intersection.triangle, color );
@@ -484,7 +560,7 @@ float3 Raytracer::DirectIllumination( Intersection intersection )
 
 void Raytracer::rayTrace( Bitmap *screen, const ViewPyramid &view, const int targetTextureID )
 {
-	for ( int j = 0; j < screen->height; j++ )
+	for ( uint j = 0; j < screen->height; j++ )
 	{
 		rayTraceLine( screen, view, targetTextureID, j );
 	}
@@ -501,7 +577,7 @@ void Raytracer::rayTrace( Bitmap *screen, const ViewPyramid &view, const int tar
 void Raytracer::rayTraceLine(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, const int lineNr)
 {
 	int j = lineNr;
-	for ( int i = 0; i < screen->width; i++ )
+	for ( uint i = 0; i < screen->width; i++ )
 	{
 		//u and v are the vectors within the virtual screen scaled between 0 and 1, so u = px / screenwidth and y = py / screenwidth
 		float u = (float)i / (float)screen->width;
@@ -510,12 +586,40 @@ void Raytracer::rayTraceLine(Bitmap *screen, const ViewPyramid &view, const int 
 
 		float3 dir = P - view.pos;		// vector in the direction you want to shoot your ray
 		float3 D = dir / length( dir ); //normalize it
-
+		
 		Ray ray = Ray( view.pos, D );
 
 		float3 intersectionColor = Trace(ray, Intersection(), 0);
 
 		screen->pixels[i + j * screen->width] = FloatToIntColor( intersectionColor );
+	}
+}
+
+void Raytracer::rayTraceLineAVX(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, const int lineNr)
+{
+	int j = lineNr;
+	for (uint i = 0; i < screen->width; i+=8)
+	{
+		float3 O[8], D[8];
+
+		for (int di = 0; di < 8; di++)
+		{
+			int x = i + di;
+			//u and v are the vectors within the virtual screen scaled between 0 and 1, so u = px / screenwidth and y = py / screenwidth
+			float u = ((float)(i + di)) / (float)screen->width;
+			float v = ((float) j ) / (float)screen->height;
+			float3 P = view.p1 + u * (view.p2 - view.p1) + v * (view.p3 - view.p1);
+
+			float3 dir = P - view.pos;		// vector in the direction you want to shoot your ray
+			O[di] = view.pos; 
+			D[di] = dir / length(dir); //normalize it
+		}
+
+		Color8 intersectionColor = Trace(Ray8(O, D), Intersection8(), 0);
+		for (int di = 0; di < 8; di++)
+		{
+			screen->pixels[i + di + j * screen->width] = FloatToIntColor(make_float3(intersectionColor.r[di], intersectionColor.g[di], intersectionColor.b[di]));
+		}
 	}
 }
 

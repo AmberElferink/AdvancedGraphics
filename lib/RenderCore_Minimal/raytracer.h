@@ -154,8 +154,10 @@ class Raytracer
 	void rayTrace( Bitmap *screen, const ViewPyramid &view, const int targetTextureID );
 	void rayTraceBlock( const ViewPyramid &view, Bitmap *screen, const int targetTextureID, int lineStart, int lineEnd );
 	void rayTraceLine( Bitmap *screen, const ViewPyramid &view, const int targetTextureID, const int lineNr );
+	void rayTraceLineAVX(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, const int lineNr);
 	uint FloatToIntColor( float3 floatColor );
-	Intersection nearestIntersection( Ray ray );
+	Intersection nearestIntersection( const Ray &ray );
+	Intersection8 nearestIntersection(const Ray8 &ray);
 	Bitmap *rayTraceRandom( const ViewPyramid &view, const int targetTextureID, int &frameCounter );
 	void TextureColor( Intersection &intersection, const CoreTri &triangle, uint &color );
 
@@ -164,6 +166,7 @@ class Raytracer
 	float Fresnel( const float cosi, const float ncalc, const float n1, const float n2 );
 	float3 DirectIllumination( Intersection intersection );
 	float3 Trace( const Ray &ray, const Intersection prevIntersection, int reflectionDepth ); //default: air
+	Color8 Trace(Ray8 &ray, const Intersection8 prevIntersection, int reflectionDepth); //default: air
 	void storeBVH();
 };
 } // namespace lh2core

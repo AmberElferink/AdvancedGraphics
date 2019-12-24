@@ -368,6 +368,7 @@ inline float3 reflect( float3 i, float3 n ) { return i - 2.0f * n * dot( n, i );
 
 inline float3 cross( float3 a, float3 b ) { return make_float3( a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x ); }
 
+
 inline float smoothstep( float a, float b, float x )
 {
 	float y = clamp( (x - a) / (b - a), 0.0f, 1.0f );
@@ -535,8 +536,17 @@ public:
 		else
 			return Maximum( axis );
 	}
+	__inline __m256 MinMax(const __m256 sign, const int axis) const
+	{
+		__m256 min = _mm256_set1_ps(bmin[axis]); //min
+		__m256 max = _mm256_set1_ps(bmax[axis]); //max
+		return _mm256_blendv_ps(min, max, sign); // if sign[i] == true, take max[i], else take min[i]
+	}
 	__inline float Minimum( const int axis ) const { return bmin[axis]; }
 	__inline float Maximum( const int axis ) const { return bmax[axis]; }
+	__inline __m256 Minimum(const int axis, bool SIMD) const { return _mm256_set1_ps(bmin[axis]); } //set all 8 to bmin[axis]
+	__inline __m256 Maximum(const int axis, bool SIMD) const { return _mm256_set1_ps(bmax[axis]); }
+
 	float Area() const
 	{
 		union { __m128 e4; float e[4]; };

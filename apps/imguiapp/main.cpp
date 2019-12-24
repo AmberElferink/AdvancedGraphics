@@ -43,9 +43,9 @@ void PrepareScene()
 	// initialize scene
 	materialFile = string( "data/pica/pica_materials.xml" );
 	//int meshID = renderer->AddMesh("Lootchest.obj", "data/Lootchest/", 1);
-	int meshID = renderer->AddMesh("CyberpunkDeLorean.obj", "data/Delorean/", 1);
+	//int meshID = renderer->AddMesh("CyberpunkDeLorean.obj", "data/Delorean/", 1);
 	//int meshID = renderer->AddMesh("Lamborghini_Aventador.obj", "data/Lamborginhi5000/", 1);
-	//int meshID = renderer->AddMesh("basketball_OBJ.obj", "data/basketball_ball/", 1);
+	int meshID = renderer->AddMesh("basketball_OBJ.obj", "data/basketball_ball/", 1);
 
 	renderer->AddInstance(meshID, mat4::Translate(1, 1, 1));
 	//renderer->AddScene("AnimatedCube.gltf", "data/animatedCube/", mat4::Translate(-6, -3.2f, -5));

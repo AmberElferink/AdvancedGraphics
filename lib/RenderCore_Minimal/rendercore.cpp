@@ -200,30 +200,33 @@ void RenderCore::SetLights(const CoreLightTri *areaLights, const int areaLightCo
 //  |  RenderCore::Render                                                         |
 //  |  Produce one image.                                                   LH2'19|
 //  +-----------------------------------------------------------------------------+
-int lineNr = 0;
+uint lineNr = 0;
 int frameCounter = 0;
+//#define THREADS
+#ifdef THREADS
 vector<thread> threads;
+#endif
 void RenderCore::Render(const ViewPyramid& view, const Convergence converge)
 {
 
 
-	
-	//threads.clear();
-	//t.reset();
-	//for (int i = 0; i < 4; i++)
-	//{
-	//	threads.push_back(thread([=]() {
-	//		raytracer.rayTraceBlock(view, screen, 0, i * (screen->height / 4), (i + 1) * (screen->height / 4));
-	//	}));
-	//}
+#ifdef THREADS
+	threads.clear();
+	t.reset();
+	for (int i = 0; i < 4; i++)
+	{
+		threads.push_back(thread([=]() {
+			raytracer.rayTraceBlock(view, screen, 0, i * (screen->height / 4), (i + 1) * (screen->height / 4));
+		}));
+	}
 
-	//for (int i = 0; i < 4; i++)
-	//{
-	//	if (threads[i].joinable())
-	//		threads[i].join();
-	//}
-	//	printf("raytracer traced in %f\n", t.elapsed());
-
+	for (int i = 0; i < 4; i++)
+	{
+		if (threads[i].joinable())
+			threads[i].join();
+	}
+		printf("raytracer traced in %f\n", t.elapsed());
+#else
 
 	//for (int i = 0; i < 4; i++)
 	//{
@@ -237,7 +240,8 @@ void RenderCore::Render(const ViewPyramid& view, const Convergence converge)
 
 	if (lineNr < screen->height)
 	{
-		raytracer.rayTraceLine(screen, view, targetTextureID, lineNr);
+		//raytracer.rayTraceLine(screen, view, targetTextureID, lineNr);
+		raytracer.rayTraceLineAVX(screen, view, targetTextureID, lineNr);
 		lineNr++;
 		//printf("raytraced line in %f\n", t.elapsed());
 	}
@@ -255,9 +259,7 @@ void RenderCore::Render(const ViewPyramid& view, const Convergence converge)
 	//{
 	//	screen->pixels[j] = raytracer.buffer->pixels[j] / frameCounter;
 	//}
-
-
-
+#endif
 	glBindTexture(GL_TEXTURE_2D, targetTextureID);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, screen->width, screen->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, screen->pixels);
 }
@@ -268,11 +270,13 @@ void RenderCore::Render(const ViewPyramid& view, const Convergence converge)
 //  +-----------------------------------------------------------------------------+
 void RenderCore::Shutdown()
 {
+#ifdef THREADS
 	for (int i = 0; i < 4; i++)
 	{
 		if (threads[i].joinable())
 			threads[i].join();
 	}
+#endif
 
 	delete screen;
 }
