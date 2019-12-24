@@ -356,7 +356,7 @@ bool BVHNode::TraverseToFirst( const Ray &ray, vector<BVHNode> &pool, const vect
 		int right = leftFirst + count;
 		for ( int i = leftFirst; i < right; i++ )
 		{
-			if ( Intersect( ray, triangles[indices[i]], matList, intersection ) )
+			if (Intersect(ray, triangles[indices[i]], matList, intersection))
 				return true;
 		}
 		return false;
