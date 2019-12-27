@@ -310,6 +310,7 @@ float3 Raytracer::calcDielectric(Ray ray, Intersection intersection, const Inter
 	return transmissionColor + reflectionColor;
 }
 
+//currently not called because it is not optimized
 void Raytracer::TextureColor( Intersection &intersection, const CoreTri &triangle, uint &color )
 {
 	Texture tex = Texture( intersection.material.texture->width, intersection.material.texture->height );
