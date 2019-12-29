@@ -233,25 +233,17 @@ Intersection Raytracer::nearestIntersection(const Ray &ray )
 	return save;
 }
 
-Intersection8 Raytracer::nearestIntersection(const Ray8 &ray)
+void Raytracer::nearestIntersection(const Ray8 &ray, Intersection8 &closest)
 {
-	Intersection8 closest; //this will be your closest intersection of which you want to know the color
 	int id = 0;
-	Intersection8 save;
 
 //	Find closest intersection point for all meshes
 	for (Mesh &mesh : scene.meshList)
 	{
 		bvh[id].root->Traverse(ray, bvh[id].pool, bvh[id].indices, bvh[id].triangles, closest, scene.matList);
-		for (int i = 0; i < 8; i++)
-		{
-			if (closest.intersections[i].t < save.intersections[i].t)
-				save.intersections[i] = closest.intersections[i];
-		}
 		id++;
 	}
 
-	return save;
 }
 
 
@@ -400,14 +392,15 @@ float3 Raytracer::Reflect( const Ray &ray, const Intersection &intersection, int
 //prevIntersection is only used for dieelectric n2.
 Color8 Raytracer::Trace(Ray8 &ray, const Intersection8 prevIntersection, int reflectionDepth)
 {
-	Intersection8 ni = nearestIntersection( ray );
+	Intersection8 closest;
+	nearestIntersection(ray, closest);
 
 	for (int i = 0; i < 8; i++)
 	{
-		if (ni.intersections[i].t > 10e29) //background
+		if (closest.t[i] > 10e29) //background
 		{
 			reflectionDepth = -1;
-			if (ray.activeMask[i] > 0)
+			if (isnan(abs(ray.activeMask[i])))//ray.activeMask[i] > 0)
 			{
 				ray.color.r[i] = 0.3f; //background color //should be * ray.I
 				ray.color.g[i] = 0.3f;
@@ -420,7 +413,7 @@ Color8 Raytracer::Trace(Ray8 &ray, const Intersection8 prevIntersection, int ref
 		{
 			if (isnan( abs(ray.activeMask[i]))) //it's -nan, which means it's true.
 			{
-				float3 c1 = DirectIllumination(ni.intersections[i]); //should be * ray.I
+				float3 c1 = DirectIllumination(closest.intersections[i]); //should be * ray.I
 				ray.color.r[i] = c1.x;
 				ray.color.g[i] = c1.y;
 				ray.color.b[i] = c1.z;

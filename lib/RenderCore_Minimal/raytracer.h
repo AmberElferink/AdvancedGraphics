@@ -157,7 +157,7 @@ class Raytracer
 	void rayTraceLineAVX(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, const int lineNr);
 	uint FloatToIntColor( float3 floatColor );
 	Intersection nearestIntersection( const Ray &ray );
-	Intersection8 nearestIntersection(const Ray8 &ray);
+	void nearestIntersection(const Ray8 &ray, Intersection8 &closest);
 	Bitmap *rayTraceRandom( const ViewPyramid &view, const int targetTextureID, int &frameCounter );
 	void TextureColor( Intersection &intersection, const CoreTri &triangle, uint &color );
 

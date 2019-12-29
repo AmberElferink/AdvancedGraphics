@@ -67,6 +67,7 @@ bool BVHNode::Intersect(const Ray8 &ray8, const CoreTri &triangle, const vector<
 	__m256 Qz8 = _mm256_sub_ps(_mm256_mul_ps(Tx8, e1y8), _mm256_mul_ps(Ty8, e1x8));
 	__m256 v8 = _mm256_mul_ps(_mm256_add_ps(_mm256_add_ps(_mm256_mul_ps(ray8.dx8, Qx8), _mm256_mul_ps(ray8.dy8, Qy8)), _mm256_mul_ps(ray8.dz8, Qz8)), inv_det8);
 	__m256 mask3 = _mm256_and_ps(_mm256_cmp_ps(v8, _mm256_setzero_ps(), _CMP_GE_OQ), _mm256_cmp_ps(_mm256_add_ps(u8, v8), ONE8, _CMP_LE_OQ));
+
 	union { __m256 t8; float t[8]; };
 	t8 = _mm256_mul_ps(_mm256_add_ps(_mm256_add_ps(_mm256_mul_ps(e2x8, Qx8), _mm256_mul_ps(e2y8, Qy8)), _mm256_mul_ps(e2z8, Qz8)), inv_det8);
 	__m256 mask8 = _mm256_cmp_ps(t8, _mm256_setzero_ps(), _CMP_GE_OQ);
@@ -86,6 +87,63 @@ bool BVHNode::Intersect(const Ray8 &ray8, const CoreTri &triangle, const vector<
 			intr.intersections[i] = Intersection(t[i], intersectionPoint, normal, triangle);
 			intr.intersections[i].material = *matList[triangle.material];
 			int w = 0;
+		}
+		return true;
+	}
+
+}
+
+bool BVHNode::IntersectClosest(const Ray8 &ray8, const CoreTri &triangle, const vector<Material*> &matList, Intersection8 &closest)
+{
+	__m256 e1x8 = _mm256_set1_ps(triangle.vertex1.x - triangle.vertex0.x);
+	__m256 e1y8 = _mm256_set1_ps(triangle.vertex1.y - triangle.vertex0.y);
+	__m256 e1z8 = _mm256_set1_ps(triangle.vertex1.z - triangle.vertex0.z);
+	__m256 e2x8 = _mm256_set1_ps(triangle.vertex2.x - triangle.vertex0.x);
+	__m256 e2y8 = _mm256_set1_ps(triangle.vertex2.y - triangle.vertex0.y);
+	__m256 e2z8 = _mm256_set1_ps(triangle.vertex2.z - triangle.vertex0.z);
+	__m256 Px8 = _mm256_sub_ps(_mm256_mul_ps(ray8.dy8, e2z8), _mm256_mul_ps(ray8.dz8, e2y8));
+	__m256 Py8 = _mm256_sub_ps(_mm256_mul_ps(ray8.dz8, e2x8), _mm256_mul_ps(ray8.dx8, e2z8));
+	__m256 Pz8 = _mm256_sub_ps(_mm256_mul_ps(ray8.dx8, e2y8), _mm256_mul_ps(ray8.dy8, e2x8));
+	__m256 det8 = _mm256_add_ps(_mm256_add_ps(_mm256_mul_ps(e1x8, Px8), _mm256_mul_ps(e1y8, Py8)), _mm256_mul_ps(e1z8, Pz8));
+	// det <= -EPS|| det >= EPS
+	__m256 mask1 = _mm256_or_ps(_mm256_cmp_ps(det8, MINUSEPS8, _CMP_LE_OQ), _mm256_cmp_ps(det8, EPS8, _CMP_GE_OQ));
+
+	__m256 inv_det8 = _mm256_rcp_ps(det8);
+	__m256 Tx8 = _mm256_sub_ps(ray8.ox8, _mm256_set1_ps(triangle.vertex0.x));
+	__m256 Ty8 = _mm256_sub_ps(ray8.oy8, _mm256_set1_ps(triangle.vertex0.y));
+	__m256 Tz8 = _mm256_sub_ps(ray8.oz8, _mm256_set1_ps(triangle.vertex0.z));
+	__m256 u8 = _mm256_mul_ps(_mm256_add_ps(_mm256_add_ps(_mm256_mul_ps(Tx8, Px8), _mm256_mul_ps(Ty8, Py8)), _mm256_mul_ps(Tz8, Pz8)), inv_det8);
+	__m256 mask2 = _mm256_and_ps(_mm256_cmp_ps(u8, _mm256_setzero_ps(), _CMP_GE_OQ), _mm256_cmp_ps(u8, ONE8, _CMP_LE_OQ));
+	__m256 Qx8 = _mm256_sub_ps(_mm256_mul_ps(Ty8, e1z8), _mm256_mul_ps(Tz8, e1y8));
+	__m256 Qy8 = _mm256_sub_ps(_mm256_mul_ps(Tz8, e1x8), _mm256_mul_ps(Tx8, e1z8));
+	__m256 Qz8 = _mm256_sub_ps(_mm256_mul_ps(Tx8, e1y8), _mm256_mul_ps(Ty8, e1x8));
+	__m256 v8 = _mm256_mul_ps(_mm256_add_ps(_mm256_add_ps(_mm256_mul_ps(ray8.dx8, Qx8), _mm256_mul_ps(ray8.dy8, Qy8)), _mm256_mul_ps(ray8.dz8, Qz8)), inv_det8);
+	__m256 mask3 = _mm256_and_ps(_mm256_cmp_ps(v8, _mm256_setzero_ps(), _CMP_GE_OQ), _mm256_cmp_ps(_mm256_add_ps(u8, v8), ONE8, _CMP_LE_OQ));
+	union { __m256 t8; float t[8];};
+	t8 = _mm256_mul_ps(_mm256_add_ps(_mm256_add_ps(_mm256_mul_ps(e2x8, Qx8), _mm256_mul_ps(e2y8, Qy8)), _mm256_mul_ps(e2z8, Qz8)), inv_det8);
+	__m256 mask8 = _mm256_cmp_ps(t8, _mm256_setzero_ps(), _CMP_GE_OQ);
+	//__m256 mask5 = _mm256_cmp_ps(t8, closest.t8, _CMP_LT_OQ); //test if distance is shorter than to previous noted intersection. Happens in nearestIntersection
+	union {__m256 combined8; float combined[8];};
+	combined8 = _mm256_and_ps(_mm256_and_ps(_mm256_and_ps(mask1, mask2), mask3), mask8);//_mm256_and_ps(_mm256_and_ps(_mm256_and_ps(_mm256_and_ps(mask1, mask2), mask3), mask8), mask5);
+	//ray8.t8 = _mm_blendv_ps(ray8.t8, t8, combined); store result in ray for each alive ray.
+	
+	int finalMask = _mm256_movemask_ps(combined8);
+	if (finalMask == 0)
+		return false;
+	else
+	{
+		closest.t8 = _mm256_blendv_ps(closest.t8, t8, combined8);
+		//we currently want to give back intersections for all alive rays. in a masked array
+		for (int i = 0; i < 8; i++)
+		{
+			if (isnan(abs(combined[i])) )
+			{
+				float3 intersectionPoint = make_float3(ray8.ox[i] + ray8.dx[i] * t[i], ray8.oy[i] + ray8.dy[i] * t[i], ray8.oz[i] + ray8.dz[i] * t[i]);
+				float3 normal = make_float3(triangle.Nx, triangle.Ny, triangle.Nz);
+				closest.intersections[i] = Intersection(t[i], intersectionPoint, normal, triangle);
+				closest.intersections[i].material = *matList[triangle.material];
+			}
+
 		}
 		return true;
 	}
@@ -309,14 +367,7 @@ void BVHNode::IntersectPrimitives(const Ray8 &rays, const vector<uint> &indices,
 	int right = leftFirst + count;
 	for (int i = leftFirst; i < right; i++)
 	{
-		Intersection8 intersection;
-		if (Intersect(rays, triangles[indices[i]], matList, intersection))
-		{
-			for(int i = 0; i < 8; i++)
-				if (intersection.intersections[i].t < closest.intersections[i].t) //check whether the current intersection is the closest intersection
-					closest.intersections[i] = intersection.intersections[i];
-		}
-
+		IntersectClosest(rays, triangles[indices[i]], matList, closest);
 	}
 }
 

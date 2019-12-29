@@ -75,6 +75,22 @@ class Intersection8
 {
 public:
 	Intersection intersections[8];
+	union { float t[8]; __m256 t8; };
+	Intersection8(float* t8)
+	{
+		for (int i = 0; i < 8; i++)
+		{
+			t[i] = t8[i];
+		}
+	}
+	Intersection8()
+	{
+		for (int i = 0; i < 8; i++)
+		{
+			t[i] = 10e30;
+		}
+	}
+
 	void SetMaterialsZero()
 	{
 		for (int i = 0; i < 8; i++)
@@ -105,6 +121,7 @@ public:
 	bool IntersectNode(const Ray8 &rays);
 	static bool Intersect(const Ray &ray, const CoreTri &triangle, const vector<Material*> &matList, Intersection &intersection);
 	static bool Intersect(const Ray8 &ray, const CoreTri &triangle, const vector<Material*> &matList, Intersection8 &intr);
+	static bool IntersectClosest(const Ray8 &ray, const CoreTri &triangle, const vector<Material*> &matList, Intersection8 &intr);
 };
 #else
 class ALIGN(32) BVHNode
