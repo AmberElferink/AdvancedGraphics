@@ -70,6 +70,7 @@ class Intersection
 	}
 	Intersection::Intersection(const Intersection& inter)
 	{
+		t = inter.t;
 		point = inter.point;
 		norm = inter.norm;
 		material = inter.material;

@@ -240,8 +240,8 @@ void RenderCore::Render(const ViewPyramid& view, const Convergence converge)
 
 	if (lineNr < screen->height)
 	{
-		//raytracer.rayTraceLine(screen, view, targetTextureID, lineNr);
-		raytracer.rayTraceLineAVX(screen, view, targetTextureID, lineNr);
+		raytracer.rayTraceLine(screen, view, targetTextureID, lineNr);
+		//raytracer.rayTraceLineAVX(screen, view, targetTextureID, lineNr);
 		lineNr++;
 		//printf("raytraced line in %f\n", t.elapsed());
 	}
