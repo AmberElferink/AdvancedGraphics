@@ -7,6 +7,8 @@ const __m256 EPS8 = _mm256_set1_ps(EPSILON);
 const __m256 MINUSEPS8 = _mm256_set1_ps(-EPSILON);
 const __m256 ONE8 = _mm256_set1_ps(1.0f);
 #endif
+
+extern int rayNr;
 // -----------------------------------------------------------
 // Texture class
 // encapsulates a palettized pixel surface with pre-scaled
@@ -65,6 +67,13 @@ class Intersection
     Intersection( const float t, const float3 &point, const float3 &norm, const CoreTri &triangle ) : t( t ), point( point ), norm( norm )
 	{
 		//material = triangle.material;
+	}
+	Intersection::Intersection(const Intersection& inter)
+	{
+		point = inter.point;
+		norm = inter.norm;
+		material = inter.material;
+		triangle = inter.triangle;
 	}
 	Intersection()
 	{

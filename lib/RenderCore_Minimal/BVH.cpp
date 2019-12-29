@@ -49,7 +49,7 @@ bool BVHNode::Intersect(const Ray8 &ray8, const CoreTri &triangle, const vector<
 	__m256 e2x8 = _mm256_set1_ps(triangle.vertex2.x - triangle.vertex0.x);
 	__m256 e2y8 = _mm256_set1_ps(triangle.vertex2.y - triangle.vertex0.y);
 	__m256 e2z8 = _mm256_set1_ps(triangle.vertex2.z - triangle.vertex0.z);
-	__m256 Px8 = _mm256_sub_ps(_mm256_mul_ps(ray8.dy8, e2z8), _mm256_mul_ps(ray8.dz8, e2y8));
+	__m256 Px8 = _mm256_sub_ps(_mm256_mul_ps(ray8.dy8, e2z8), _mm256_mul_ps(ray8.dz8, e2y8)); //P = h hierboven
 	__m256 Py8 = _mm256_sub_ps(_mm256_mul_ps(ray8.dz8, e2x8), _mm256_mul_ps(ray8.dx8, e2z8));
 	__m256 Pz8 = _mm256_sub_ps(_mm256_mul_ps(ray8.dx8, e2y8), _mm256_mul_ps(ray8.dy8, e2x8));
 	__m256 det8 = _mm256_add_ps(_mm256_add_ps(_mm256_mul_ps(e1x8, Px8), _mm256_mul_ps(e1y8, Py8)), _mm256_mul_ps(e1z8, Pz8));
@@ -57,7 +57,7 @@ bool BVHNode::Intersect(const Ray8 &ray8, const CoreTri &triangle, const vector<
 	__m256 mask1 = _mm256_or_ps(_mm256_cmp_ps(det8, MINUSEPS8, _CMP_LE_OQ), _mm256_cmp_ps(det8, EPS8, _CMP_GE_OQ));
 
 	__m256 inv_det8 = _mm256_rcp_ps(det8);
-	__m256 Tx8 = _mm256_sub_ps(ray8.ox8, _mm256_set1_ps(triangle.vertex0.x));
+	__m256 Tx8 = _mm256_sub_ps(ray8.ox8, _mm256_set1_ps(triangle.vertex0.x)); //T = edge hierboven
 	__m256 Ty8 = _mm256_sub_ps(ray8.oy8, _mm256_set1_ps(triangle.vertex0.y));
 	__m256 Tz8 = _mm256_sub_ps(ray8.oz8, _mm256_set1_ps(triangle.vertex0.z));
 	__m256 u8 = _mm256_mul_ps(_mm256_add_ps(_mm256_add_ps(_mm256_mul_ps(Tx8, Px8), _mm256_mul_ps(Ty8, Py8)), _mm256_mul_ps(Tz8, Pz8)), inv_det8);

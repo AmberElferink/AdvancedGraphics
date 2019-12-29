@@ -1,5 +1,5 @@
 #include "core_settings.h"
-
+int rayNr = 0;
 // adapted from Möller–Trumbore intersection algorithm: https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
 /*bool Raytracer::Intersect( const Ray &ray, const CoreTri &triangle, Intersection &intersection )
 {
@@ -585,6 +585,7 @@ void Raytracer::rayTraceLine(Bitmap *screen, const ViewPyramid &view, const int 
 		float3 intersectionColor = Trace(ray, Intersection(), 0);
 
 		screen->pixels[i + j * screen->width] = FloatToIntColor( intersectionColor );
+		rayNr++;
 	}
 }
 
@@ -593,6 +594,7 @@ void Raytracer::rayTraceLineAVX(Bitmap *screen, const ViewPyramid &view, const i
 	int j = lineNr;
 	for (uint i = 0; i < screen->width; i+=8)
 	{
+
 		float3 O[8], D[8];
 
 		for (int di = 0; di < 8; di++)
@@ -613,6 +615,7 @@ void Raytracer::rayTraceLineAVX(Bitmap *screen, const ViewPyramid &view, const i
 		{
 			screen->pixels[i + di + j * screen->width] = FloatToIntColor(make_float3(intersectionColor.r[di], intersectionColor.g[di], intersectionColor.b[di]));
 		}
+		rayNr += 8;
 	}
 }
 
