@@ -93,7 +93,7 @@ bool Raytracer::IsOccluded( const Ray &ray, const Light &light )
 
 
 /*Method that shoots a shadow ray and checks whether there are objects between the current intersection point and a light source*/
-bool Raytracer::viewLight( Intersection intersection, const Light &light, float3 &lightVector )
+bool Raytracer::viewLight( const Intersection &intersection, const Light &light, float3 &lightVector )
 {
 	float3 dir = light.position - intersection.point; //vector between light and intersection point
 	float dist = length( dir );
@@ -108,7 +108,7 @@ bool Raytracer::viewLight( Intersection intersection, const Light &light, float3
 }
 
 /*Method that checks whether a directional light source can be viewed*/
-bool Raytracer::viewDirLight( Intersection intersection, const Light &light, float3 &lightVector )
+bool Raytracer::viewDirLight( const Intersection &intersection, const Light &light, float3 &lightVector )
 {
 	lightVector = light.direction / length( light.direction ); //normalized vector
 
@@ -124,7 +124,7 @@ bool Raytracer::viewDirLight( Intersection intersection, const Light &light, flo
   It returns 0 if the spot light is occluded,
   1 if it can see the outer circle of light
   and 2 if it can also see the inner circle. */
-int Raytracer::viewSpotLight( Intersection intersection, const Light &light, float3 &lightVector )
+int Raytracer::viewSpotLight( const Intersection &intersection, const Light &light, float3 &lightVector )
 {
 	//Normalized spotlight vector
 	float3 spotDir = light.direction / length( light.direction );
@@ -186,7 +186,7 @@ float3 Raytracer::randomPointTri( const CoreLightTri &triangle )
 }
 
 /*method that checks whether a random point in an area of light is visible*/
-bool Raytracer::viewAreaLight( const Intersection intersection, Light &light )
+bool Raytracer::viewAreaLight( const Intersection &intersection, Light &light )
 {
 	//Random point on the triangle
 	float3 point = randomPointTri( light.triangle );

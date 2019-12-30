@@ -84,7 +84,10 @@ bool BVHNode::Intersect(const Ray8 &ray8, const CoreTri &triangle, const vector<
 			float3 intersectionPoint = make_float3(ray8.ox[i] + ray8.dx[i] * t[i], ray8.oy[i] + ray8.dy[i] * t[i], ray8.oz[i] + ray8.dz[i] * t[i]);
 			float3 normal = make_float3(triangle.Nx, triangle.Ny, triangle.Nz);
 
-			intr.intersections[i] = Intersection(t[i], intersectionPoint, normal, triangle);
+			intr.intersections[i].t = t[i];
+			intr.intersections[i].point = intersectionPoint;
+			intr.intersections[i].norm = normal;
+			intr.intersections[i].triangle = triangle;// = Intersection(t[i], intersectionPoint, normal, triangle);
 			intr.intersections[i].material = *matList[triangle.material];
 			int w = 0;
 		}
@@ -140,7 +143,12 @@ bool BVHNode::IntersectClosest(const Ray8 &ray8, const CoreTri &triangle, const 
 			{
 				float3 intersectionPoint = make_float3(ray8.ox[i] + ray8.dx[i] * t[i], ray8.oy[i] + ray8.dy[i] * t[i], ray8.oz[i] + ray8.dz[i] * t[i]);
 				float3 normal = make_float3(triangle.Nx, triangle.Ny, triangle.Nz);
-				closest.intersections[i] = Intersection(t[i], intersectionPoint, normal, triangle);
+				closest.intersections[i].t = t[i];
+				closest.intersections[i].point = intersectionPoint;
+				closest.intersections[i].norm = normal;
+				closest.intersections[i].triangle = triangle;
+				closest.intersections[i].material = Material(); //somehow, it becomes fully black if I don't do this.
+				//= Intersection(t[i], intersectionPoint, normal, triangle);
 				closest.intersections[i].material = *matList[triangle.material];
 			}
 
@@ -355,8 +363,14 @@ void BVHNode::IntersectPrimitives( const Ray &ray, const vector<uint> &indices, 
 	{
 		Intersection intersection;
 		if(Intersect( ray, triangles[indices[i]], matList, intersection ))
-			if ( intersection.t < closest.t ) //check whether the current intersection is the closest intersection
-				closest = intersection;
+			if (intersection.t < closest.t) //check whether the current intersection is the closest intersection
+			{
+				closest.t = intersection.t;
+				closest.material = intersection.material;
+				closest.norm = intersection.norm;
+				closest.point = intersection.point;
+				closest.triangle = intersection.triangle;
+			}
 	}	
 }
 

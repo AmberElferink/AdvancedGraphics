@@ -33,12 +33,6 @@ class Texture
 class Material
 {
   public:
-	// constructor / destructor
-	Material() = default;
-	Material( float3 color )
-	{
-		color = color;
-	}
 	// data members
 
 	float3 color = make_float3( 0.5 ); // diffuse and reflective material color
@@ -48,6 +42,23 @@ class Material
 	bool dielectric = false;
 	float specularity = 0.8;
 	float indexOfRefraction = 1.0003; //air
+
+		// constructor / destructor /copy constructor
+	Material() = default;
+	Material(float3 color)
+	{
+		color = color;
+	}
+	Material(const Material &mat)
+	{
+		color = mat.color;
+		absorption = mat.absorption;
+		texture = mat.texture;
+		metallic = mat.metallic;
+		dielectric = mat.dielectric;
+		specularity = mat.specularity;
+		indexOfRefraction = mat.indexOfRefraction;
+	}
 
 	float3 GetColor()
 	{

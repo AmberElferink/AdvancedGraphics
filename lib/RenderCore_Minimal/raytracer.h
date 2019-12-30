@@ -146,10 +146,10 @@ class Raytracer
 	void Render( const mat4 &transform );
 	//bool Intersect( const Ray &ray, const CoreTri &triangle, Intersection &intersection );
 	bool IsOccluded( const Ray &ray, const Light &light );
-	bool viewLight( Intersection intersection, const Light &light, float3 &lightVector );
-	bool viewDirLight( Intersection intersection, const Light &light, float3 &lightVector );
-	int viewSpotLight( Intersection intersection, const Light &light, float3 &lightVector );
-	bool viewAreaLight( const Intersection intersection, Light &light );
+	bool viewLight( const Intersection &intersection, const Light &light, float3 &lightVector );
+	bool viewDirLight( const Intersection &intersection, const Light &light, float3 &lightVector );
+	int viewSpotLight( const Intersection &intersection, const Light &light, float3 &lightVector );
+	bool viewAreaLight( const Intersection &intersection, Light &light );
 	float3 randomPointTri( const CoreLightTri &triangle );
 	void rayTrace( Bitmap *screen, const ViewPyramid &view, const int targetTextureID );
 	void rayTraceBlock( const ViewPyramid &view, Bitmap *screen, const int targetTextureID, int lineStart, int lineEnd );
