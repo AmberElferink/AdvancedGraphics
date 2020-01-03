@@ -540,7 +540,9 @@ public:
 	{
 		__m256 min = _mm256_set1_ps(bmin[axis]); //min
 		__m256 max = _mm256_set1_ps(bmax[axis]); //max
-		return _mm256_blendv_ps(min, max, sign); // if sign[i] == true, take max[i], else take min[i]
+		__m256 result = _mm256_blendv_ps(min, max, sign); // if sign[i] == true, take max[i], else take min[i]
+
+		return result;
 	}
 	__inline float Minimum( const int axis ) const { return bmin[axis]; }
 	__inline float Maximum( const int axis ) const { return bmax[axis]; }

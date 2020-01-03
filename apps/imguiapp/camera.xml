@@ -1,6 +1,6 @@
 <camera>
-    <position x="0.61645067" y="1.2974299" z="-12.489144"/>
-    <direction x="0" y="-0.4335458" z="0.90113157"/>
+    <position x="10.744714" y="1.2974299" z="-7.686377"/>
+    <direction x="-0.83428621" y="-0.38541204" z="0.3942388"/>
     <FOV>40</FOV>
     <brightness>0</brightness>
     <contrast>0</contrast>
