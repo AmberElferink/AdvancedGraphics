@@ -139,9 +139,7 @@ public:
 	void IntersectPrimitives(const Ray &ray, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection &closest, const vector<Material *> &matList);
 	void IntersectPrimitives(const Ray8 &rays, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection8 &closest, const vector<Material *> &matList);
 	bool IntersectNode(const Ray &ray);
-	bool IntersectNodeJacco(const Ray &r); //this doesn't work
 	bool IntersectNode(const Ray8 &rays);
-	bool IntersectNodeJacco(const Ray8 &rays); //this doesn't work
 	static bool Intersect(const Ray &ray, const CoreTri &triangle, const vector<Material*> &matList, Intersection &intersection);
 	static bool Intersect(const Ray8 &ray, const CoreTri &triangle, const vector<Material*> &matList, Intersection8 &intr);
 	static bool IntersectClosest(const Ray8 &ray, const CoreTri &triangle, const vector<Material*> &matList, Intersection8 &intr);

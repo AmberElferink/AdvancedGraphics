@@ -196,6 +196,12 @@ void RenderCore::SetLights(const CoreLightTri *areaLights, const int areaLightCo
 	}
 }
 
+void RenderCore::SetProbePos(const int2 pos)
+{
+	raytracer.probePos = pos;
+}
+
+
 //  +-----------------------------------------------------------------------------+
 //  |  RenderCore::Render                                                         |
 //  |  Produce one image.                                                   LH2'19|
@@ -240,8 +246,8 @@ void RenderCore::Render(const ViewPyramid& view, const Convergence converge)
 
 	if (lineNr < screen->height)
 	{
-		//raytracer.rayTraceLine(screen, view, targetTextureID, lineNr);
-		raytracer.rayTraceLineAVX(screen, view, targetTextureID, lineNr);
+		raytracer.rayTraceLine(screen, view, targetTextureID, lineNr);
+		//raytracer.rayTraceLineAVX(screen, view, targetTextureID, lineNr);
 		lineNr++;
 		//printf("raytraced line in %f\n", t.elapsed());
 	}

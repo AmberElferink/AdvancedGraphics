@@ -138,6 +138,8 @@ class Raytracer
 	vector<BVH> bvh;
 	Bitmap *buffer;
 	Scene scene;
+	int2 probePos; //mouse position for which you want to get more info
+
 	// constructor / destructor
 	Raytracer() = default;
 	// methods

@@ -51,6 +51,11 @@ CoreStats CoreAPI::GetCoreStats()
 	return core->coreStats;
 }
 
+void CoreAPI::SetProbePos(const int2 pos)
+{
+	core->SetProbePos(pos);
+}
+
 void CoreAPI::SetTarget( GLTexture* target, const uint spp )
 {
 	// we received an OpenGL texture as a render target; forward to the SetTarget method in rendercore.cpp.

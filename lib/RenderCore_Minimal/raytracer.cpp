@@ -572,6 +572,10 @@ void Raytracer::rayTraceLine(Bitmap *screen, const ViewPyramid &view, const int 
 	int j = lineNr;
 	for ( uint i = 0; i < screen->width; i++ )
 	{
+		//printf("pX: %i, i: %i, pY: %i, j: %i\n", probePos.x, i, probePos.y, j);
+		if (i == probePos.x && j == probePos.y)
+			printf("probing: x: %i, y: %i, rayNr: %i\n", i, j, rayNr);
+
 		//u and v are the vectors within the virtual screen scaled between 0 and 1, so u = px / screenwidth and y = py / screenwidth
 		float u = (float)i / (float)screen->width;
 		float v = (float)j / (float)screen->height;

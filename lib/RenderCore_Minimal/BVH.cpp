@@ -320,18 +320,7 @@ void BVHNode::Traverse(const Ray &ray, vector<BVHNode> &pool, const vector<uint>
 }
 /*Method that traverses trough the nodes of an BVH and returns the closest intersection*/
 void BVHNode::Traverse( const Ray8 &ray8, vector<BVHNode> &pool, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection8 &closest, const vector<Material *> &matList )
-{
-	//bool intersectsNode = false;
-	//for (int i = 0; i < 8; i++)
-	//{
-	//	float3 O = make_float3(ray8.ox[i], ray8.oy[i], ray8.oz[i]);
-	//	float3 D = make_float3(ray8.dx[i], ray8.dy[i], ray8.dz[i]);
-
-	//	if (IntersectNode(Ray(O, D)))
-	//		intersectsNode = true;
-	//}
-	//if (!intersectsNode)
-	
+{	
 	if ( !IntersectNode( ray8 ) )
 		return;
 	if ( IsLeaf() )
@@ -396,34 +385,6 @@ void BVHNode::IntersectPrimitives(const Ray8 &rays, const vector<uint> &indices,
 	}
 }
 
-// original working one
-/* Method that checks whether the current ray intersects the bounding box of a given node
-//   based on: https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-box-intersection */
-//bool BVHNode::IntersectNode(const Ray &ray)
-//{
-//	float tmin, tmax, tymin, tymax, tzmin, tzmax;
-//
-//	tmin = ( bounds.MinMax(ray.signX,0) - ray.O.x ) * ray.recDir.x;
-//	tmax = ( bounds.MinMax(1 - ray.signX,0) - ray.O.x ) * ray.recDir.x;
-//	tymin = ( bounds.MinMax(ray.signY,1) - ray.O.y ) * ray.recDir.y;
-//	tymax = ( bounds.MinMax(1 - ray.signY,1) - ray.O.y ) * ray.recDir.y;
-//
-//	if ( ( tmin > tymax ) || ( tymin > tmax ) )
-//		return false;
-//	if ( tymin > tmin )
-//		tmin = tymin;
-//	if ( tymax < tmax )
-//		tmax = tymax;
-//
-//	tzmin = ( bounds.MinMax(ray.signZ, 2) - ray.O.z ) * ray.recDir.z;
-//	tzmax = ( bounds.MinMax(1 - ray.signZ, 2) - ray.O.z ) * ray.recDir.z;
-//
-//	if ( ( tmin > tzmax ) || ( tzmin > tmax ) )
-//		return false;
-//
-//	return true;
-//}
-
 /* Method that checks whether the current ray intersects the bounding box of a given node
    based on: https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-box-intersection */
 bool BVHNode::IntersectNode(const Ray &ray)
@@ -452,24 +413,22 @@ bool BVHNode::IntersectNode(const Ray &ray)
 
 
 
-//my own try, translating code of the other intersectNode method (something goes wrong only sometimes)
+//translating code of the intersectNode method
 bool BVHNode::IntersectNode(const Ray8 &ray8)
 {
 	//float tmin, tmax, tymin, tymax, tzmin, tzmax;
 	__m256 tmin, tmax, tymin, tymax, tzmin, tzmax;
 
 	//tmin = (bounds.MinMax(ray.signX, 0) - ray.O.x) * ray.recDir.x;
-	__m256 minmax1 = bounds.MinMax(ray8.signX8, 0);
-	tmin = _mm256_mul_ps(_mm256_sub_ps(minmax1, ray8.ox8), ray8.recDirX8);
+	tmin = _mm256_mul_ps(_mm256_sub_ps(bounds.MinMax(ray8.signX8,  0), ray8.ox8), ray8.recDirX8);
 	//tmax = (bounds.MinMax(1 - ray.signX, 0) - ray.O.x) * ray.recDir.x;
-	
 	__m256 invSignX8 = _mm256_andnot_ps(ray8.signX8, true256);
-	__m256 minmax = bounds.MinMax(invSignX8, 0);
-	tmax = _mm256_mul_ps(_mm256_sub_ps( minmax, ray8.ox8), ray8.recDirX8);
+	tmax = _mm256_mul_ps(_mm256_sub_ps(bounds.MinMax(invSignX8,    0), ray8.ox8), ray8.recDirX8);
 	//tymin = (bounds.MinMax(ray.signY, 1) - ray.O.y) * ray.recDir.y;
-	tymin = _mm256_mul_ps(_mm256_sub_ps(bounds.MinMax(                 ray8.signY8,           1), ray8.oy8), ray8.recDirY8);  /*andnot(signX8, true) is to flip signX8*/
+	tymin = _mm256_mul_ps(_mm256_sub_ps(bounds.MinMax(ray8.signY8, 1), ray8.oy8), ray8.recDirY8);  /*andnot(signX8, true) is to flip signX8*/
 	//tymax = (bounds.MinMax(1 - ray.signY, 1) - ray.O.y) * ray.recDir.y;
-	tymax = _mm256_mul_ps(_mm256_sub_ps(bounds.MinMax(_mm256_andnot_ps(ray8.signY8, true256), 1), ray8.oy8), ray8.recDirY8);
+	__m256 invSignY8 = _mm256_andnot_ps(ray8.signY8, true256);
+	tymax = _mm256_mul_ps(_mm256_sub_ps(bounds.MinMax(invSignY8,   1), ray8.oy8), ray8.recDirY8);
 
 
 	//if ((tmin > tymax) || (tymin > tmax))
@@ -489,7 +448,8 @@ bool BVHNode::IntersectNode(const Ray8 &ray8)
 	//tzmin = (bounds.MinMax(ray.signZ, 2) - ray.O.z) * ray.recDir.z;
 	tzmin = _mm256_mul_ps(_mm256_sub_ps(bounds.MinMax(                 ray8.signZ8, 2),			 ray8.oz8), ray8.recDirZ8);
 	//tzmax = (bounds.MinMax(1 - ray.signZ, 2) - ray.O.z) * ray.recDir.z;
-	tzmax = _mm256_mul_ps(_mm256_sub_ps(bounds.MinMax(_mm256_andnot_ps(ray8.signZ8, true256), 2), ray8.oz8), ray8.recDirZ8);
+	__m256 invSignZ8 = _mm256_andnot_ps(ray8.signZ8, true256);
+	tzmax = _mm256_mul_ps(_mm256_sub_ps(bounds.MinMax(invSignZ8, 2), ray8.oz8), ray8.recDirZ8);
 
 	//if ((tmin > tzmax) || (tzmin > tmax))
 	//	return false;
@@ -501,149 +461,7 @@ bool BVHNode::IntersectNode(const Ray8 &ray8)
 		return false;
 
 	return true;
-
-	//from jacco's slides, only works for SSE (substracting 8 bbox things doesn't match the aabb class)
-	//__m128 t1 = _mm_mul_ps(_mm_sub_ps(bounds.bmin4, O4), rD4);
-	//__m128 t2 = _mm_mul_ps(_mm_sub_ps(node->bmax4, O4), rD4);
-	//__m128 vmax4 = _mm_max_ps(t1, t2), vmin4 = _mm_min_ps(t1, t2);
-	//float* vmax = (float*)&vmax4, *vmin = (float*)&vmin4;
-	//float tmax = min(vmax[0], min(vmax[1], vmax[2]));
-	//float tmin = max(vmin[0], max(vmin[1], vmin[2]));
-	//return tmax >= tmin && tmax >= 0;
 }
-
-
-//jacco's scalar code slides to AVX it doesn't work!!!
-
-bool BVHNode::IntersectNodeJacco(const Ray &r )
-{
-	float tx1 = (bounds.bmin3.x - r.O.x) * r.recDir.x;
-	float tx2 = (bounds.bmax3.x - r.O.x) * r.recDir.x;
-	float tmin = min(tx1, tx2);
-	float tmax = max(tx1, tx2);
-	float ty1 = (bounds.bmin3.y - r.O.y) * r.recDir.x;
-	float ty2 = (bounds.bmax3.y - r.O.y) * r.recDir.x;
-	tmin = max(tmin, min(ty1, ty2));
-	tmax = min(tmax, max(ty1, ty2));
-	float tz1 = (bounds.bmin3.z - r.O.z) * r.recDir.x;
-	float tz2 = (bounds.bmax3.z - r.O.z) * r.recDir.x;
-	tmin = max(tmin, min(tz1, tz2));
-	tmax = min(tmax, max(tz1, tz2));
-	return tmax >= tmin && tmax >= 0;
-}
-
-
-
-
-/* Method that checks whether the current ray intersects the bounding box of a given node
-   based on: https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-box-intersection 
-   translated to AVX, it doesn't work since jacco's code also doesn't work!*/
-
-bool BVHNode::IntersectNodeJacco(const Ray8 &ray8)
-{
-
-
-	//jacco's scalar code slides to AVX (which doesn't work)
-	/*
-		bool intersection( box b, ray r )
-		{
-		float tx1 = (b.min.x - r.O.x) * r.rD.x;
-		float tx2 = (b.max.x - r.O.x) * r.rD.x;
-		float tmin = min(tx1, tx2);
-		float tmax = max(tx1, tx2);
-		float ty1 = (b.min.y - r.O.y) * r.rD.y;
-		float ty2 = (b.max.y - r.O.y) * r.rD.y;
-		tmin = max(tmin, min(ty1, ty2));
-		tmax = min(tmax, max(ty1, ty2));
-		float tz1 = (b.min.z - r.O.z) * r.rD.z;
-		float tz2 = (b.max.z - r.O.z) * r.rD.z;
-		tmin = max(tmin, min(tz1, tz2));
-		tmax = min(tmax, max(tz1, tz2));
-		return tmax >= tmin && tmax >= 0;
-		}
-	*/
-	const __m256 bminx = _mm256_set1_ps(bounds.bmin3.x); //TODO dit misschien van te voren berekenen en opslaan bij maken tree
-	const __m256 bminy = _mm256_set1_ps(bounds.bmin3.y);
-	const __m256 bminz = _mm256_set1_ps(bounds.bmin3.z);
-	const __m256 bmaxx = _mm256_set1_ps(bounds.bmax3.x); //TODO dit misschien van te voren berekenen en opslaan bij maken tree
-	const __m256 bmaxy = _mm256_set1_ps(bounds.bmax3.y);
-	const __m256 bmaxz = _mm256_set1_ps(bounds.bmax3.z);
-
-	//float tx1 = (b.min.x - r.O.x) * r.rD.x;
-	__m256 tx1 = _mm256_mul_ps(_mm256_sub_ps(bminx, ray8.ox8), ray8.recDirX8);
-	//float tx2 = (b.max.x - r.O.x) * r.rD.x;
-	__m256 tx2 = _mm256_mul_ps(_mm256_sub_ps(bmaxx, ray8.ox8), ray8.recDirX8);
-	//float tmin = min(tx1, tx2);
-	__m256 tmin = _mm256_min_ps(tx1, tx2);
-	//float tmax = max(tx1, tx2);
-	__m256 tmax = _mm256_max_ps(tx1, tx2);
-	//float ty1 = (b.min.y - r.O.y) * r.rD.y;
-	__m256 ty1 = _mm256_mul_ps(_mm256_sub_ps(bminy, ray8.oy8), ray8.recDirY8);
-	//float ty2 = (b.max.y - r.O.y) * r.rD.y;
-	__m256 ty2 = _mm256_mul_ps(_mm256_sub_ps(bmaxy, ray8.oy8), ray8.recDirY8);
-	//tmin = max(tmin, min(ty1, ty2));
-	tmin = _mm256_max_ps(tmin, _mm256_min_ps(ty1,ty2));
-	//tmax = min(tmax, max(ty1, ty2));
-	tmax = _mm256_min_ps(tmin, _mm256_max_ps(ty1,ty2));
-	//float tz1 = (b.min.z - r.O.z) * r.rD.z;
-	__m256 tz1 = _mm256_mul_ps(_mm256_sub_ps(bminz, ray8.oz8), ray8.recDirZ8);
-	//float tz2 = (b.max.z - r.O.z) * r.rD.z;
-	__m256 tz2 = _mm256_mul_ps(_mm256_sub_ps(bmaxz, ray8.oz8), ray8.recDirZ8);
-	//tmin = max(tmin, min(tz1, tz2));
-	tmin = _mm256_max_ps(tmin, _mm256_min_ps(tz1, tz2));
-	//tmax = min(tmax, max(tz1, tz2));
-	tmax = _mm256_min_ps(tmax, _mm256_max_ps(tz1, tz2));
-	//return tmax >= tmin && tmax >= 0;
-	__m256 result = _mm256_cmp_ps(tmax, tmin, _CMP_GE_OQ);
-	result = _mm256_and_ps(result, _mm256_cmp_ps(tmax, _mm256_setzero_ps(), _CMP_GE_OQ));
-	if (_mm256_movemask_ps(result) != 0)
-		return true;
-	else return false;
-
-
-
-
-	//my own try, translating code of the other intersectNode method (something goes wrong only sometimes)
-	//__m256 tmin, tmax, tymin, tymax, tzmin, tzmax;
-
-	//tmin = _mm256_mul_ps(_mm256_sub_ps(bounds.MinMax( /*flip signX8*/  ray8.signX8, 0),           ray8.ox8), ray8.recDirX8);
-	//tmax = _mm256_sub_ps(_mm256_sub_ps(bounds.MinMax( _mm256_andnot_ps(ray8.signX8, true256), 0), ray8.ox8), ray8.recDirX8);
-	//tymin = _mm256_sub_ps(_mm256_sub_ps(bounds.MinMax(                 ray8.signY8, 1),			 ray8.oy8), ray8.recDirY8);
-	//tymax = _mm256_sub_ps(_mm256_sub_ps(bounds.MinMax(_mm256_andnot_ps(ray8.signY8, true256), 1), ray8.oy8), ray8.recDirY8);
-
-	//__m256 tminGTtymax = _mm256_cmp_ps(tmin, tymax, _CMP_GT_OS);
-	//__m256 tyminGTtmax = _mm256_cmp_ps(tymin, tmax, _CMP_GT_OS);
-	////or the above two. If any of them is > 0 (use movemask according to slides), continue, otherwise return false
-	//int checkY = _mm256_movemask_ps(_mm256_or_ps(tminGTtymax, tyminGTtmax));
-	//if (checkY == 0)
-	//	return false;
-
-	//tmin = _mm256_max_ps(tymin, tmin);
-	//tmax = _mm256_min_ps(tymax, tmax);
-	//
-	//tzmin = _mm256_sub_ps(_mm256_sub_ps(bounds.MinMax(                 ray8.signZ8, 2),			 ray8.oz8), ray8.recDirZ8);
-	//tzmax = _mm256_sub_ps(_mm256_sub_ps(bounds.MinMax(_mm256_andnot_ps(ray8.signZ8, true256), 2), ray8.oz8), ray8.recDirZ8);
-
-	//__m256 tminGTtzmax = _mm256_cmp_ps(tmin, tzmax, _CMP_GT_OS);
-	//__m256 tzminGTtmax = _mm256_cmp_ps(tzmin, tmax, _CMP_GT_OS);
-
-	//int checkZ = _mm256_movemask_ps(_mm256_or_ps(tminGTtzmax, tzminGTtmax));
-	//if (checkZ == 0)
-	//	return false;
-
-	//return true;
-
-	//from jacco's slides, only works for SSE (substracting 8 bbox things doesn't match the aabb class)
-	//__m128 t1 = _mm_mul_ps(_mm_sub_ps(bounds.bmin4, O4), rD4);
-	//__m128 t2 = _mm_mul_ps(_mm_sub_ps(node->bmax4, O4), rD4);
-	//__m128 vmax4 = _mm_max_ps(t1, t2), vmin4 = _mm_min_ps(t1, t2);
-	//float* vmax = (float*)&vmax4, *vmin = (float*)&vmin4;
-	//float tmax = min(vmax[0], min(vmax[1], vmax[2]));
-	//float tmin = max(vmin[0], max(vmin[1], vmin[2]));
-	//return tmax >= tmin && tmax >= 0;
-}
-
-
 
 /*Methode that construct a BVH*/
 void BVH::ConstructBVH( const vector<float4> &vertexData, const int vertexCount, const vector<CoreTri> &triangleData )

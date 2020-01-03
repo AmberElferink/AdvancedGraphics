@@ -30,7 +30,7 @@ public:
 	// GetCoreStats_: obtain a const ref to the CoreStats object, which provides statistics on the rendering process.
 	CoreStats GetCoreStats();
 	// SetProbePos: set a pixel for which the triangle and instance id will be captured, e.g. for object picking.
-	void SetProbePos( const int2 pos ) { /* not implemented for the minimal core. */ }
+	void SetProbePos(const int2 pos);
 	// SetTarget: specify an OpenGL texture as a render target for the path tracer.
 	void SetTarget( GLTexture* target, const uint spp );
 	// Setting: modify a render setting
