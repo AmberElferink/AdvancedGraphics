@@ -209,7 +209,7 @@ void RenderCore::SetProbePos(const int2 pos)
 uint lineNr = 0;
 int frameCounter = 0;
 #define THREADS
-//#define AVX
+#define AVX
 
 
 #ifdef THREADS
