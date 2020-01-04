@@ -7,25 +7,25 @@ const __m256 true256 = _mm256_set1_ps(-1); // produces -nan. you need -nan as tr
 bool BVHNode::Intersect( const Ray &ray, const CoreTri &triangle, const vector<Material*> &matList, Intersection &intersection )
 {
 	//TODO: het kan zijn dat een aantal dingen al geprecalculate zijn in CoreTri. Kijk daarnaar voor versnelling
-	float3 edge1, edge2, h, s, q;
-	float a, f, u, v;
+	float3 edge1, edge2, P, T, Q;
+	float det, inv_det, u, v;
 	edge1 = triangle.vertex1 - triangle.vertex0;
 	edge2 = triangle.vertex2 - triangle.vertex0;
-	h = cross( ray.D, edge2 );
-	a = dot( edge1, h );
-	if ( a > -EPSILON && a < EPSILON )
+	P = cross( ray.D, edge2 );
+	det = dot( edge1, P );
+	if ( det > -EPSILON && det < EPSILON )
 		return false; // This ray is parallel to this triangle.
-	f = 1.0f / a;
-	s = ray.O - triangle.vertex0;
-	u = f * dot( s, h );
+	inv_det = 1.0f / det;
+	T = ray.O - triangle.vertex0;
+	u = inv_det * dot( T, P );
 	if ( u < 0.0f || u > 1.0f )
 		return false;
-	q = cross( s, edge1 );
-	v = f * dot( ray.D, q );
+	Q = cross( T, edge1 );
+	v = inv_det * dot( ray.D, Q );
 	if ( v < 0.0f || u + v > 1.0f )
 		return false;
 	// At this stage we can compute t to find out where the intersection point is on the line.
-	float t = f * dot( edge2, q );
+	float t = inv_det * dot( edge2, Q );
 	if ( t > EPSILON && t < 1.0f / EPSILON ) // ray intersection
 	{
 		float3 intersectionPoint = ray.O + ray.D * t;
@@ -49,7 +49,7 @@ bool BVHNode::Intersect(const Ray8 &ray8, const CoreTri &triangle, const vector<
 	__m256 e2x8 = _mm256_set1_ps(triangle.vertex2.x - triangle.vertex0.x);
 	__m256 e2y8 = _mm256_set1_ps(triangle.vertex2.y - triangle.vertex0.y);
 	__m256 e2z8 = _mm256_set1_ps(triangle.vertex2.z - triangle.vertex0.z);
-	__m256 Px8 = _mm256_sub_ps(_mm256_mul_ps(ray8.dy8, e2z8), _mm256_mul_ps(ray8.dz8, e2y8)); //P = h hierboven
+	__m256 Px8 = _mm256_sub_ps(_mm256_mul_ps(ray8.dy8, e2z8), _mm256_mul_ps(ray8.dz8, e2y8));
 	__m256 Py8 = _mm256_sub_ps(_mm256_mul_ps(ray8.dz8, e2x8), _mm256_mul_ps(ray8.dx8, e2z8));
 	__m256 Pz8 = _mm256_sub_ps(_mm256_mul_ps(ray8.dx8, e2y8), _mm256_mul_ps(ray8.dy8, e2x8));
 	__m256 det8 = _mm256_add_ps(_mm256_add_ps(_mm256_mul_ps(e1x8, Px8), _mm256_mul_ps(e1y8, Py8)), _mm256_mul_ps(e1z8, Pz8));
@@ -115,6 +115,7 @@ bool BVHNode::IntersectClosest(const Ray8 &ray8, const CoreTri &triangle, const 
 	__m256 Tx8 = _mm256_sub_ps(ray8.ox8, _mm256_set1_ps(triangle.vertex0.x));
 	__m256 Ty8 = _mm256_sub_ps(ray8.oy8, _mm256_set1_ps(triangle.vertex0.y));
 	__m256 Tz8 = _mm256_sub_ps(ray8.oz8, _mm256_set1_ps(triangle.vertex0.z));
+	// u8 =  ((Tx8*Px8) + (Ty8 * Py8)) + (Tz8 * Pz8))  * invd8)
 	__m256 u8 = _mm256_mul_ps(_mm256_add_ps(_mm256_add_ps(_mm256_mul_ps(Tx8, Px8), _mm256_mul_ps(Ty8, Py8)), _mm256_mul_ps(Tz8, Pz8)), inv_det8);
 	__m256 mask2 = _mm256_and_ps(_mm256_cmp_ps(u8, _mm256_setzero_ps(), _CMP_GE_OQ), _mm256_cmp_ps(u8, ONE8, _CMP_LE_OQ));
 	__m256 Qx8 = _mm256_sub_ps(_mm256_mul_ps(Ty8, e1z8), _mm256_mul_ps(Tz8, e1y8));
@@ -124,10 +125,11 @@ bool BVHNode::IntersectClosest(const Ray8 &ray8, const CoreTri &triangle, const 
 	__m256 mask3 = _mm256_and_ps(_mm256_cmp_ps(v8, _mm256_setzero_ps(), _CMP_GE_OQ), _mm256_cmp_ps(_mm256_add_ps(u8, v8), ONE8, _CMP_LE_OQ));
 	union { __m256 t8; float t[8];};
 	t8 = _mm256_mul_ps(_mm256_add_ps(_mm256_add_ps(_mm256_mul_ps(e2x8, Qx8), _mm256_mul_ps(e2y8, Qy8)), _mm256_mul_ps(e2z8, Qz8)), inv_det8);
-	__m256 mask8 = _mm256_cmp_ps(t8, _mm256_setzero_ps(), _CMP_GE_OQ);
+	__m256 maskNoBackground = _mm256_cmp_ps(t8, _mm256_setzero_ps(), _CMP_GE_OQ);
+	__m256 maskCloser = _mm256_cmp_ps(closest.t8, t8, _CMP_GT_OQ);
 	//__m256 mask5 = _mm256_cmp_ps(t8, closest.t8, _CMP_LT_OQ); //test if distance is shorter than to previous noted intersection. Happens in nearestIntersection
 	union {__m256 combined8; float combined[8];};
-	combined8 = _mm256_and_ps(_mm256_and_ps(_mm256_and_ps(mask1, mask2), mask3), mask8);//_mm256_and_ps(_mm256_and_ps(_mm256_and_ps(_mm256_and_ps(mask1, mask2), mask3), mask8), mask5);
+	combined8 = _mm256_and_ps(_mm256_and_ps(_mm256_and_ps(_mm256_and_ps(mask1, mask2), mask3), maskNoBackground), maskCloser);//_mm256_and_ps(_mm256_and_ps(_mm256_and_ps(_mm256_and_ps(mask1, mask2), mask3), mask8), mask5);
 	//ray8.t8 = _mm_blendv_ps(ray8.t8, t8, combined); store result in ray for each alive ray.
 	
 	int finalMask = _mm256_movemask_ps(combined8);
@@ -137,7 +139,7 @@ bool BVHNode::IntersectClosest(const Ray8 &ray8, const CoreTri &triangle, const 
 	{
 		closest.t8 = _mm256_blendv_ps(closest.t8, t8, combined8);
 		//we currently want to give back intersections for all alive rays. in a masked array
-		for (int i = 0; i < 8; i++)
+		for (int i = 0; i < 8; i++) //PROBABLY REWRITING INTERSECTION TO SIMD WILL WORK
 		{
 			if (isnan(abs(combined[i])) )
 			{
@@ -155,7 +157,6 @@ bool BVHNode::IntersectClosest(const Ray8 &ray8, const CoreTri &triangle, const 
 		}
 		return true;
 	}
-
 }
 
 bool BVHNode::IsLeaf()

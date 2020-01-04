@@ -246,14 +246,15 @@ void RenderCore::Render(const ViewPyramid& view, const Convergence converge)
 
 	if (lineNr < screen->height)
 	{
-		raytracer.rayTraceLine(screen, view, targetTextureID, lineNr);
-		//raytracer.rayTraceLineAVX(screen, view, targetTextureID, lineNr);
+		//raytracer.rayTraceLine(screen, view, targetTextureID, lineNr);
+		raytracer.rayTraceLineAVX(screen, view, targetTextureID, lineNr);
 		lineNr++;
 		//printf("raytraced line in %f\n", t.elapsed());
 	}
 	else
 	{
 		lineNr = 0;
+		rayNr = 0;
 		printf("raytraced in %f\n", t.elapsed());
 		t.reset();
 	}
@@ -266,7 +267,6 @@ void RenderCore::Render(const ViewPyramid& view, const Convergence converge)
 	//	screen->pixels[j] = raytracer.buffer->pixels[j] / frameCounter;
 	//}
 #endif
-	rayNr = 0;
 	glBindTexture(GL_TEXTURE_2D, targetTextureID);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, screen->width, screen->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, screen->pixels);
 }

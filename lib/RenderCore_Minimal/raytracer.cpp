@@ -411,7 +411,7 @@ Color8 Raytracer::Trace(Ray8 &ray, const Intersection8 prevIntersection, int ref
 		}
 		else //direct illumination
 		{
-			if (isnan( abs(ray.activeMask[i]))) //it's -nan, which means it's true.
+			if (isnan( abs(ray.activeMask[i]))) //it's -nan, which means it's true. (0 is false)
 			{
 				float3 c1 = DirectIllumination(closest.intersections[i]); //should be * ray.I
 				ray.color.r[i] = c1.x;
@@ -466,7 +466,8 @@ float3 Raytracer::Trace(const Ray &ray, const Intersection prevIntersection, int
 
 	reflectionDepth = -1;
 	//completely diffuse or maximum reflection depth
-	return DirectIllumination(intersection) * ray.I; // ray.I is the intensity that comes through glass if it has passed through
+	float3 color = DirectIllumination(intersection) * ray.I; // ray.I is the intensity that comes through glass if it has passed through
+	return color;
 }
 
 
