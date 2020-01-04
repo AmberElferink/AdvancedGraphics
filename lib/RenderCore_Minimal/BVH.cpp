@@ -149,8 +149,6 @@ bool BVHNode::IntersectClosest(const Ray8 &ray8, const CoreTri &triangle, const 
 				closest.intersections[i].point = intersectionPoint;
 				closest.intersections[i].norm = normal;
 				closest.intersections[i].triangle = triangle;
-				closest.intersections[i].material = Material(); //somehow, it becomes fully black if I don't do this.
-				//= Intersection(t[i], intersectionPoint, normal, triangle);
 				closest.intersections[i].material = *matList[triangle.material];
 			}
 

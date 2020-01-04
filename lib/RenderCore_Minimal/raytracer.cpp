@@ -633,6 +633,15 @@ void Raytracer::rayTraceBlock(const ViewPyramid &view, Bitmap *screen, const int
 	}
 }
 
+void Raytracer::rayTraceBlockAVX(const ViewPyramid &view, Bitmap *screen, const int targetTextureID, int lineStart, int lineEnd)
+{
+
+	for (int i = lineStart; i < lineEnd; i++)
+	{
+		rayTraceLineAVX(screen, view, targetTextureID, i);
+	}
+}
+
 //-----------------------------------------------------
 // shoot a ray through point p to intersect the scene.
 //  p3 |------------------|
