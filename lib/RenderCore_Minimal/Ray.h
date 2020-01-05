@@ -1,6 +1,6 @@
 #pragma once
 #define COHERENTTRAVERSAL //packet traversal, 4 rays at once
-
+#define RAYPACKETSIZE 4 //8 simd rays per packet, so 32 rays total
 class Ray
 {
 public:
@@ -45,6 +45,12 @@ public:
 	}
 };
 
+class Colors
+{
+public:
+	Color8 colors[RAYPACKETSIZE];
+};
+
 class ALIGN(32) Ray8 //Eight rays in one, AVX for SIMD stuff. 
 {
 public:
@@ -65,7 +71,7 @@ public:
 	union { __m256 signY8; float signY[8]; };
 	union { __m256 signZ8; float signZ[8]; };
 
-	union { __m256 activeMask8; float activeMask[8]; };
+	union { __m256 activeMask8; float deadMask[8]; };
 
 	Color8 color;
 
@@ -94,8 +100,28 @@ public:
 			activeMask8 = _mm256_cmp_ps(_mm256_setzero_ps(), _mm256_setzero_ps(), _CMP_EQ_OS);
 			int w = 0;
 	}
+	Ray8::Ray8()
+	{
+
+	}
 	Ray8::~Ray8()
 	{
+	}
+};
+
+//group of Ray8 simd rays for packet traversal
+class Rays
+{
+public:
+	Ray8 rays[RAYPACKETSIZE];
+	int I[RAYPACKETSIZE];
+	int ia = RAYPACKETSIZE; //one past last active ray (rays at and behind rays[I[ia]] do not intersect)
+	Rays::Rays()
+	{
+		for (int i = 0; i < RAYPACKETSIZE; i++)
+		{
+			I[i] = i;
+		}
 	}
 };
 

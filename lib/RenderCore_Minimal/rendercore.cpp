@@ -208,8 +208,9 @@ void RenderCore::SetProbePos(const int2 pos)
 //  +-----------------------------------------------------------------------------+
 uint lineNr = 0;
 int frameCounter = 0;
-#define THREADS
-#define AVX
+//#define THREADS
+//#define AVX
+#define AVXPACKETTRAVERSAL
 
 
 #ifdef THREADS
@@ -225,11 +226,11 @@ void RenderCore::Render(const ViewPyramid& view, const Convergence converge)
 	for (int i = 0; i < 4; i++)
 	{
 		threads.push_back(thread([=]() {
-#ifdef AVX
-			raytracer.rayTraceBlockAVX(view, screen, 0, i * (screen->height / 4), (i + 1) * (screen->height / 4));
-#else
-			raytracer.rayTraceBlock(view, screen, 0, i * (screen->height / 4), (i + 1) * (screen->height / 4));
-#endif
+			#ifdef AVX
+				raytracer.rayTraceBlockAVX(view, screen, 0, i * (screen->height / 4), (i + 1) * (screen->height / 4));
+			#else
+				raytracer.rayTraceBlock(view, screen, 0, i * (screen->height / 4), (i + 1) * (screen->height / 4));
+			#endif
 		}));
 	}
 
@@ -254,12 +255,17 @@ void RenderCore::Render(const ViewPyramid& view, const Convergence converge)
 	if (lineNr < screen->height)
 	{
 		
-#ifdef AVX
-		raytracer.rayTraceLineAVX(screen, view, targetTextureID, lineNr);
-#else
-		raytracer.rayTraceLine(screen, view, targetTextureID, lineNr);
-#endif
-		lineNr++;
+		#ifdef AVX
+			raytracer.rayTraceLineAVX(screen, view, targetTextureID, lineNr);
+			lineNr++;
+		#elif defined AVXPACKETTRAVERSAL
+			raytracer.rayTraceInPackets(screen, view, targetTextureID, lineNr);
+			lineNr+= RAYPACKETSIZE;
+		#else
+			raytracer.rayTraceLine(screen, view, targetTextureID, lineNr);
+			lineNr++;
+		#endif
+		
 		//printf("raytraced line in %f\n", t.elapsed());
 	}
 	else
