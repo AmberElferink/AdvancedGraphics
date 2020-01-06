@@ -253,7 +253,7 @@ void Raytracer::nearestIntersection(Rays &r, Intersections &closests)
 	//	Find closest intersection point for all meshes
 	for (Mesh &mesh : scene.meshList)
 	{
-		bvh[id].root->Traverse(r, bvh[id].pool, bvh[id].indices, bvh[id].triangles, closests, scene.matList);
+		bvh[id].root->Traverse(r, RAYPACKETSIZE, bvh[id].pool, bvh[id].indices, bvh[id].triangles, closests, scene.matList);
 		id++;
 	}
 
@@ -415,9 +415,9 @@ Color8 Raytracer::Trace(Ray8 &ray, const Intersection8 prevIntersection, int ref
 			reflectionDepth = -1;
 			if (isnan(abs(ray.deadMask[i])))//ray.activeMask[i] > 0)
 			{
-				ray.color.r[i] = 0.3f; //background color //should be * ray.I
+				ray.color.b[i] = 0.3f; //background color //should be * ray.I
 				ray.color.g[i] = 0.3f;
-				ray.color.b[i] = 0.3f;
+				ray.color.r[i] = 0.3f;
 				ray.deadMask[i] = 0x00000000;
 			}
 
@@ -427,9 +427,9 @@ Color8 Raytracer::Trace(Ray8 &ray, const Intersection8 prevIntersection, int ref
 			if (isnan(abs(ray.deadMask[i]))) //it's -nan, which means it's true. (0 is false)
 			{
 				float3 c1 = DirectIllumination(closest.intersections[i]); //should be * ray.I
-				ray.color.r[i] = c1.x;
+				ray.color.b[i] = c1.x;
 				ray.color.g[i] = c1.y;
-				ray.color.b[i] = c1.z;
+				ray.color.r[i] = c1.z;
 				ray.deadMask[i] = 0x00000000;
 			}
 		}
@@ -447,26 +447,26 @@ void Raytracer::Trace(Rays &r, const Intersections prevIntersection, int reflect
 	Intersections closests;
 	nearestIntersection(r, closests);
 
-	if (reflectionDepth == 0) //color the background for the first round for all inactive rays
-	{
-		for (int j = r.ia; j < RAYPACKETSIZE; j++)
-		{
-			for (int i = 0; i < 8; i++)
-			{
-				//inactive rays got the background
-				r.rays[j].color.r[i] = 0.3f; //background color //should be * ray.I
-				r.rays[j].color.g[i] = 0.3f;
-				r.rays[j].color.b[i] = 0.3f;
-				r.rays[j].deadMask[i] = 0x00000000;
-			}
-		}
-	}
+	//if (reflectionDepth == 0) //color the background for the first round for all inactive rays
+	//{
+	//	for (int j = r.ia; j < RAYPACKETSIZE; j++)
+	//	{
+	//		for (int i = 0; i < 8; i++)
+	//		{
+	//			//inactive rays got the background
+	//			r.rays[j].color.r[i] = 0.3f; //background color //should be * ray.I
+	//			r.rays[j].color.g[i] = 0.3f;
+	//			r.rays[j].color.b[i] = 0.3f;
+	//			r.rays[j].deadMask[i] = 0x00000000;
+	//		}
+	//	}
+	//}
 
-if (r.ia == 0)
-		return; //there are no rays that still need a color
+//if (r.ia == 0)
+//		return; //there are no rays that still need a color
 
 	//all active rays must be checked.
-	for (int j = 0; j < r.ia; j++)
+	for (int j = 0; j < RAYPACKETSIZE; j++)
 	{
 		for (int i = 0; i < 8; i++)
 		{
@@ -475,9 +475,9 @@ if (r.ia == 0)
 				if (isnan(abs(r.rays[r.I[j]].deadMask[i]))) //it's -nan, which means it's true. (0 is false)
 				{
 					float3 c1 = DirectIllumination(closests.inter[r.I[j]].intersections[i]); //should be * ray.I
-					r.rays[r.I[j]].color.r[i] = c1.x;
+					r.rays[r.I[j]].color.b[i] = c1.x;
 					r.rays[r.I[j]].color.g[i] = c1.y;
-					r.rays[r.I[j]].color.b[i] = c1.z;
+					r.rays[r.I[j]].color.r[i] = c1.z;
 					r.rays[r.I[j]].deadMask[i] = 0x00000000;
 				}
 
@@ -487,9 +487,9 @@ if (r.ia == 0)
 				reflectionDepth = -1;
 				if (isnan(abs(r.rays[j].deadMask[i])))//ray.activeMask[i] > 0)
 				{
-					r.rays[r.I[j]].color.r[i] = 0.3f; //background color //should be * ray.I
+					r.rays[r.I[j]].color.b[i] = 0.3f; //background color //should be * ray.I
 					r.rays[r.I[j]].color.g[i] = 0.3f;
-					r.rays[r.I[j]].color.b[i] = 0.3f;
+					r.rays[r.I[j]].color.r[i] = 0.3f;
 					r.rays[r.I[j]].deadMask[i] = 0x00000000;
 				}
 
@@ -497,7 +497,7 @@ if (r.ia == 0)
 			if (_mm256_movemask_ps(r.rays[r.I[j]].activeMask8) == 0)
 			{
 				swap(r.I[j], r.I[r.ia]);
-				r.ia = j;
+				r.ia--;
 			}
 		}
 	}
@@ -692,7 +692,7 @@ void Raytracer::rayTraceLineAVX(Bitmap *screen, const ViewPyramid &view, const i
 		Color8 intersectionColor = Trace(Ray8(O, D), Intersection8(), 0);
 		for (int di = 0; di < 8; di++)
 		{
-			screen->pixels[i + di + lineNr * screen->width] = FloatToIntColor(make_float3(intersectionColor.r[di], intersectionColor.g[di], intersectionColor.b[di]));
+			screen->pixels[i + di + lineNr * screen->width] = FloatToIntColor(make_float3(intersectionColor.b[di], intersectionColor.g[di], intersectionColor.r[di]));
 		}
 		rayNr += 8;
 	}
@@ -700,14 +700,16 @@ void Raytracer::rayTraceLineAVX(Bitmap *screen, const ViewPyramid &view, const i
 
 void Raytracer::rayTraceInPackets(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, const int lineNr)
 {
-	Rays rays;
 	for (uint i = 0; i < screen->width; i += 8)
 	{
+		Rays r;
 		float3 O[8], D[8];
 		for (int dj = 0; dj < RAYPACKETSIZE; dj++)
 		{
 			for (int di = 0; di < 8; di++)
 			{
+				if (i + di== probePos.x && lineNr + dj == probePos.y)
+					printf("probing: x: %i, y: %i, rayNr: %i\n", i + di, lineNr + dj, rayNr);
 				int x = i + di;
 				//u and v are the vectors within the virtual screen scaled between 0 and 1, so u = px / screenwidth and y = py / screenwidth
 				float u = ((float)(i + di)) / (float)screen->width;
@@ -718,19 +720,19 @@ void Raytracer::rayTraceInPackets(Bitmap *screen, const ViewPyramid &view, const
 				O[di] = view.pos;
 				D[di] = dir / length(dir); //normalize it
 			}
-			rays.rays[dj] = Ray8(O, D);
+			r.rays[dj] = Ray8(O, D);
 		}
-		
-		Trace(rays, Intersections(), 0);
+
+		Trace(r, Intersections(), 0);
 
 		for (int dj = 0; dj < RAYPACKETSIZE; dj++)
 		{
 			for (int di = 0; di < 8; di++)
 			{
-				screen->pixels[(i + di) + (lineNr + dj) * screen->width] = FloatToIntColor(make_float3(rays.rays->color.r[di], rays.rays->color.g[di], rays.rays->color.b[di]));
+				screen->pixels[(i + di) + (lineNr + dj) * screen->width] = FloatToIntColor(make_float3(r.rays[dj].color.b[di], r.rays[dj].color.g[di], r.rays[dj].color.r[di]));
 			}
 		}
-		rayNr += 8 * RAYPACKETSIZE;
+		rayNr += 8 ; //*RAYPACKETSIZE, but for debugging only look at the first row.
 	}
 }
 

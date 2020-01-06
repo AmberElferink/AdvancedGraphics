@@ -141,14 +141,14 @@ public:
 	void SAH(float &total, int &axis, float &split, const vector<uint> &indices, const vector<aabb> &boundingBoxes, const int leftF);
 	void Traverse(const Ray &ray, vector<BVHNode> &pool, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection &closest, const vector<Material *> &matList);
 	void Traverse(const Ray8 &rays, vector<BVHNode> &pool, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection8 &closest, const vector<Material *> &matList);
-	void Traverse(Rays &r, vector<BVHNode> &pool, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersections &closests, const vector<Material *> &matList);
+	void Traverse(Rays &r, int ia, vector<BVHNode> &pool, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersections &closests, const vector<Material *> &matList);
 	bool TraverseToFirst(const Ray &ray, vector<BVHNode> &pool, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection &intersection, const vector<Material *> &matList);
 	void IntersectPrimitives(const Ray &ray, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection &closest, const vector<Material *> &matList);
 	void IntersectPrimitives(const Ray8 &rays, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection8 &closest, const vector<Material *> &matList);
-	void IntersectPrimitives(const Rays &r, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersections &closests, const vector<Material *> &matList);
+	void IntersectPrimitives(const Rays &r, int ia, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersections &closests, const vector<Material *> &matList);
 	bool IntersectNode(const Ray &ray);
 	bool IntersectNode(const Ray8 &rays);
-	int partRays(Rays &r);
+	int partRays(Rays &r, int ia);
 	static bool Intersect(const Ray &ray, const CoreTri &triangle, const vector<Material*> &matList, Intersection &intersection);
 	static bool Intersect(const Ray8 &ray, const CoreTri &triangle, const vector<Material*> &matList, Intersection8 &intr);
 	static bool IntersectClosest(const Ray8 &ray, const CoreTri &triangle, const vector<Material*> &matList, Intersection8 &intr);

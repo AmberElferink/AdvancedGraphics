@@ -28,9 +28,9 @@ public:
 class Color8
 {
 public:
-	union { __m256 r8; float r[8]; };
+	union { __m256 r8; float b[8]; };
 	union { __m256 g8; float g[8]; };
-	union { __m256 b8; float b[8]; };
+	union { __m256 b8; float r[8]; };
 	Color8(float r, float g, float b)
 	{
 		r8 = _mm256_set1_ps(r);
