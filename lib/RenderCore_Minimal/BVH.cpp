@@ -313,8 +313,6 @@ int BVHNode::partRays(Rays &r, int ia)
 	{
 		if (IntersectNode(r.rays[r.I[i]]))
 			swap(r.I[ie++], r.I[i]);
-		else
-			int w = 0;
 	}
 	return ie;
 }
@@ -352,7 +350,7 @@ void BVHNode::Traverse(Rays &r, int ia, vector<BVHNode> &pool, const vector<uint
 {
 
 	ia = partRays(r, ia); //checks intersection for all rays with current node
-	if (ia != 0) //there is at least one ray active
+	if (ia > 0) //there is at least one ray active
 	{
 		if (!IsLeaf())
 		{
@@ -430,6 +428,8 @@ void BVHNode::IntersectPrimitives(const Rays &r, int ia, const vector<uint> &ind
 		{
 			Intersection8 closest; //todo, gets copied. Is there a better way?
 			IntersectClosest(r.rays[r.I[i]], triangles[indices[i]], matList, closest);
+			if (closest.t[0] < 10e29)
+				int w = 0; //does not fire, so no intersection is found.
 			closests.inter[r.I[i]] = closest; //intersections stay sorted with rays, so only active intersections are checked later
 		}
 	}
@@ -457,7 +457,7 @@ bool BVHNode::IntersectNode(const Ray &ray)
 
 	if ((tmin > tzmax) || (tzmin > tmax))
 		return false;
-
+	
 	return true;
 }
 
