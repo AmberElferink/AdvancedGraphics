@@ -114,9 +114,16 @@ class Rays
 {
 public:
 	Ray8 rays[RAYPACKETSIZE];
+	
+	//int ia = RAYPACKETSIZE; //one past last active ray (rays at and behind rays[I[ia]] do not intersect)
+};
+
+//this class is a wrapper around the indices corresponding to rays. This array is sorted so the active rays are in the front and the inactive rays are in the back.
+class Indices
+{
+public:
 	int I[RAYPACKETSIZE];
-	int ia = RAYPACKETSIZE; //one past last active ray (rays at and behind rays[I[ia]] do not intersect)
-	Rays::Rays()
+	Indices()
 	{
 		for (int i = 0; i < RAYPACKETSIZE; i++)
 		{

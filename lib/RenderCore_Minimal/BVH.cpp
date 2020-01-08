@@ -306,19 +306,19 @@ void BVHNode::CalculateBounds( const vector<aabb> &boundingBoxes, const vector<u
 
 //ia is the last active ray in the list. After that only rays exist which do not intersect
 //I are the list of indices to the rays that can be sorted based on if it is active
-int BVHNode::partRays(Rays &r, int ia)
+int BVHNode::partRays(Rays &r, int ia, Indices &I)
 {
 	int ie = 0;
 	for (int i = 0; i < ia; ++i)
 	{
-		if (IntersectNode(r.rays[r.I[i]]))
-			swap(r.I[ie++], r.I[i]);
+		if (IntersectNode(r.rays[I.I[i]]))
+			swap(I.I[ie++], I.I[i]);
 	}
 	return ie;
 }
 
 /*Method that traverses trough the nodes of an BVH and returns the closest intersection*/
-void BVHNode::Traverse(const Ray &ray, vector<BVHNode> &pool, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection &closest, const vector<Material *> &matList)
+void BVHNode::Traverse(const Ray &ray,  vector<BVHNode> &pool, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection &closest, const vector<Material *> &matList)
 {
 	if (!IntersectNode(ray))
 		return;
@@ -346,20 +346,20 @@ void BVHNode::Traverse( const Ray8 &ray8, vector<BVHNode> &pool, const vector<ui
 
 //from Overbeck et al. paper: Large Ray Packets for Real-time Whitted Ray Tracing
 //ia is index one behind the last active ray (rays after r.rays[I[ia]] are not active).
-void BVHNode::Traverse(Rays &r, int ia, vector<BVHNode> &pool, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersections &closests, const vector<Material *> &matList)
+void BVHNode::Traverse(Rays &r, int ia, Indices I, vector<BVHNode> &pool, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersections &closests, const vector<Material *> &matList)
 {
 
-	ia = partRays(r, ia); //checks intersection for all rays with current node
+	ia = partRays(r, ia, I); //checks intersection for all rays with current node
 	if (ia > 0) //there is at least one ray active
 	{
 		if (!IsLeaf())
 		{
-			pool[leftFirst].Traverse(r, ia, pool, indices, triangles, closests, matList);
-			pool[leftFirst + 1].Traverse(r, ia, pool, indices, triangles, closests, matList);
+			pool[leftFirst].Traverse(r, ia, I, pool, indices, triangles, closests, matList);
+			pool[leftFirst + 1].Traverse(r, ia, I, pool, indices, triangles, closests, matList);
 		}
 		else
 		{
-			IntersectPrimitives(r, ia, indices, triangles, closests, matList);
+			IntersectPrimitives(r, ia, I, indices, triangles, closests, matList);
 		}
 	}
 }
@@ -418,19 +418,19 @@ void BVHNode::IntersectPrimitives(const Ray8 &rays, const vector<uint> &indices,
 }
 
 /* Method that computes the closest intersection for a set of triangles that are contained in one leaf */
-void BVHNode::IntersectPrimitives(const Rays &r, int ia, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersections &closests, const vector<Material *> &matList)
+void BVHNode::IntersectPrimitives(const Rays &r, int ia, Indices I, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersections &closests, const vector<Material *> &matList)
 {
 	//compute last index of the array with triangles
 	int right = leftFirst + count;
 	for (int i = leftFirst; i < right; i++)
 	{
-		for (int i = 0; i < ia; i++)
+		for (int j = 0; j < ia; j++)
 		{
 			Intersection8 closest; //todo, gets copied. Is there a better way?
-			IntersectClosest(r.rays[r.I[i]], triangles[indices[i]], matList, closest);
+			IntersectClosest(r.rays[I.I[j]], triangles[indices[i]], matList, closest);
 			if (closest.t[0] < 10e29)
 				int w = 0; //does not fire, so no intersection is found.
-			closests.inter[r.I[i]] = closest; //intersections stay sorted with rays, so only active intersections are checked later
+			closests.inter[j] = closest; //intersections stay sorted with rays, so only active intersections are checked later
 		}
 	}
 }

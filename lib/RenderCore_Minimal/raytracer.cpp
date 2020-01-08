@@ -253,7 +253,7 @@ void Raytracer::nearestIntersection(Rays &r, Intersections &closests)
 	//	Find closest intersection point for all meshes
 	for (Mesh &mesh : scene.meshList)
 	{
-		bvh[id].root->Traverse(r, RAYPACKETSIZE, bvh[id].pool, bvh[id].indices, bvh[id].triangles, closests, scene.matList);
+		bvh[id].root->Traverse(r, RAYPACKETSIZE, Indices(), bvh[id].pool, bvh[id].indices, bvh[id].triangles, closests, scene.matList);
 		id++;
 	}
 
@@ -442,7 +442,7 @@ Color8 Raytracer::Trace(Ray8 &ray, const Intersection8 prevIntersection, int ref
 
 	//Method that sends a ray into a scene and returns the color of the hitted objects
 //prevIntersection is only used for dieelectric n2.
-void Raytracer::Trace(Rays &r, const Intersections prevIntersection, int reflectionDepth)
+void Raytracer::Trace(Rays &r, Indices I, const Intersections prevIntersection, int reflectionDepth)
 {
 	Intersections closests;
 	nearestIntersection(r, closests);
@@ -470,15 +470,15 @@ void Raytracer::Trace(Rays &r, const Intersections prevIntersection, int reflect
 	{
 		for (int i = 0; i < 8; i++)
 		{
-			if (closests.inter[r.I[j]].t[i] < 10e29) //direct illumination
+			if (closests.inter[I.I[j]].t[i] < 10e29) //direct illumination
 			{
-				if (isnan(abs(r.rays[r.I[j]].deadMask[i]))) //it's -nan, which means it's true. (0 is false)
+				if (isnan(abs(r.rays[I.I[j]].deadMask[i]))) //it's -nan, which means it's true. (0 is false)
 				{
-					float3 c1 = DirectIllumination(closests.inter[r.I[j]].intersections[i]); //should be * ray.I
-					r.rays[r.I[j]].color.b[i] = c1.x;
-					r.rays[r.I[j]].color.g[i] = c1.y;
-					r.rays[r.I[j]].color.r[i] = c1.z;
-					r.rays[r.I[j]].deadMask[i] = 0x00000000;
+					float3 c1 = DirectIllumination(closests.inter[I.I[j]].intersections[i]); //should be * ray.I
+					r.rays[I.I[j]].color.b[i] = c1.x;
+					r.rays[I.I[j]].color.g[i] = c1.y;
+					r.rays[I.I[j]].color.r[i] = c1.z;
+					r.rays[I.I[j]].deadMask[i] = 0x00000000;
 				}
 
 			}
@@ -487,18 +487,18 @@ void Raytracer::Trace(Rays &r, const Intersections prevIntersection, int reflect
 				reflectionDepth = -1;
 				if (isnan(abs(r.rays[j].deadMask[i])))//ray.activeMask[i] > 0)
 				{
-					r.rays[r.I[j]].color.b[i] = 0.3f; //background color //should be * ray.I
-					r.rays[r.I[j]].color.g[i] = 0.3f;
-					r.rays[r.I[j]].color.r[i] = 0.3f;
-					r.rays[r.I[j]].deadMask[i] = 0x00000000;
+					r.rays[I.I[j]].color.b[i] = 0.3f; //background color //should be * ray.I
+					r.rays[I.I[j]].color.g[i] = 0.3f;
+					r.rays[I.I[j]].color.r[i] = 0.3f;
+					r.rays[I.I[j]].deadMask[i] = 0x00000000;
 				}
 
 			}
-			if (_mm256_movemask_ps(r.rays[r.I[j]].activeMask8) == 0)
-			{
-				swap(r.I[j], r.I[r.ia]);
-				r.ia--;
-			}
+			//if (_mm256_movemask_ps(r.rays[r.I[j]].activeMask8) == 0)
+			//{
+			//	swap(rI[j], r.I[r.ia]);
+			//	r.ia--;
+			//}
 		}
 	}
 
@@ -723,7 +723,7 @@ void Raytracer::rayTraceInPackets(Bitmap *screen, const ViewPyramid &view, const
 			r.rays[dj] = Ray8(O, D);
 		}
 
-		Trace(r, Intersections(), 0);
+		Trace(r, Indices(), Intersections(), 0);
 
 		for (int dj = 0; dj < RAYPACKETSIZE; dj++)
 		{

@@ -172,7 +172,7 @@ class Raytracer
 	float3 DirectIllumination( Intersection intersection );
 	float3 Trace( const Ray &ray, const Intersection prevIntersection, int reflectionDepth ); //default: air
 	Color8 Trace(Ray8 &ray, const Intersection8 prevIntersection, int reflectionDepth); //default: air
-	void Trace(Rays &ray, const Intersections prevIntersection, int reflectionDepth); //default: air
+	void Trace(Rays &ray, Indices I, const Intersections prevIntersection, int reflectionDepth); //default: air
 	void storeBVH();
 };
 } // namespace lh2core
