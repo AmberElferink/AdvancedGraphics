@@ -145,7 +145,7 @@ public:
 	bool TraverseToFirst(const Ray &ray, vector<BVHNode> &pool, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection &intersection, const vector<Material *> &matList);
 	void IntersectPrimitives(const Ray &ray, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection &closest, const vector<Material *> &matList);
 	void IntersectPrimitives(const Ray8 &rays, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersection8 &closest, const vector<Material *> &matList);
-	void IntersectPrimitives(const Rays &r, int ia, Indices I, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersections &closests, const vector<Material *> &matList);
+	void IntersectPrimitives(const Rays &r, int ia, const Indices &I, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersections &closests, const vector<Material *> &matList);
 	bool IntersectNode(const Ray &ray);
 	bool IntersectNode(const Ray8 &rays);
 	int partRays(Rays &r, int ia, Indices &I);

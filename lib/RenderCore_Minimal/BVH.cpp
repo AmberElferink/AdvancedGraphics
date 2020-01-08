@@ -414,11 +414,13 @@ void BVHNode::IntersectPrimitives(const Ray8 &rays, const vector<uint> &indices,
 	for (int i = leftFirst; i < right; i++)
 	{
 		IntersectClosest(rays, triangles[indices[i]], matList, closest);
+		if (closest.t[0] < 10e29)
+			int w = 0; //does not fire, so no intersection is found.
 	}
 }
 
 /* Method that computes the closest intersection for a set of triangles that are contained in one leaf */
-void BVHNode::IntersectPrimitives(const Rays &r, int ia, Indices I, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersections &closests, const vector<Material *> &matList)
+void BVHNode::IntersectPrimitives(const Rays &r, int ia, const Indices &I, const vector<uint> &indices, const vector<CoreTri> &triangles, Intersections &closests, const vector<Material *> &matList)
 {
 	//compute last index of the array with triangles
 	int right = leftFirst + count;
@@ -429,8 +431,8 @@ void BVHNode::IntersectPrimitives(const Rays &r, int ia, Indices I, const vector
 			Intersection8 closest; //todo, gets copied. Is there a better way?
 			IntersectClosest(r.rays[I.I[j]], triangles[indices[i]], matList, closest);
 			if (closest.t[0] < 10e29)
-				int w = 0; //does not fire, so no intersection is found.
-			closests.inter[j] = closest; //intersections stay sorted with rays, so only active intersections are checked later
+				int w = 0; //if it fires, an intersection is found.
+			closests.inter[I.I[j]] = closest; //intersections stay sorted with rays, so only active intersections are checked later
 		}
 	}
 }
