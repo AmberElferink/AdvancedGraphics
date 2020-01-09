@@ -45,11 +45,11 @@ void PrepareScene()
 	//int meshID = renderer->AddMesh("Lootchest.obj", "data/Lootchest/", 1);
 	//int meshID = renderer->AddMesh("CyberpunkDeLorean.obj", "data/Delorean/", 1);
 	//int meshID = renderer->AddMesh("Lamborghini_Aventador.obj", "data/Lamborginhi5000/", 1);
-	int meshID = renderer->AddMesh("basketball_OBJ.obj", "data/basketball_ball/", 1);
+	//int meshID = renderer->AddMesh("basketball_OBJ.obj", "data/basketball_ball/", 1);
 
-	renderer->AddInstance(meshID, mat4::Translate(1, 1, 1));
+	//renderer->AddInstance(meshID, mat4::Translate(1, 1, 1));
 	//renderer->AddScene("AnimatedCube.gltf", "data/animatedCube/", mat4::Translate(-6, -3.2f, -5));
-	//renderer->AddScene("test2.glb", "data/reflectionScene/", mat4::Translate(-6, -3.2f, -5));
+	renderer->AddScene("test2.glb", "data/reflectionScene/", mat4::Translate(-6, -3.2f, -5));
 	//renderer->AddScene("Cube-Pyramid.gltf", "data/reflectTest/", mat4::Translate(10, -20.2f, -5));
 	//renderer->AddScene("AnimatedCube.gltf", "data/animatedCube/", mat4::Translate(1, -10.2f, 1));
 	//int rootNode = renderer->FindNode("RootNode (gltf orientation matrix)");
@@ -57,10 +57,10 @@ void PrepareScene()
 #if 1
 	// overhead light, use regular PT
 	int lightMat = renderer->AddMaterial(make_float3(10, 10, 8));
-	//int lightQuad = renderer->AddQuad(make_float3(0, -1, 0), make_float3(0, 26.0f, 0), 6.9f, 6.9f, lightMat);
-	//int lightInst = renderer->AddInstance(lightQuad);
-	int lightBulb = renderer->AddPointLight(make_float3(-100, -90, -400), make_float3(100000), true);
-	int lightBulb2 = renderer->AddPointLight(make_float3(64, -6, 21), make_float3(30000), true);
+	int lightQuad = renderer->AddQuad(make_float3(0, -1, 0), make_float3(0, 26.0f, 0), 10.f, 10.f, lightMat);
+	int lightInst = renderer->AddInstance(lightQuad);
+	//int lightBulb = renderer->AddPointLight(make_float3(-100, -90, -400), make_float3(100000), true);
+	//int lightBulb2 = renderer->AddPointLight(make_float3(64, -6, 21), make_float3(30000), true);
 
 	//int lightBulb2 = renderer->AddPointLight(make_float3(10, -8, 4), make_float3(100, 100, 100), true);
 	/*int sun = renderer->AddDirectionalLight( make_float3( 1, 1, 1 ), make_float3( 0.9, 0.9, 0.9 ), true );*/
