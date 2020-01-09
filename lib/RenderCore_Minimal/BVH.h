@@ -37,6 +37,7 @@ class Material
 
 	float3 color = make_float3( 0.5 ); // diffuse and reflective material color
 	float3 absorption;				   //for dieelectrics
+	float3 emission = make_float3(0.5);
 	Texture *texture = 0;			   // texture
 	bool metallic = false;
 	bool dielectric = false;

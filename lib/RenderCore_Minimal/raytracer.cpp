@@ -627,19 +627,54 @@ float3 Raytracer::DirectIllumination( Intersection intersection )
 	return intersectionColor;
 }
 
-
-
 //---------------------------------------------------------PATHTRACER METHODS------------------------------------
+
+float3 Raytracer::DiffuseReflection( float3 N )
+{
+	while (true)
+	{
+	//Generate three random floats between -1 and 1
+	float x = 2*( (float)rand() ) / (float)RAND_MAX;
+	float y = 2*( (float)rand() ) / (float)RAND_MAX;
+	float z = 2*( (float)rand() ) / (float)RAND_MAX;
+	if ( x > 1 )
+		x = 1 - x;
+	if ( y > 1 )
+		y = 1 - y;
+	if ( z > 1 )
+		z = 1 - z;
+
+	float radius = x * x + y * y + z * z;
+	if (radius <= 1)
+	{
+		float3 dir = make_float3( x, y, z );
+		dir = dir / sqrt( radius );
+		if ( dot( N, dir ) < 0 )
+			dir = -dir;
+		return dir;
+	}
+	}
+}
+
+
 
 float3 Raytracer::Sample(const Ray &ray)
 {
 	Intersection I = nearestIntersection(ray);
+	// terminate if ray left the scene
 	if (I.t > 10e29)
 		return make_float3(0.f, 0.f, 0.f);
-	//if(I.material)
+	if (I.triangle.ltriIdx >= 0)
+		return scene.lightList[I.triangle.ltriIdx].radiance;
+
+	// continue in random direction
+	float3 R = DiffuseReflection(I.norm);
+	float3 BRDF = I.material.color / PI;
+	Ray r(I.point, R);
+	// update throughput
+	float3 Ei = Sample(r) * (dot(I.norm, R));
+	return PI * 2.0f * BRDF * Ei;
 }
-
-
 
 
 
@@ -699,6 +734,34 @@ void Raytracer::rayTraceLine(Bitmap *screen, const ViewPyramid &view, const int 
 
 		screen->pixels[i + j * screen->width] = FloatToIntColor( intersectionColor );
 		rayNr++;
+	}
+}
+
+void Raytracer::pathTrace(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, uint sampleCount)
+{
+	for (uint j = 0; j < screen->height; j++)
+	{
+		for (uint i = 0; i < screen->width; i++)
+		{
+			//printf("pX: %i, i: %i, pY: %i, j: %i\n", probePos.x, i, probePos.y, j);
+			if (i == probePos.x && j == probePos.y)
+				printf("probing: x: %i, y: %i, rayNr: %i\n", i, j, rayNr);
+
+			//u and v are the vectors within the virtual screen scaled between 0 and 1, so u = px / screenwidth and y = py / screenwidth
+			float u = (float)i / (float)screen->width;
+			float v = (float)j / (float)screen->height;
+			float3 P = view.p1 + u * (view.p2 - view.p1) + v * (view.p3 - view.p1);
+
+			float3 dir = P - view.pos;		// vector in the direction you want to shoot your ray
+			float3 D = dir / length(dir); //normalize it
+
+			Ray ray = Ray(view.pos, D);
+
+			float3 intersectionColor = Sample(ray);
+			buffer->pixels[i + j * buffer->width] = (buffer->pixels[i + j * buffer->width] *sampleCount + intersectionColor) / (sampleCount + 1);
+			screen->pixels[i + j * screen->width] = FloatToIntColor(intersectionColor);
+			rayNr++;
+		}
 	}
 }
 
@@ -794,42 +857,42 @@ void Raytracer::rayTraceBlockAVX(const ViewPyramid &view, Bitmap *screen, const 
 //  p1 |------------------| p2
 //   screenwidth
 //-----------------------------------------------------
-float3 prevp1 = make_float3(1000000); //random thingy
-int framecounter = 0;
-
-Bitmap* Raytracer::rayTraceRandom(const ViewPyramid &view, const int targetTextureID, int &frameCounter)
-{
-	//1 ray per light source geeft noisy image, maar andere random numbers = different numbers, optellen bij de accumulator. 
-	//Die is 2x zo bright, maar /2 geeft weer normaal antwoord. Dat blijf je doen.
-
-	storeBVH();
-
-	if (!(view.p1.x == prevp1.x && view.p1.y == prevp1.y && view.p1.z == prevp1.z))
-	{
-		buffer->Clear();
-		framecounter = 1;
-	}
-
-	for (int i = 0; i < 100; i++) 
-	{
-
-		//u and v are the vectors within the virtual screen scaled between 0 and 1, so u = px / screenwidth and y = py / screenwidth
-		float u = RandomFloat();
-		float v = RandomFloat();
-		float3 P = view.p1 + u * (view.p2 - view.p1) + v * (view.p3 - view.p1);
-
-		float3 dir = P - view.pos;		// vector in the direction you want to shoot your ray
-		float3 D = dir / length(dir); //normalize it
-
-		Ray ray = Ray(view.pos, D);
-
-		float3 intersectionColor = Trace(ray, Intersection(), 0);
-		int index = (int)((u * buffer->height) + (v * buffer->height) * buffer->width);
-		buffer->pixels[index] += FloatToIntColor(intersectionColor);
-	}
-	framecounter++;
-	return buffer;
-}
+//float3 prevp1 = make_float3(1000000); //random thingy
+//int framecounter = 0;
+//
+//Bitmap* Raytracer::rayTraceRandom(const ViewPyramid &view, const int targetTextureID, int &frameCounter)
+//{
+//	//1 ray per light source geeft noisy image, maar andere random numbers = different numbers, optellen bij de accumulator. 
+//	//Die is 2x zo bright, maar /2 geeft weer normaal antwoord. Dat blijf je doen.
+//
+//	storeBVH();
+//
+//	if (!(view.p1.x == prevp1.x && view.p1.y == prevp1.y && view.p1.z == prevp1.z))
+//	{
+//		buffer->Clear();
+//		framecounter = 1;
+//	}
+//
+//	for (int i = 0; i < 100; i++) 
+//	{
+//
+//		//u and v are the vectors within the virtual screen scaled between 0 and 1, so u = px / screenwidth and y = py / screenwidth
+//		float u = RandomFloat();
+//		float v = RandomFloat();
+//		float3 P = view.p1 + u * (view.p2 - view.p1) + v * (view.p3 - view.p1);
+//
+//		float3 dir = P - view.pos;		// vector in the direction you want to shoot your ray
+//		float3 D = dir / length(dir); //normalize it
+//
+//		Ray ray = Ray(view.pos, D);
+//
+//		float3 intersectionColor = Trace(ray, Intersection(), 0);
+//		int index = (int)((u * buffer->height) + (v * buffer->height) * buffer->width);
+//		buffer->pixels[index] += FloatToIntColor(intersectionColor);
+//	}
+//	framecounter++;
+//	return buffer;
+//}
 
 void Raytracer::storeBVH()
 {

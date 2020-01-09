@@ -227,6 +227,26 @@ public:
 	uint* pixels = nullptr;
 	uint width = 0, height = 0;
 };
+class BitmapFloat
+{
+public:
+	BitmapFloat() = default;
+	BitmapFloat(uint w, uint h) : pixels(new float3[w * h]), width(w), height(h) 
+	{
+		for (uint j = 0; j < height; j++)
+		{
+			for (uint i = 0; i < width; i++)
+			{
+				pixels[i + j * width] = make_float3(0, 0, 0);
+			}
+		}
+	}
+	~BitmapFloat() { delete pixels; }
+	void Plot(uint x, uint y, float3 c) { if (x < width && y < height) pixels[x + y * width] = c; }
+	void Clear() { memset(pixels, 0, width * height * 4); }
+	float3* pixels = nullptr;
+	uint width = 0, height = 0;
+};
 
 class GLTexture
 {
