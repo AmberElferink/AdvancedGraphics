@@ -210,7 +210,7 @@ uint lineNr = 0;
 int frameCounter = 0;
 //#define THREADS
 //#define AVX
-#define AVXPACKETTRAVERSAL
+//#define AVXPACKETTRAVERSAL
 
 
 #ifdef THREADS
