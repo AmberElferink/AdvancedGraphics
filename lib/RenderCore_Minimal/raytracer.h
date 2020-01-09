@@ -166,6 +166,8 @@ class Raytracer
 	Bitmap *rayTraceRandom( const ViewPyramid &view, const int targetTextureID, int &frameCounter );
 	void TextureColor( Intersection &intersection, const CoreTri &triangle, uint &color );
 
+	//Pathtracer methodes
+	float3 Sample(const Ray &ray);
 	float3 Reflect( const Ray &ray, const Intersection &intersection, int reflectionDepth );
 	float3 calcDielectric( Ray ray, Intersection intersection, const Intersection prevIntersection, int reflectionDepth, const float n1 = 1.0002f ); //only adjust n1 if previous trace is also a dielectric material
 	float Fresnel( const float cosi, const float ncalc, const float n1, const float n2 );

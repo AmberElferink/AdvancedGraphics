@@ -628,6 +628,38 @@ float3 Raytracer::DirectIllumination( Intersection intersection )
 }
 
 
+
+//---------------------------------------------------------PATHTRACER METHODS------------------------------------
+
+float3 Raytracer::Sample(const Ray &ray)
+{
+	Intersection I = nearestIntersection(ray);
+	if (I.t > 10e29)
+		return make_float3(0.f, 0.f, 0.f);
+	//if(I.material)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void Raytracer::rayTrace( Bitmap *screen, const ViewPyramid &view, const int targetTextureID )
 {
 	for ( uint j = 0; j < screen->height; j++ )
