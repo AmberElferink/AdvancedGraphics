@@ -627,6 +627,33 @@ float3 Raytracer::DirectIllumination( Intersection intersection )
 	return intersectionColor;
 }
 
+float3 Raytracer::DiffuseReflection( float3 N )
+{
+	while (true)
+	{
+	//Generate three random floats between -1 and 1
+	float x = 2*( (float)rand() ) / (float)RAND_MAX;
+	float y = 2*( (float)rand() ) / (float)RAND_MAX;
+	float z = 2*( (float)rand() ) / (float)RAND_MAX;
+	if ( x > 1 )
+		x = 1 - x;
+	if ( y > 1 )
+		y = 1 - y;
+	if ( z > 1 )
+		z = 1 - z;
+
+	float radius = x * x + y * y + z * z;
+	if (radius <= 1)
+	{
+		float3 dir = make_float3( x, y, z );
+		dir = dir / sqrt( radius );
+		if ( dot( N, dir ) < 0 )
+			dir = -dir;
+		return dir;
+	}
+	}
+}
+
 
 void Raytracer::rayTrace( Bitmap *screen, const ViewPyramid &view, const int targetTextureID )
 {
