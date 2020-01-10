@@ -261,7 +261,7 @@ void RenderCore::Render(const ViewPyramid& view, const Convergence converge)
 			raytracer.rayTraceLineAVX(screen, view, targetTextureID, lineNr);
 			lineNr++;
 		#elif defined AVXPACKETTRAVERSAL
-			raytracer.rayTraceInPackets(screen, view, targetTextureID, lineNr);
+			raytracer.rayTraceLinesPackets(screen, view, targetTextureID, lineNr);
 			lineNr+= RAYPACKETSIZE;
 		#else
 			raytracer.rayTraceLine(screen, view, targetTextureID, lineNr);
