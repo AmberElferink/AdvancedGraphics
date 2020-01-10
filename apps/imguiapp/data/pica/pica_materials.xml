@@ -1,16 +1,16 @@
 <materials>
-    <material_count>3</material_count>
+    <material_count>15</material_count>
     <material_0>
-        <name>Lines</name>
-        <origin>data/basketball_ball/basketball_obj.obj</origin>
+        <name>DeLorean_EnginePart1</name>
+        <origin>data/delorean/cyberpunkdelorean.obj</origin>
         <id>0</id>
         <flags>129</flags>
-        <color b="0.021768" g="0.021768" r="0.021768"/>
-        <absorption b="0" g="0" r="0"/>
+        <color b="0.078431003" g="0.078431003" r="0.078431003"/>
+        <absorption b="1" g="1" r="1"/>
         <metallic>0</metallic>
         <subsurface>0</subsurface>
         <specular>0.5</specular>
-        <roughness>-95.07843</roughness>
+        <roughness>-18.999998</roughness>
         <specularTint>0</specularTint>
         <anisotropic>0</anisotropic>
         <sheen>0</sheen>
@@ -25,16 +25,16 @@
         <custom3>0</custom3>
     </material_0>
     <material_1>
-        <name>MainColor</name>
-        <origin>data/basketball_ball/basketball_obj.obj</origin>
+        <name>DeLorean_EnginePart2</name>
+        <origin>data/delorean/cyberpunkdelorean.obj</origin>
         <id>1</id>
         <flags>129</flags>
-        <color b="0.042289" g="0.12962399" r="0.62065798"/>
-        <absorption b="0" g="0" r="0"/>
+        <color b="0.39215699" g="0.39215699" r="0.39215699"/>
+        <absorption b="1" g="1" r="1"/>
         <metallic>0</metallic>
         <subsurface>0</subsurface>
         <specular>0.5</specular>
-        <roughness>-95.07843</roughness>
+        <roughness>-13.999999</roughness>
         <specularTint>0</specularTint>
         <anisotropic>0</anisotropic>
         <sheen>0</sheen>
@@ -48,4 +48,292 @@
         <custom2>0</custom2>
         <custom3>0</custom3>
     </material_1>
+    <material_2>
+        <name>DeLorean_EnginePart3</name>
+        <origin>data/delorean/cyberpunkdelorean.obj</origin>
+        <id>2</id>
+        <flags>129</flags>
+        <color b="0.86274499" g="0.243137" r="0"/>
+        <absorption b="1" g="1" r="1"/>
+        <metallic>0</metallic>
+        <subsurface>0</subsurface>
+        <specular>0.5</specular>
+        <roughness>-9</roughness>
+        <specularTint>0</specularTint>
+        <anisotropic>0</anisotropic>
+        <sheen>0</sheen>
+        <sheenTint>0</sheenTint>
+        <clearcoat>0</clearcoat>
+        <clearcoatGloss>1</clearcoatGloss>
+        <transmission>0</transmission>
+        <eta>1</eta>
+        <custom0>0</custom0>
+        <custom1>0</custom1>
+        <custom2>0</custom2>
+        <custom3>0</custom3>
+    </material_2>
+    <material_3>
+        <name>DeLorean_MainBody</name>
+        <origin>data/delorean/cyberpunkdelorean.obj</origin>
+        <id>3</id>
+        <flags>129</flags>
+        <color b="1" g="1" r="1"/>
+        <absorption b="1" g="1" r="1"/>
+        <metallic>0</metallic>
+        <subsurface>0</subsurface>
+        <specular>0.5</specular>
+        <roughness>-18.999998</roughness>
+        <specularTint>0</specularTint>
+        <anisotropic>0</anisotropic>
+        <sheen>0</sheen>
+        <sheenTint>0</sheenTint>
+        <clearcoat>0</clearcoat>
+        <clearcoatGloss>1</clearcoatGloss>
+        <transmission>0</transmission>
+        <eta>1</eta>
+        <custom0>0</custom0>
+        <custom1>0</custom1>
+        <custom2>0</custom2>
+        <custom3>0</custom3>
+    </material_3>
+    <material_4>
+        <name>DeLorean_Motore</name>
+        <origin>data/delorean/cyberpunkdelorean.obj</origin>
+        <id>4</id>
+        <flags>129</flags>
+        <color b="0.078431003" g="0.078431003" r="0.078431003"/>
+        <absorption b="1" g="1" r="1"/>
+        <metallic>0</metallic>
+        <subsurface>0</subsurface>
+        <specular>0.5</specular>
+        <roughness>-18.999998</roughness>
+        <specularTint>0</specularTint>
+        <anisotropic>0</anisotropic>
+        <sheen>0</sheen>
+        <sheenTint>0</sheenTint>
+        <clearcoat>0</clearcoat>
+        <clearcoatGloss>1</clearcoatGloss>
+        <transmission>0</transmission>
+        <eta>1</eta>
+        <custom0>0</custom0>
+        <custom1>0</custom1>
+        <custom2>0</custom2>
+        <custom3>0</custom3>
+    </material_4>
+    <material_5>
+        <name>DeLorean_BrightCables</name>
+        <origin>data/delorean/cyberpunkdelorean.obj</origin>
+        <id>5</id>
+        <flags>129</flags>
+        <color b="0.27451" g="0.27451" r="0.27451"/>
+        <absorption b="1" g="1" r="1"/>
+        <metallic>0</metallic>
+        <subsurface>0</subsurface>
+        <specular>0.5</specular>
+        <roughness>-18.999998</roughness>
+        <specularTint>0</specularTint>
+        <anisotropic>0</anisotropic>
+        <sheen>0</sheen>
+        <sheenTint>0</sheenTint>
+        <clearcoat>0</clearcoat>
+        <clearcoatGloss>1</clearcoatGloss>
+        <transmission>0</transmission>
+        <eta>1</eta>
+        <custom0>0</custom0>
+        <custom1>0</custom1>
+        <custom2>0</custom2>
+        <custom3>0</custom3>
+    </material_5>
+    <material_6>
+        <name>DeLorean_DarkCables</name>
+        <origin>data/delorean/cyberpunkdelorean.obj</origin>
+        <id>6</id>
+        <flags>129</flags>
+        <color b="0.039216001" g="0.039216001" r="0.039216001"/>
+        <absorption b="1" g="1" r="1"/>
+        <metallic>0</metallic>
+        <subsurface>0</subsurface>
+        <specular>0.5</specular>
+        <roughness>-18.999998</roughness>
+        <specularTint>0</specularTint>
+        <anisotropic>0</anisotropic>
+        <sheen>0</sheen>
+        <sheenTint>0</sheenTint>
+        <clearcoat>0</clearcoat>
+        <clearcoatGloss>1</clearcoatGloss>
+        <transmission>0</transmission>
+        <eta>1</eta>
+        <custom0>0</custom0>
+        <custom1>0</custom1>
+        <custom2>0</custom2>
+        <custom3>0</custom3>
+    </material_6>
+    <material_7>
+        <name>Standard_8</name>
+        <origin>data/delorean/cyberpunkdelorean.obj</origin>
+        <id>7</id>
+        <flags>129</flags>
+        <color b="0" g="0" r="0"/>
+        <absorption b="0.5" g="0.5" r="0.5"/>
+        <metallic>0</metallic>
+        <subsurface>0</subsurface>
+        <specular>0.5</specular>
+        <roughness>-24</roughness>
+        <specularTint>0</specularTint>
+        <anisotropic>0</anisotropic>
+        <sheen>0</sheen>
+        <sheenTint>0</sheenTint>
+        <clearcoat>0</clearcoat>
+        <clearcoatGloss>1</clearcoatGloss>
+        <transmission>0</transmission>
+        <eta>1</eta>
+        <custom0>0</custom0>
+        <custom1>0</custom1>
+        <custom2>0</custom2>
+        <custom3>0</custom3>
+    </material_7>
+    <material_8>
+        <name>DeLorean_WhiteLight</name>
+        <origin>data/delorean/cyberpunkdelorean.obj</origin>
+        <id>8</id>
+        <flags>129</flags>
+        <color b="0.52156901" g="0.69019598" r="0.73333299"/>
+        <absorption b="1" g="1" r="1"/>
+        <metallic>0</metallic>
+        <subsurface>0</subsurface>
+        <specular>0.5</specular>
+        <roughness>-9</roughness>
+        <specularTint>0</specularTint>
+        <anisotropic>0</anisotropic>
+        <sheen>0</sheen>
+        <sheenTint>0</sheenTint>
+        <clearcoat>0</clearcoat>
+        <clearcoatGloss>1</clearcoatGloss>
+        <transmission>0</transmission>
+        <eta>1</eta>
+        <custom0>0</custom0>
+        <custom1>0</custom1>
+        <custom2>0</custom2>
+        <custom3>0</custom3>
+    </material_8>
+    <material_9>
+        <name>DeLorean_Interni</name>
+        <origin>data/delorean/cyberpunkdelorean.obj</origin>
+        <id>9</id>
+        <flags>129</flags>
+        <color b="0.058823999" g="0.058823999" r="0.058823999"/>
+        <absorption b="1" g="1" r="1"/>
+        <metallic>0</metallic>
+        <subsurface>0</subsurface>
+        <specular>0.5</specular>
+        <roughness>-9</roughness>
+        <specularTint>0</specularTint>
+        <anisotropic>0</anisotropic>
+        <sheen>0</sheen>
+        <sheenTint>0</sheenTint>
+        <clearcoat>0</clearcoat>
+        <clearcoatGloss>1</clearcoatGloss>
+        <transmission>0</transmission>
+        <eta>1</eta>
+        <custom0>0</custom0>
+        <custom1>0</custom1>
+        <custom2>0</custom2>
+        <custom3>0</custom3>
+    </material_9>
+    <material_10>
+        <name>DeLorean_FinituraNero</name>
+        <origin>data/delorean/cyberpunkdelorean.obj</origin>
+        <id>10</id>
+        <flags>129</flags>
+        <color b="0.019608" g="0.019608" r="0.019608"/>
+        <absorption b="1" g="1" r="1"/>
+        <metallic>0</metallic>
+        <subsurface>0</subsurface>
+        <specular>0.5</specular>
+        <roughness>-18.999998</roughness>
+        <specularTint>0</specularTint>
+        <anisotropic>0</anisotropic>
+        <sheen>0</sheen>
+        <sheenTint>0</sheenTint>
+        <clearcoat>0</clearcoat>
+        <clearcoatGloss>1</clearcoatGloss>
+        <transmission>0</transmission>
+        <eta>1</eta>
+        <custom0>0</custom0>
+        <custom1>0</custom1>
+        <custom2>0</custom2>
+        <custom3>0</custom3>
+    </material_10>
+    <material_11>
+        <name>DeLorean_OrangeLight</name>
+        <origin>data/delorean/cyberpunkdelorean.obj</origin>
+        <id>11</id>
+        <flags>129</flags>
+        <color b="0" g="0.25490201" r="0.721569"/>
+        <absorption b="1" g="1" r="1"/>
+        <metallic>0</metallic>
+        <subsurface>0</subsurface>
+        <specular>0.5</specular>
+        <roughness>-9</roughness>
+        <specularTint>0</specularTint>
+        <anisotropic>0</anisotropic>
+        <sheen>0</sheen>
+        <sheenTint>0</sheenTint>
+        <clearcoat>0</clearcoat>
+        <clearcoatGloss>1</clearcoatGloss>
+        <transmission>0</transmission>
+        <eta>1</eta>
+        <custom0>0</custom0>
+        <custom1>0</custom1>
+        <custom2>0</custom2>
+        <custom3>0</custom3>
+    </material_11>
+    <material_12>
+        <name>DeLorean_RedLight</name>
+        <origin>data/delorean/cyberpunkdelorean.obj</origin>
+        <id>12</id>
+        <flags>129</flags>
+        <color b="0" g="0" r="0.721569"/>
+        <absorption b="1" g="1" r="1"/>
+        <metallic>0</metallic>
+        <subsurface>0</subsurface>
+        <specular>0.5</specular>
+        <roughness>-9</roughness>
+        <specularTint>0</specularTint>
+        <anisotropic>0</anisotropic>
+        <sheen>0</sheen>
+        <sheenTint>0</sheenTint>
+        <clearcoat>0</clearcoat>
+        <clearcoatGloss>1</clearcoatGloss>
+        <transmission>0</transmission>
+        <eta>1</eta>
+        <custom0>0</custom0>
+        <custom1>0</custom1>
+        <custom2>0</custom2>
+        <custom3>0</custom3>
+    </material_12>
+    <material_13>
+        <name>DeLorean_BlueLight</name>
+        <origin>data/delorean/cyberpunkdelorean.obj</origin>
+        <id>13</id>
+        <flags>129</flags>
+        <color b="0.86274499" g="0.243137" r="0"/>
+        <absorption b="1" g="1" r="1"/>
+        <metallic>0</metallic>
+        <subsurface>0</subsurface>
+        <specular>0.5</specular>
+        <roughness>-9</roughness>
+        <specularTint>0</specularTint>
+        <anisotropic>0</anisotropic>
+        <sheen>0</sheen>
+        <sheenTint>0</sheenTint>
+        <clearcoat>0</clearcoat>
+        <clearcoatGloss>1</clearcoatGloss>
+        <transmission>0</transmission>
+        <eta>1</eta>
+        <custom0>0</custom0>
+        <custom1>0</custom1>
+        <custom2>0</custom2>
+        <custom3>0</custom3>
+    </material_13>
 </materials>

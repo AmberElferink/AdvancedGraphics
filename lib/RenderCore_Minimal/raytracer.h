@@ -157,8 +157,9 @@ class Raytracer
 	void rayTraceBlock( const ViewPyramid &view, Bitmap *screen, const int targetTextureID, int lineStart, int lineEnd );
 	void rayTraceLine( Bitmap *screen, const ViewPyramid &view, const int targetTextureID, const int lineNr );
 	void rayTraceBlockAVX(const ViewPyramid &view, Bitmap *screen, const int targetTextureID, int lineStart, int lineEnd);
+	void rayTraceBlockPackets(const ViewPyramid &view, Bitmap *screen, const int targetTextureID, int lineStart, int lineEnd);
 	void rayTraceLineAVX(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, const int lineNr);
-	void rayTraceInPackets(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, const int lineNr);
+	void rayTraceLinesPackets(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, const int lineNr);
 	uint FloatToIntColor( float3 floatColor );
 	Intersection nearestIntersection( const Ray &ray );
 	void nearestIntersection(const Ray8 &ray, Intersection8 &closest);

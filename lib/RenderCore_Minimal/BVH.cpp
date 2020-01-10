@@ -424,6 +424,7 @@ void BVHNode::IntersectPrimitives(const Rays &r, int ia, const Indices &I, const
 {
 	//compute last index of the array with triangles
 	int right = leftFirst + count;
+	//for all ray packets which intersected the nodes leading to these triangles (active rays)
 	for (int j = 0; j < ia; j++)
 	{
 		for (int i = leftFirst; i < right; i++)

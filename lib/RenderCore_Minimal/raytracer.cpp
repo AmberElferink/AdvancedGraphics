@@ -698,7 +698,8 @@ void Raytracer::rayTraceLineAVX(Bitmap *screen, const ViewPyramid &view, const i
 	}
 }
 
-void Raytracer::rayTraceInPackets(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, const int lineNr)
+
+void Raytracer::rayTraceLinesPackets(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, const int lineNr)
 {
 	for (uint i = 0; i < screen->width; i += 8)
 	{
@@ -751,6 +752,14 @@ void Raytracer::rayTraceBlockAVX(const ViewPyramid &view, Bitmap *screen, const 
 	for (int i = lineStart; i < lineEnd; i++)
 	{
 		rayTraceLineAVX(screen, view, targetTextureID, i);
+	}
+}
+
+void Raytracer::rayTraceBlockPackets(const ViewPyramid &view, Bitmap *screen, const int targetTextureID, int lineStart, int lineEnd)
+{
+	for (int i = lineStart; i < lineEnd; i+= RAYPACKETSIZE)
+	{
+		rayTraceLinesPackets(screen, view, targetTextureID, i);
 	}
 }
 
