@@ -424,15 +424,11 @@ void BVHNode::IntersectPrimitives(const Rays &r, int ia, const Indices &I, const
 {
 	//compute last index of the array with triangles
 	int right = leftFirst + count;
-	for (int i = leftFirst; i < right; i++)
+	for (int j = 0; j < ia; j++)
 	{
-		for (int j = 0; j < ia; j++)
+		for (int i = leftFirst; i < right; i++)
 		{
-			Intersection8 closest; //todo, gets copied. Is there a better way?
-			IntersectClosest(r.rays[I.I[j]], triangles[indices[i]], matList, closest);
-			if (closest.t[0] < 10e29)
-				int w = 0; //if it fires, an intersection is found.
-			closests.inter[I.I[j]] = closest; //intersections stay sorted with rays, so only active intersections are checked later
+			IntersectClosest(r.rays[I.I[j]], triangles[indices[i]], matList, closests.inter[I.I[j]]);
 		}
 	}
 }
