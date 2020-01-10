@@ -245,42 +245,42 @@ void RenderCore::Render(const ViewPyramid& view, const Convergence converge)
 //		printf("raytracer traced in %f\n", t.elapsed());
 //#else
 //
-//	//for (int i = 0; i < 4; i++)
-//	//{
-//	//	raytracer.rayTraceBlock(view, screen, 0, i * (screen->height / 4), (i + 1) * (screen->height / 4));
-//	//}
+	////for (int i = 0; i < 4; i++)
+	////{
+	////	raytracer.rayTraceBlock(view, screen, 0, i * (screen->height / 4), (i + 1) * (screen->height / 4));
+	////}
 //
 //
 //	//raytracer.rayTrace(screen, view, targetTextureID);
 //
-//	//---------per line raytracing --------
-//
-//	if (lineNr < screen->height)
-//	{
-//		
-//		#ifdef AVX
-//			raytracer.rayTraceLineAVX(screen, view, targetTextureID, lineNr);
-//			lineNr++;
-//		#elif defined AVXPACKETTRAVERSAL
-//			raytracer.rayTraceInPackets(screen, view, targetTextureID, lineNr);
-//			lineNr+= RAYPACKETSIZE;
-//		#elseif defined PATHTRACE
-//				raytracer.pathTrace(screen, view, targetTextureID, sampleNR);
-//		#else
-//			raytracer.rayTraceLine(screen, view, targetTextureID, lineNr);
-//			lineNr++;
-//		#endif
-//		
-//		//printf("raytraced line in %f\n", t.elapsed());
-//	}
-//	else
-//	{
-//		lineNr = 0;
-//		rayNr = 0;
-//		printf("raytraced in %f\n", t.elapsed());
-//		t.reset();
-//	}
-//
+	////---------per line raytracing --------
+
+	//if (lineNr < screen->height)
+	//{
+	//	
+	//	#ifdef AVX
+	//		raytracer.rayTraceLineAVX(screen, view, targetTextureID, lineNr);
+	//		lineNr++;
+	//	#elif defined AVXPACKETTRAVERSAL
+	//		raytracer.rayTraceInPackets(screen, view, targetTextureID, lineNr);
+	//		lineNr+= RAYPACKETSIZE;
+	//	#elseif defined PATHTRACE
+	//			raytracer.pathTrace(screen, view, targetTextureID, sampleNR);
+	//	#else
+	//		raytracer.rayTraceLine(screen, view, targetTextureID, lineNr);
+	//		lineNr++;
+	//	#endif
+	//	
+	//	//printf("raytraced line in %f\n", t.elapsed());
+	//}
+	//else
+	//{
+	//	lineNr = 0;
+	//	rayNr = 0;
+	//	printf("raytraced in %f\n", t.elapsed());
+	//	t.reset();
+	//}
+
 	// -----------per block raytracing ---------------
 	//raytracer.rayTraceRandom(view, targetTextureID, frameCounter);
 	//int screenSize = screen->width * screen->height;

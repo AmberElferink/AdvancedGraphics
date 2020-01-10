@@ -758,8 +758,8 @@ void Raytracer::pathTrace(Bitmap *screen, const ViewPyramid &view, const int tar
 			Ray ray = Ray(view.pos, D);
 
 			float3 intersectionColor = Sample(ray);
-			buffer->pixels[i + j * buffer->width] = (buffer->pixels[i + j * buffer->width] *sampleCount + intersectionColor) / (sampleCount + 1);
-			screen->pixels[i + j * screen->width] = FloatToIntColor(intersectionColor);
+			buffer->pixels[i + j * buffer->width] = (buffer->pixels[i + j * buffer->width] * (float) (sampleCount) + intersectionColor) / (float) (sampleCount + 1);
+			screen->pixels[i + j * screen->width] = FloatToIntColor(buffer->pixels[i + j * buffer->width]);
 			rayNr++;
 		}
 	}

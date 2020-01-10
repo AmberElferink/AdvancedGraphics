@@ -35,14 +35,14 @@ class Material
   public:
 	// data members
 
-	float3 color = make_float3( 0.5 ); // diffuse and reflective material color
+	float3 color = make_float3( 0.5f ); // diffuse and reflective material color
 	float3 absorption;				   //for dieelectrics
-	float3 emission = make_float3(0.5);
+	float3 emission = make_float3(0.5f);
 	Texture *texture = 0;			   // texture
 	bool metallic = false;
 	bool dielectric = false;
-	float specularity = 0.8;
-	float indexOfRefraction = 1.0003; //air
+	float specularity = 0.8f;
+	float indexOfRefraction = 1.0003f; //air
 
 		// constructor / destructor /copy constructor
 	Material() = default;
@@ -71,8 +71,8 @@ class Intersection
 {
   public:
 	float t = 10e30;								 // distance from starting point to intersection point
-	float3 point = make_float3(0);							 // intersection point
-	float3 norm = make_float3( -1, -1, -1 ); // normal at intersection point
+	float3 point = make_float3(0.f);							 // intersection point
+	float3 norm = make_float3( -1.f, -1.f, -1.f ); // normal at intersection point
 	Material material;
 	CoreTri triangle;
 
