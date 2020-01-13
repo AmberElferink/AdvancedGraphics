@@ -56,7 +56,7 @@ int rayNr = 0;
 //				//light comes from infinetely far away
 //				if ( light.directionalLight )
 //					return true;
-//				else //light comes from a given point
+//				else bbbbbbbbbbbbbbbbbbbnn//light comes from a given point
 //				{
 //					if ( length( intersection.point - ray.O ) < length( light.position - ray.O ) ) //Between the light and the origin, not after
 //						return true;

@@ -66,6 +66,20 @@ class Material
 	}
 };
 
+//frustrum for culling triangles out of the four corner rays in packet traversal.
+class Frustrum
+{
+	Ray* cornerRays[4];
+
+	// the normal and offsets for all the side planes of the frustrum
+	float nx[4];
+	float ny[4];
+	float nz[4];
+	float dx[4];
+	float dy[4];
+	float dz[4];
+};
+
 class Intersection
 {
   public:
