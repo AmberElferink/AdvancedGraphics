@@ -211,6 +211,7 @@ int frameCounter = 0;
 #define THREADS
 //#define AVX
 //#define AVXPACKETTRAVERSAL
+#define PACKETFRUSTRUMS
 
 
 #ifdef THREADS
@@ -230,6 +231,8 @@ void RenderCore::Render(const ViewPyramid& view, const Convergence converge)
 				raytracer.rayTraceBlockPackets(view, screen, 0, i * (screen->height / 4), (i + 1) * (screen->height / 4));
 			#elif defined AVX
 				raytracer.rayTraceBlockAVX(view, screen, 0, i * (screen->height / 4), (i + 1) * (screen->height / 4));
+			#elif defined PACKETFRUSTRUMS
+			    raytracer.rayTraceBlockPacketsFr(view, screen, 0, i * (screen->height / 4), (i + 1) * (screen->height / 4));
 			#else
 				raytracer.rayTraceBlock(view, screen, 0, i * (screen->height / 4), (i + 1) * (screen->height / 4));
 			#endif

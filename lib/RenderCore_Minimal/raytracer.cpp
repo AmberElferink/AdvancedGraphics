@@ -259,6 +259,19 @@ void Raytracer::nearestIntersection(Rays &r, Intersections &closests)
 
 }
 
+void Raytracer::nearestIntersection(Rays &r, const Frustrum &fr, Intersections &closests)
+{
+	int id = 0;
+
+	//	Find closest intersection point for all meshes
+	for (Mesh &mesh : scene.meshList)
+	{
+		bvh[id].root->Traverse(r, fr, RAYPACKETSIZE, Indices(), bvh[id].pool, bvh[id].indices, bvh[id].triangles, closests, scene.matList);
+		id++;
+	}
+
+}
+
 
 float Raytracer::Fresnel(const float cosi, const float ncalc, const float n1, const float n2)
 {
@@ -440,12 +453,92 @@ Color8 Raytracer::Trace(Ray8 &ray, const Intersection8 prevIntersection, int ref
 	}
 }
 
-	//Method that sends a ray into a scene and returns the color of the hitted objects
+
+//Method that sends a ray into a scene and returns the color of the hitted objects
 //prevIntersection is only used for dieelectric n2.
 void Raytracer::Trace(Rays &r, Indices I, const Intersections prevIntersection, int reflectionDepth)
 {
 	Intersections closests;
 	nearestIntersection(r, closests);
+
+	//if (reflectionDepth == 0) //color the background for the first round for all inactive rays
+	//{
+	//	for (int j = r.ia; j < RAYPACKETSIZE; j++)
+	//	{
+	//		for (int i = 0; i < 8; i++)
+	//		{
+	//			//inactive rays got the background
+	//			r.rays[j].color.r[i] = 0.3f; //background color //should be * ray.I
+	//			r.rays[j].color.g[i] = 0.3f;
+	//			r.rays[j].color.b[i] = 0.3f;
+	//			r.rays[j].deadMask[i] = 0x00000000;
+	//		}
+	//	}
+	//}
+
+//if (r.ia == 0)
+//		return; //there are no rays that still need a color
+
+	//all active rays must be checked.
+	for (int j = 0; j < RAYPACKETSIZE; j++)
+	{
+		for (int i = 0; i < 8; i++)
+		{
+			if (closests.inter[I.I[j]].t[i] < 10e29) //direct illumination
+			{
+				if (isnan(abs(r.rays[I.I[j]].deadMask[i]))) //it's -nan, which means it's true. (0 is false)
+				{
+					float3 c1 = DirectIllumination(closests.inter[I.I[j]].intersections[i]); //should be * ray.I
+					r.rays[I.I[j]].color.b[i] = c1.x;
+					r.rays[I.I[j]].color.g[i] = c1.y;
+					r.rays[I.I[j]].color.r[i] = c1.z;
+					r.rays[I.I[j]].deadMask[i] = 0x00000000;
+				}
+
+			}
+			else //background
+			{
+				reflectionDepth = -1;
+				if (isnan(abs(r.rays[j].deadMask[i])))//ray.activeMask[i] > 0)
+				{
+					r.rays[I.I[j]].color.b[i] = 0.3f; //background color //should be * ray.I
+					r.rays[I.I[j]].color.g[i] = 0.3f;
+					r.rays[I.I[j]].color.r[i] = 0.3f;
+					r.rays[I.I[j]].deadMask[i] = 0x00000000;
+				}
+
+			}
+			//if (_mm256_movemask_ps(r.rays[r.I[j]].activeMask8) == 0)
+			//{
+			//	swap(rI[j], r.I[r.ia]);
+			//	r.ia--;
+			//}
+		}
+	}
+
+
+	//if ( reflectionDepth < maxReflectionDepth )
+	//{
+	//	//Case of (partially) reflective material
+	//	if (intersection.material.metallic)
+	//		return Reflect(ray, intersection, reflectionDepth);
+	//	else if (intersection.material.dielectric)
+	//		return calcDielectric(ray, intersection, prevIntersection, reflectionDepth);
+	//}
+
+	//reflectionDepth = -1;
+
+	//completely diffuse or maximum reflection depth
+	//return DirectIllumination(intersection) * ray.I; // ray.I is the intensity that comes through glass if it has passed through
+
+}
+
+	//Method that sends a ray into a scene and returns the color of the hitted objects
+//prevIntersection is only used for dieelectric n2.
+void Raytracer::Trace(Rays &r, const Frustrum &fr, Indices I, const Intersections prevIntersection, int reflectionDepth)
+{
+	Intersections closests;
+	nearestIntersection(r, fr, closests);
 
 	//if (reflectionDepth == 0) //color the background for the first round for all inactive rays
 	//{
@@ -724,6 +817,7 @@ void Raytracer::rayTraceLinesPackets(Bitmap *screen, const ViewPyramid &view, co
 			r.rays[dj] = Ray8(O, D);
 		}
 
+
 		Trace(r, Indices(), Intersections(), 0);
 
 		for (int dj = 0; dj < RAYPACKETSIZE; dj++)
@@ -734,6 +828,46 @@ void Raytracer::rayTraceLinesPackets(Bitmap *screen, const ViewPyramid &view, co
 			}
 		}
 		rayNr += 8 ; //*RAYPACKETSIZE, but for debugging only look at the first row.
+	}
+}
+
+
+void Raytracer::rayTraceLinesPacketsFr(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, const int lineNr)
+{
+	for (uint i = 0; i < screen->width; i += 8)
+	{
+		Rays r;
+		float3 O[8], D[8];
+		for (int dj = 0; dj < RAYPACKETSIZE; dj++)
+		{
+			for (int di = 0; di < 8; di++)
+			{
+				if (i + di == probePos.x && lineNr + dj == probePos.y)
+					printf("probing: x: %i, y: %i, rayNr: %i\n", i + di, lineNr + dj, rayNr);
+				int x = i + di;
+				//u and v are the vectors within the virtual screen scaled between 0 and 1, so u = px / screenwidth and y = py / screenwidth
+				float u = ((float)(i + di)) / (float)screen->width;
+				float v = ((float)(lineNr + dj)) / (float)screen->height;
+				float3 P = view.p1 + u * (view.p2 - view.p1) + v * (view.p3 - view.p1);
+
+				float3 dir = P - view.pos;		// vector in the direction you want to shoot your ray
+				O[di] = view.pos;
+				D[di] = dir / length(dir); //normalize it
+			}
+			r.rays[dj] = Ray8(O, D);
+		}
+		Frustrum fr(r);
+
+		Trace(r, fr, Indices(), Intersections(), 0);
+
+		for (int dj = 0; dj < RAYPACKETSIZE; dj++)
+		{
+			for (int di = 0; di < 8; di++)
+			{
+				screen->pixels[(i + di) + (lineNr + dj) * screen->width] = FloatToIntColor(make_float3(r.rays[dj].color.b[di], r.rays[dj].color.g[di], r.rays[dj].color.r[di]));
+			}
+		}
+		rayNr += 8; //*RAYPACKETSIZE, but for debugging only look at the first row.
 	}
 }
 
@@ -760,6 +894,14 @@ void Raytracer::rayTraceBlockPackets(const ViewPyramid &view, Bitmap *screen, co
 	for (int i = lineStart; i < lineEnd; i+= RAYPACKETSIZE)
 	{
 		rayTraceLinesPackets(screen, view, targetTextureID, i);
+	}
+}
+
+void Raytracer::rayTraceBlockPacketsFr(const ViewPyramid &view, Bitmap *screen, const int targetTextureID, int lineStart, int lineEnd)
+{
+	for (int i = lineStart; i < lineEnd; i += RAYPACKETSIZE)
+	{
+		rayTraceLinesPacketsFr(screen, view, targetTextureID, i);
 	}
 }
 
