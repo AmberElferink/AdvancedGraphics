@@ -763,6 +763,7 @@ void Raytracer::pathTrace(Bitmap *screen, const ViewPyramid &view, const int tar
 			rayNr++;
 		}
 	}
+	rayNr = 0;
 }
 
 void Raytracer::rayTraceLineAVX(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, const int lineNr)
