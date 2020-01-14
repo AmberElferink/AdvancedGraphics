@@ -136,7 +136,7 @@ class Raytracer
 {
   public:
 	vector<BVH> bvh;
-	BitmapFloat *buf;
+	BitmapFloat *buffer;
 	Scene scene;
 	int2 probePos; //mouse position for which you want to get more info
 
