@@ -667,6 +667,19 @@ float3 Raytracer::Sample(const Ray &ray)
 	if (I.triangle.ltriIdx >= 0)
 		return scene.lightList[I.triangle.ltriIdx].triangle.radiance;
 
+	//specular surfaces
+	if (I.material.metallic)
+	{
+		//take a random number between 0 and 1
+		float rn = (float)rand() / (float)RAND_MAX;
+		if (rn <= I.material.specularity)
+		{
+			float3 reflectedDir = ray.D - 2 * dot( ray.D, I.norm ) * I.norm;
+			Ray reflectedRay = Ray( I.point + 2 * EPSILON * reflectedDir, reflectedDir );
+			return Sample( reflectedRay ) * I.material.color;
+		}
+	}
+
 	// continue in random direction
 	float3 R = DiffuseReflection(I.norm);
 	float3 BRDF = I.material.color / PI;
@@ -763,7 +776,7 @@ void Raytracer::pathTrace(Bitmap *screen, const ViewPyramid &view, const int tar
 			rayNr++;
 		}
 	}
-	rayNr = 0;
+	//rayNr = 0;
 }
 
 void Raytracer::rayTraceLineAVX(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, const int lineNr)

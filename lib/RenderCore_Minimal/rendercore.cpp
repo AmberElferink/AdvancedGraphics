@@ -257,7 +257,7 @@ void RenderCore::Render(const ViewPyramid& view, const Convergence converge)
 			raytracer.rayTraceInPackets(screen, view, targetTextureID, lineNr);
 			lineNr+= RAYPACKETSIZE;
 		#elif defined PATHTRACE
-				raytracer.pathTrace(screen, view, targetTextureID, sampleNr);
+				raytracer.pathTrace(screen, view, targetTextureID, sampleNr++);
 		#else
 			raytracer.rayTraceLine(screen, view, targetTextureID, lineNr);
 			lineNr++;

@@ -76,7 +76,7 @@ class Intersection
 	Material material;
 	CoreTri triangle;
 
-    Intersection( const float t, const float3 &point, const float3 &norm, const CoreTri &triangle ) : t( t ), point( point ), norm( norm )
+    Intersection( const float t, const float3 &point, const float3 &norm, const CoreTri triangle ) : t( t ), point( point ), norm( norm )
 	{
 		//material = triangle.material;
 	}
