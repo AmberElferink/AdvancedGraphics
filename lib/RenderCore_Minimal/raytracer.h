@@ -136,7 +136,7 @@ class Raytracer
 {
   public:
 	vector<BVH> bvh;
-	BitmapFloat *buffer;
+	BitmapFloat *buf;
 	Scene scene;
 	int2 probePos; //mouse position for which you want to get more info
 
@@ -172,6 +172,7 @@ class Raytracer
 	void pathTrace(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, uint sampleCount);
 
 	float3 Reflect( const Ray &ray, const Intersection &intersection, int reflectionDepth );
+	float3 ReflectPath( const Ray &ray, const Intersection &intersection, int reflectionDepth );
 	float3 calcDielectric( Ray ray, Intersection intersection, const Intersection prevIntersection, int reflectionDepth, const float n1 = 1.0002f ); //only adjust n1 if previous trace is also a dielectric material
 	float Fresnel( const float cosi, const float ncalc, const float n1, const float n2 );
 	float3 DirectIllumination( Intersection intersection );

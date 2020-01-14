@@ -109,8 +109,8 @@ void RenderCore::SetTarget(GLTexture *target)
 	if (screen != 0 && target->width == screen->width && target->height == screen->height) return; // nothing changed
 	delete screen;
 	screen = new Bitmap(target->width, target->height);
-	delete raytracer.buffer;
-	raytracer.buffer = new BitmapFloat(screen->width, screen->height);
+	delete raytracer.buf;
+	raytracer.buf = new BitmapFloat(screen->width, screen->height);
 	sampleNr = 0;
 	
 }
@@ -257,7 +257,7 @@ void RenderCore::Render(const ViewPyramid& view, const Convergence converge)
 			raytracer.rayTraceInPackets(screen, view, targetTextureID, lineNr);
 			lineNr+= RAYPACKETSIZE;
 		#elif defined PATHTRACE
-				raytracer.pathTrace(screen, view, targetTextureID, sampleNr);
+			raytracer.pathTrace(screen, view, targetTextureID, sampleNr++);
 		#else
 			raytracer.rayTraceLine(screen, view, targetTextureID, lineNr);
 			lineNr++;

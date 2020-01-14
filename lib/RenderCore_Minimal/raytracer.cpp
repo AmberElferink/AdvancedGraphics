@@ -401,6 +401,26 @@ float3 Raytracer::Reflect( const Ray &ray, const Intersection &intersection, int
 	}
 }
 
+float3 Raytracer::ReflectPath(const Ray &ray, const Intersection &intersection, int reflectionDepth)
+{
+	//s denotes the amount of light that is reflected and d the amount that is absorbed
+	float s = intersection.material.specularity;
+	float chance = rand();
+
+	if (chance < s) 
+	{
+		//Computes the direction of the reflected ray
+		float3 reflectedDir = ray.D - 2 * dot(ray.D, intersection.norm) * intersection.norm;
+		Ray reflectedRay = Ray(intersection.point + 2 * EPSILON * reflectedDir, reflectedDir);
+		return intersection.material.color * Sample(reflectedRay);
+	}
+	else
+	{
+		return intersection.material.color * DiffuseReflection(intersection.norm);
+	}
+	
+}
+
 //Method that sends a ray into a scene and returns the color of the hitted objects
 //prevIntersection is only used for dieelectric n2.
 Color8 Raytracer::Trace(Ray8 &ray, const Intersection8 prevIntersection, int reflectionDepth)
@@ -666,14 +686,19 @@ float3 Raytracer::Sample(const Ray &ray)
 		return make_float3(0.f, 0.f, 0.f);
 	if (I.triangle.ltriIdx >= 0)
 		return scene.lightList[I.triangle.ltriIdx].triangle.radiance;
+	//else if (I.material.metallic && I.material.specularity > 0)
+	//	return ReflectPath(ray, I, 0);
+	//else
+	//{
+		// continue in random direction
+		float3 R = DiffuseReflection(I.norm);
+		float3 BRDF = I.material.color / PI;
+		Ray r(I.point, R);
+		// update throughput
+		float3 Ei = Sample(r) * (dot(I.norm, R));
+		return PI * 2.0f * BRDF * Ei;
+	//}
 
-	// continue in random direction
-	float3 R = DiffuseReflection(I.norm);
-	float3 BRDF = I.material.color / PI;
-	Ray r(I.point, R);
-	// update throughput
-	float3 Ei = Sample(r) * (dot(I.norm, R));
-	return PI * 2.0f * BRDF * Ei;
 }
 
 
@@ -739,8 +764,10 @@ void Raytracer::rayTraceLine(Bitmap *screen, const ViewPyramid &view, const int 
 
 void Raytracer::pathTrace(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, uint sampleCount)
 {
+
 	for (uint j = 0; j < screen->height; j++)
 	{
+		
 		for (uint i = 0; i < screen->width; i++)
 		{
 			//printf("pX: %i, i: %i, pY: %i, j: %i\n", probePos.x, i, probePos.y, j);
@@ -758,8 +785,15 @@ void Raytracer::pathTrace(Bitmap *screen, const ViewPyramid &view, const int tar
 			Ray ray = Ray(view.pos, D);
 
 			float3 intersectionColor = Sample(ray);
-			buffer->pixels[i + j * buffer->width] = (buffer->pixels[i + j * buffer->width] * (float) (sampleCount) + intersectionColor) / (float) (sampleCount + 1);
-			screen->pixels[i + j * screen->width] = FloatToIntColor(buffer->pixels[i + j * buffer->width]);
+			//if (rayNr == 400)
+			//	printf("%f\n", buf->pixels[i + j * buf->width].x);
+			buf->pixels[i + j * buf->width] = (buf->pixels[i + j * buf->width] * (float) (sampleCount) + intersectionColor) / (float) (sampleCount + 1);
+			if (rayNr == 400)
+				printf("sampleCount: %i, intersectioncolor: %f, %f, %f\n", sampleCount, intersectionColor.x, intersectionColor.y, intersectionColor.z);
+			if (rayNr == 400)
+				printf("%f\n", buf->pixels[i + j * buf->width].x);
+			screen->pixels[i + j * screen->width] = FloatToIntColor(buf->pixels[i + j * buf->width]);
+
 			rayNr++;
 		}
 	}
