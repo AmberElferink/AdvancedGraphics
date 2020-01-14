@@ -336,6 +336,62 @@ float3 Raytracer::calcDielectric(Ray ray, Intersection intersection, const Inter
 	return transmissionColor + reflectionColor;
 }
 
+float3 Raytracer::DielectricPath(Ray ray, Intersection intersection, const Intersection prevIntersection, float n1)
+{
+	//Snells law:
+	//formula: Advanced Graphics slides lecture 2 - Whitted Style - slide 18
+	//or For a full derivation, see http://www.flipcode.com/archives/reflection_transmission.pdf
+
+	float cosi = dot(intersection.norm, make_float3(-ray.D.x, -ray.D.y, -ray.D.z));
+	float n2;
+	if (cosi <= 0) 	 //you're going from n2 into n1, which makes them switch	
+	{
+		n2 = n1;
+		n1 = intersection.material.indexOfRefraction;
+		cosi = -cosi;
+		intersection.norm = -intersection.norm;
+	}
+	else //you're going from n1 into n2.
+	{
+		n2 = intersection.material.indexOfRefraction;
+	}
+
+	float ncalc = n1 / n2;
+
+	//number within the root
+	float k = 1 - (ncalc * ncalc) * (1 - (cosi * cosi));
+
+	if (k < 0) //total internal reflection
+	{
+		return Sample(ray.Reflect(intersection.norm, intersection.point), intersection, reflectionDepth); //make_float3(1, 0, 0);// 
+	}
+
+
+	float3 T = ncalc * ray.D + intersection.norm * (ncalc * cosi - sqrtf(k));
+	Ray transmissionRay(intersection.point + 2 * EPSILON * T, T);
+
+	float rn = (float)rand() / (float)RAND_MAX;
+	float Fr = Fresnel(cosi, ncalc, n1, n2);
+	if (rn < Fr) //reflect
+		return Sample(ray.Reflect(intersection.norm, intersection.point), intersection, reflectionDepth);
+	else //transmit and apply beers law
+	{
+		//Beers law:
+		if (prevIntersection.material.dielectric) //there was a previous intersection in dielectric
+		{
+			float distance = length(intersection.point - prevIntersection.point);
+			float3 I;
+			I.x = exp(-intersection.material.absorption.x * distance);
+			I.y = exp(-intersection.material.absorption.y * distance);
+			I.z = exp(-intersection.material.absorption.z * distance);
+			transmissionRay.I *= I;
+			ray.I *= I;
+		}
+		return Sample(transmissionRay, intersection, ++reflectionDepth);
+	}
+
+}
+
 void Raytracer::TextureColor( Intersection &intersection, const CoreTri &triangle, uint &color )
 {
 	Texture tex = Texture( intersection.material.texture->width, intersection.material.texture->height );
@@ -400,6 +456,8 @@ float3 Raytracer::Reflect( const Ray &ray, const Intersection &intersection, int
 		return s * intersection.material.color * Trace( reflectedRay, intersection, ++reflectionDepth ) + d * DirectIllumination( intersection );
 	}
 }
+
+
 
 //Method that sends a ray into a scene and returns the color of the hitted objects
 //prevIntersection is only used for dieelectric n2.
@@ -658,7 +716,7 @@ float3 Raytracer::DiffuseReflection( float3 N )
 
 
 
-float3 Raytracer::Sample(const Ray &ray)
+float3 Raytracer::Sample(const Ray &ray, Intersection prevIntersection, int reflectionDepth)
 {
 	Intersection I = nearestIntersection(ray);
 	// terminate if ray left the scene
@@ -674,10 +732,12 @@ float3 Raytracer::Sample(const Ray &ray)
 		float rn = (float)rand() / (float)RAND_MAX;
 		if (rn <= I.material.specularity)
 		{
-			float3 reflectedDir = ray.D - 2 * dot( ray.D, I.norm ) * I.norm;
-			Ray reflectedRay = Ray( I.point + 2 * EPSILON * reflectedDir, reflectedDir );
-			return Sample( reflectedRay ) * I.material.color;
+			return Sample( ray.Reflect( I.norm, I.point), I, reflectionDepth ) * I.material.color * ray.I;
 		}
+	}
+	if (I.material.dielectric)
+	{
+		return DielectricPath(ray, I, prevIntersection);
 	}
 
 	// continue in random direction
@@ -685,7 +745,7 @@ float3 Raytracer::Sample(const Ray &ray)
 	float3 BRDF = I.material.color / PI;
 	Ray r(I.point, R);
 	// update throughput
-	float3 Ei = Sample(r) * (dot(I.norm, R));
+	float3 Ei = Sample(r, I, reflectionDepth) * (dot(I.norm, R)) * ray.I;
 	return PI * 2.0f * BRDF * Ei;
 }
 
@@ -770,7 +830,7 @@ void Raytracer::pathTrace(Bitmap *screen, const ViewPyramid &view, const int tar
 
 			Ray ray = Ray(view.pos, D);
 
-			float3 intersectionColor = Sample(ray);
+			float3 intersectionColor = Sample(ray, Intersection(), 0);
 			buffer->pixels[i + j * buffer->width] = (buffer->pixels[i + j * buffer->width] * (float) (sampleCount) + intersectionColor) / (float) (sampleCount + 1);
 			screen->pixels[i + j * screen->width] = FloatToIntColor(buffer->pixels[i + j * buffer->width]);
 			rayNr++;
