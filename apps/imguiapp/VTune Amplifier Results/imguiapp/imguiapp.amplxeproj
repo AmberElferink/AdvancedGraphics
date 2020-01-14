@@ -27,12 +27,12 @@
      <launch type="pointer" type_id="dasID_cctrl2::ApplicationWorkload" ptr_type="dasID_cctrl2::IWorkload">
       <workload>
        <targetName>launch</targetName>
-       <launch_app.app_to_launch>C:\CodeRepositories\Master\Advanced Graphics\lh2\advanced-graphics\apps\imguiapp\.\imguiapp.exe</launch_app.app_to_launch>
-       <launch_app.working_folder>C:\CodeRepositories\Master\Advanced Graphics\lh2\advanced-graphics\apps\imguiapp\</launch_app.working_folder>
+       <launch_app.app_to_launch>C:\CodeRepositories\Master\Advanced Graphics\lighthouse2\apps\imguiapp\.\imguiapp.exe</launch_app.app_to_launch>
+       <launch_app.working_folder>C:\CodeRepositories\Master\Advanced Graphics\lighthouse2\apps\imguiapp\</launch_app.working_folder>
        <launch_app.app_parameters></launch_app.app_parameters>
        <use_app_dir_as_work_dir type="bool">false</use_app_dir_as_work_dir>
        <launch_app.environment></launch_app.environment>
-       <result_directory.path>C:\CodeRepositories\Master\Advanced Graphics\lh2\advanced-graphics\apps\imguiapp\VTune Amplifier Results\imguiapp\r@@@{at}</result_directory.path>
+       <result_directory.path>C:\CodeRepositories\Master\Advanced Graphics\lighthouse2\apps\imguiapp\VTune Amplifier Results\imguiapp\r@@@{at}</result_directory.path>
        <context>
         <contextValue>
          <id>allowMultipleRuns</id>

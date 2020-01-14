@@ -220,66 +220,75 @@ vector<thread> threads;
 #endif
 void RenderCore::Render(const ViewPyramid& view, const Convergence converge)
 {
+	raytracer.pathTrace(screen, view, targetTextureID, sampleNr);
+	sampleNr++;
+//
+//#ifdef THREADS
+//	threads.clear();
+//	t.reset();
+//	for (int i = 0; i < 4; i++)
+//	{
+//		threads.push_back(thread([=]() {
+//			#ifdef AVX
+//				raytracer.rayTraceBlockAVX(view, screen, 0, i * (screen->height / 4), (i + 1) * (screen->height / 4));
+//			#else
+//				raytracer.rayTraceBlock(view, screen, 0, i * (screen->height / 4), (i + 1) * (screen->height / 4));
+//			#endif
+//		}));
+//	}
+//
+//	for (int i = 0; i < 4; i++)
+//	{
+//		if (threads[i].joinable())
+//			threads[i].join();
+//	}
+//		printf("raytracer traced in %f\n", t.elapsed());
+//#else
+//
+	////for (int i = 0; i < 4; i++)
+	////{
+	////	raytracer.rayTraceBlock(view, screen, 0, i * (screen->height / 4), (i + 1) * (screen->height / 4));
+	////}
+//
+//
+//	//raytracer.rayTrace(screen, view, targetTextureID);
+//
+	////---------per line raytracing --------
 
-#ifdef THREADS
-	threads.clear();
-	t.reset();
-	for (int i = 0; i < 4; i++)
-	{
-		threads.push_back(thread([=]() {
-			#ifdef AVX
-				raytracer.rayTraceBlockAVX(view, screen, 0, i * (screen->height / 4), (i + 1) * (screen->height / 4));
-			#else
-				raytracer.rayTraceBlock(view, screen, 0, i * (screen->height / 4), (i + 1) * (screen->height / 4));
-			#endif
-		}));
-	}
+	//if (lineNr < screen->height)
+	//{
+	//	
+	//	#ifdef AVX
+	//		raytracer.rayTraceLineAVX(screen, view, targetTextureID, lineNr);
+	//		lineNr++;
+	//	#elif defined AVXPACKETTRAVERSAL
+	//		raytracer.rayTraceInPackets(screen, view, targetTextureID, lineNr);
+	//		lineNr+= RAYPACKETSIZE;
+	//	#elseif defined PATHTRACE
+	//			raytracer.pathTrace(screen, view, targetTextureID, sampleNR);
+	//	#else
+	//		raytracer.rayTraceLine(screen, view, targetTextureID, lineNr);
+	//		lineNr++;
+	//	#endif
+	//	
+	//	//printf("raytraced line in %f\n", t.elapsed());
+	//}
+	//else
+	//{
+	//	lineNr = 0;
+	//	rayNr = 0;
+	//	printf("raytraced in %f\n", t.elapsed());
+	//	t.reset();
+	//}
 
-	for (int i = 0; i < 4; i++)
-	{
-		if (threads[i].joinable())
-			threads[i].join();
-	}
-		printf("raytracer traced in %f\n", t.elapsed());
-#else
-
-	for (int i = 0; i < 4; i++)
-	{
-		raytracer.rayTraceBlock(view, screen, 0, i * (screen->height / 4), (i + 1) * (screen->height / 4));
-	}
-
-
-	raytracer.rayTrace(screen, view, targetTextureID);
-
-	//---------per line raytracing --------
-
-	if (lineNr < screen->height)
-	{
-		
-		#ifdef AVX
-			raytracer.rayTraceLineAVX(screen, view, targetTextureID, lineNr);
-			lineNr++;
-		#elif defined AVXPACKETTRAVERSAL
-			raytracer.rayTraceInPackets(screen, view, targetTextureID, lineNr);
-			lineNr+= RAYPACKETSIZE;
-		#elif defined PATHTRACE
-				raytracer.pathTrace(screen, view, targetTextureID, sampleNr);
-		#else
-			raytracer.rayTraceLine(screen, view, targetTextureID, lineNr);
-			lineNr++;
-		#endif
-		
-		//printf("raytraced line in %f\n", t.elapsed());
-	}
-	else
-	{
-		lineNr = 0;
-		rayNr = 0;
-		printf("raytraced in %f\n", t.elapsed());
-		t.reset();
-	}
-
-#endif
+	// -----------per block raytracing ---------------
+	//raytracer.rayTraceRandom(view, targetTextureID, frameCounter);
+	//int screenSize = screen->width * screen->height;
+	//for (int j = 0; j < screenSize; j++)
+	//{
+	//	screen->pixels[j] = raytracer.buffer->pixels[j] / frameCounter;
+	//}
+//#endif
 	glBindTexture(GL_TEXTURE_2D, targetTextureID);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, screen->width, screen->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, screen->pixels);
 }

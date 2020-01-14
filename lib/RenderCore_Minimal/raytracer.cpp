@@ -760,12 +760,9 @@ void Raytracer::pathTrace(Bitmap *screen, const ViewPyramid &view, const int tar
 			float3 intersectionColor = Sample(ray);
 			buffer->pixels[i + j * buffer->width] = (buffer->pixels[i + j * buffer->width] * (float) (sampleCount) + intersectionColor) / (float) (sampleCount + 1);
 			screen->pixels[i + j * screen->width] = FloatToIntColor(buffer->pixels[i + j * buffer->width]);
-			if (rayNr == 481)
-				screen->pixels[i + j * screen->width] = 0xFF0000;
 			rayNr++;
 		}
 	}
-	rayNr = 0;
 }
 
 void Raytracer::rayTraceLineAVX(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, const int lineNr)
