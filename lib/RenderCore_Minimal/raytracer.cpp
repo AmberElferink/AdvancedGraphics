@@ -665,7 +665,7 @@ float3 Raytracer::Sample(const Ray &ray)
 	if (I.t > 10e29)
 		return make_float3(0.f, 0.f, 0.f);
 	if (I.triangle.ltriIdx >= 0)
-		return scene.lightList[I.triangle.ltriIdx].radiance;
+		return scene.lightList[I.triangle.ltriIdx].triangle.radiance;
 
 	// continue in random direction
 	float3 R = DiffuseReflection(I.norm);
