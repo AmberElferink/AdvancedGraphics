@@ -179,6 +179,7 @@ class Raytracer
 	float Fresnel( const float cosi, const float ncalc, const float n1, const float n2 );
 	float3 DirectIllumination( Intersection intersection );
 	float3 DiffuseReflection( float3 N );
+	float3 CosineWeightedDiffuseReflection( float3 N );
 	float3 Trace( const Ray &ray, const Intersection prevIntersection, int reflectionDepth ); //default: air
 	Color8 Trace(Ray8 &ray, const Intersection8 prevIntersection, int reflectionDepth); //default: air
 	void Trace(Rays &ray, Indices I, const Intersections prevIntersection, int reflectionDepth); //default: air

@@ -631,6 +631,7 @@ float3 Raytracer::DirectIllumination( Intersection intersection )
 
 //---------------------------------------------------------PATHTRACER METHODS------------------------------------
 
+/* Random vector on the hemisphere following a uniform distribution */
 float3 Raytracer::DiffuseReflection( float3 N )
 {
 	while ( true )
@@ -657,6 +658,30 @@ float3 Raytracer::DiffuseReflection( float3 N )
 		}
 	}
 }
+
+/* Random vector on the hemisphere following a cosine weighted distribution */
+float3 Raytracer::CosineWeightedDiffuseReflection( float3 N )
+{
+	float r0 = (float)rand() / (float)RAND_MAX;
+	float r1 = (float)rand() / (float)RAND_MAX;
+	float r = sqrt( r0 );
+	float theta = 2 * PI * r1;
+	float x = r * cosf( theta );
+	float y = r * sinf( theta );
+	float3 P = make_float3( x, y, sqrt( 1 - r0 ) );
+
+	//Vector P needs to be transformed to tangent space
+	float3 W;
+	if ( abs( N.x ) > 0.99 )
+		W = make_float3( 0, 1, 0 );
+	else
+		W = make_float3( 1, 0, 0 );
+	float3 T = cross( N, W );
+	T = T / length(T);
+	float3 B = cross( T, N );
+	//return make_float3( dot( P, T ), dot( P, B ), dot( P, N ) );
+	return P.x * T + P.y * B + P.z * N;
+}
 
 float3 Raytracer::Sample( const Ray &ray, bool lastSpecular )
 {
@@ -710,7 +735,7 @@ float3 Raytracer::Sample( const Ray &ray, bool lastSpecular )
 	}
 
 	// continue in random direction
-	float3 R = DiffuseReflection( I.norm );
+	float3 R = CosineWeightedDiffuseReflection( I.norm );
 	Ray r( I.point, R );
 	// update throughput
 	float3 Ei = Sample( r, false ) * ( dot( I.norm, R ) );
