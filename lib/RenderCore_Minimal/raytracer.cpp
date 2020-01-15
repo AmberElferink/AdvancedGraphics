@@ -738,8 +738,10 @@ float3 Raytracer::Sample( const Ray &ray, bool lastSpecular )
 	float3 R = CosineWeightedDiffuseReflection( I.norm );
 	Ray r( I.point, R );
 	// update throughput
-	float3 Ei = Sample( r, false ) * ( dot( I.norm, R ) );
-	return PI * 2.0f * BRDF * Ei + Ld;
+	float dotR = dot( I.norm, R );
+	float PDF =  dotR / PI; //set to 1 / (2 * PI) if you are using DiffReflection
+	float3 Ei = Sample( r, false ) * dotR / PDF;
+	return BRDF * Ei + Ld;
 }
 
 void Raytracer::rayTrace( Bitmap *screen, const ViewPyramid &view, const int targetTextureID )
