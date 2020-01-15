@@ -188,13 +188,17 @@ void RenderCore::SetLights(const CoreLightTri *areaLights, const int areaLightCo
 		raytracer.scene.lightList.push_back(l);
 	}
 
+	float area = 0; //summed area of all lights
+
 	for (int i = 0; i < areaLightCount; i++)
 	{
 		Light l;
 		l.areaLight = true;
 		l.triangle = areaLights[i];
+		area += l.triangle.area;
 		raytracer.scene.lightList.push_back(l);
 	}
+	raytracer.scene.areaLights = area;
 }
 
 void RenderCore::SetProbePos(const int2 pos)

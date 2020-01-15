@@ -125,6 +125,7 @@ class Scene
 	vector<Texture *> texList;
 	vector<Light> lightList;
 	vector<Mesh> meshList;
+	float areaLights;
 };
 
 // -----------------------------------------------------------
@@ -153,6 +154,7 @@ class Raytracer
 	int viewSpotLight( const Intersection &intersection, const Light &light, float3 &lightVector );
 	bool viewAreaLight( const Intersection &intersection, Light &light );
 	float3 randomPointTri( const CoreLightTri &triangle );
+	float3 randomPointLight( float3 &pl, Light &light );
 	void rayTrace( Bitmap *screen, const ViewPyramid &view, const int targetTextureID );
 	void rayTraceBlock( const ViewPyramid &view, Bitmap *screen, const int targetTextureID, int lineStart, int lineEnd );
 	void rayTraceLine( Bitmap *screen, const ViewPyramid &view, const int targetTextureID, const int lineNr );
@@ -168,7 +170,7 @@ class Raytracer
 
 
 	//Pathtracer methodes
-	float3 Sample(const Ray &ray);
+	float3 Sample(const Ray &ray, bool lastSpecular);
 	void pathTrace(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, uint sampleCount);
 
 	float3 Reflect( const Ray &ray, const Intersection &intersection, int reflectionDepth );
