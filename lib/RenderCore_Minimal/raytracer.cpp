@@ -682,6 +682,63 @@ float3 Raytracer::CosineWeightedDiffuseReflection( float3 N )
 	//return make_float3( dot( P, T ), dot( P, B ), dot( P, N ) );
 	return P.x * T + P.y * B + P.z * N;
 }
+float3 Raytracer::MISample(Ray &ray, bool lastSpecular)
+{
+	float3 T = make_float3(1);
+	float3 E = make_float3(0);
+	while ( true )
+	{
+		Intersection I = nearestIntersection( ray );
+		float3 BRDF = I.material.color / PI;
+		if ( I.t > 10e29 ) 
+			return E;
+		if ( I.triangle.ltriIdx >= 0 )
+			{
+			if ( lastSpecular )
+				return I.material.color;
+			return E;
+			}
+		//specular surfaces
+		if ( I.material.metallic )
+		{
+			//take a random number between 0 and 1
+			float rn = (float)rand() / (float)RAND_MAX;
+			if ( rn <= I.material.specularity )
+			{
+				float3 reflectedDir = ray.D - 2 * dot( ray.D, I.norm ) * I.norm;
+				Ray reflectedRay = Ray( I.point + 2 * EPSILON * reflectedDir, reflectedDir );
+				return E + T * MISample( reflectedRay, true ) * I.material.color;
+			}
+		}
+		// sample a random light source
+		float3 pl; 
+		Light light;
+		randomPointLight(pl,light);
+		float dist = length( pl - I.point );
+		pl = ( pl - I.point ) / dist;
+		Ray lr( I.point, pl );
+		float dot1 = dot( I.norm, pl );
+		float dot2 = dot( light.triangle.N, -pl );
+		if ( dot1 > 0 && dot2 > 0 )
+			{
+				if ( !IsOccluded( lr, light ) )
+				{
+					float solidAngle = ( dot2 * light.triangle.area ) / ( dist * dist );
+					float misPDF = 1 / solidAngle + 1 / (2*PI); //1 /(2*PI);
+					E += T * ( dot1 / misPDF ) * light.triangle.radiance * BRDF;
+				}
+			}
+		// continue random walk
+		float3 R = CosineWeightedDiffuseReflection( I.norm );
+		float dotR = dot( R, I.norm );
+		float PDF = dotR / PI;
+		Ray r( I.point, R );
+		T *= ( dotR / PDF ) * BRDF;
+		ray = r;
+		lastSpecular = false;
+	}
+	return E;
+}
 
 float3 Raytracer::Sample( const Ray &ray, bool lastSpecular )
 {
@@ -694,7 +751,7 @@ float3 Raytracer::Sample( const Ray &ray, bool lastSpecular )
 	if ( I.triangle.ltriIdx >= 0 )
 		{
 		if ( lastSpecular )
-			return I.material.emission;
+			return I.material.color;
 		else return make_float3(0);
 		}
 	//specular surfaces
@@ -720,7 +777,6 @@ float3 Raytracer::Sample( const Ray &ray, bool lastSpecular )
 	//normalize vector to the random point on a random light
 	float dist = length( pl - I.point );
 	pl = ( pl - I.point ) / dist;
-	float test = length( pl );
 	Ray lr( I.point, pl ); //send ray to random point on one of the lights
 
 	float dot1 = dot( I.norm, pl );
@@ -729,8 +785,11 @@ float3 Raytracer::Sample( const Ray &ray, bool lastSpecular )
 	{
 		if (!IsOccluded(lr,light))
 		{
-			float solidAngle = ( dot2 * light.triangle.area ) / (dist*dist);
-			Ld =  solidAngle * dot1  * light.triangle.radiance * BRDF;
+			float solidAngle = ( dot2 * light.triangle.area ) / ( dist * dist );
+			//USE FOR Multiple Importance Sampling: 
+			//float misPDF = 1 / solidAngle + 1 / ( 2 * PI ); //1 /(2*PI);
+			//Ld = ( dot1 / misPDF ) * light.triangle.radiance * BRDF;
+			Ld = solidAngle * dot1 * light.triangle.radiance * BRDF;
 		}
 	}
 
@@ -806,7 +865,7 @@ void Raytracer::pathTrace( Bitmap *screen, const ViewPyramid &view, const int ta
 
 			Ray ray = Ray( view.pos, D );
 
-			float3 intersectionColor = Sample( ray, false );
+			float3 intersectionColor = MISample( ray, false );
 			buffer->pixels[i + j * buffer->width] = ( buffer->pixels[i + j * buffer->width] * (float)( sampleCount ) + intersectionColor ) / (float)( sampleCount + 1 );
 			screen->pixels[i + j * screen->width] = FloatToIntColor( buffer->pixels[i + j * buffer->width] );
 			rayNr++;
