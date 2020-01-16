@@ -374,7 +374,7 @@ float3 Raytracer::DielectricPath(Ray ray, Intersection intersection, const Inter
 
 	if (k < 0) //total internal reflection
 	{
-		return Sample(ray.Reflect(intersection.norm, intersection.point), intersection, reflectionDepth); //make_float3(1, 0, 0);// 
+		return Sample(ray.Reflect(intersection.norm, intersection.point), intersection, false); //make_float3(1, 0, 0);// 
 	}
 
 
@@ -384,7 +384,7 @@ float3 Raytracer::DielectricPath(Ray ray, Intersection intersection, const Inter
 	float rn = (float)rand() / (float)RAND_MAX;
 	float Fr = Fresnel(cosi, ncalc, n1, n2);
 	if (rn < Fr) //reflect
-		return Sample(ray.Reflect(intersection.norm, intersection.point), intersection, reflectionDepth);
+		return Sample(ray.Reflect(intersection.norm, intersection.point), intersection, false);
 	else //transmit and apply beers law
 	{
 		//Beers law:
@@ -398,7 +398,7 @@ float3 Raytracer::DielectricPath(Ray ray, Intersection intersection, const Inter
 			transmissionRay.I *= I;
 			ray.I *= I;
 		}
-		return Sample(transmissionRay, intersection, ++reflectionDepth);
+		return Sample(transmissionRay, intersection, false);
 	}
 
 }
@@ -739,7 +739,8 @@ float3 Raytracer::CosineWeightedDiffuseReflection( float3 N )
 	float3 B = cross( T, N );
 	//return make_float3( dot( P, T ), dot( P, B ), dot( P, N ) );
 	return P.x * T + P.y * B + P.z * N;
-}
+}
+
 float3 Raytracer::MISample(Ray &ray, bool lastSpecular)
 {
 	float3 T = make_float3(1);
@@ -798,7 +799,7 @@ float3 Raytracer::MISample(Ray &ray, bool lastSpecular)
 	return E;
 }
 
-float3 Raytracer::Sample(const Ray &ray, Intersection prevIntersection, int reflectionDepth)
+float3 Raytracer::Sample( const Ray &ray, Intersection prevIntersection, bool lastSpecular )
 {
 	Intersection I = nearestIntersection( ray );
 	// terminate if ray left the scene
@@ -807,11 +808,12 @@ float3 Raytracer::Sample(const Ray &ray, Intersection prevIntersection, int refl
 
 	//we do not want to sample light sources on our random walk
 	if ( I.triangle.ltriIdx >= 0 )
-		{
-		if ( prevIntersection.material.metallic )
-			return I.material.color;
-		else return make_float3(0);
-		}
+	{
+		if ( lastSpecular )
+			return I.material.color * ray.I;
+		else
+			return make_float3( 0 );
+	}
 	//specular surfaces
 	if ( I.material.metallic )
 	{
@@ -819,18 +821,21 @@ float3 Raytracer::Sample(const Ray &ray, Intersection prevIntersection, int refl
 		float rn = (float)rand() / (float)RAND_MAX;
 		if ( rn <= I.material.specularity )
 		{
-			return Sample( ray.Reflect( I.norm, I.point), I, reflectionDepth ) * I.material.color * ray.I;
+			float3 reflectedDir = ray.D - 2 * dot( ray.D, I.norm ) * I.norm;
+			Ray reflectedRay = Ray( I.point + 2 * EPSILON * reflectedDir, reflectedDir );
+			return Sample( reflectedRay, I, true ) * I.material.color * ray.I;
 		}
 	}
+
 	if (I.material.dielectric)
 	{
-		return DielectricPath(ray, I, prevIntersection);
+		return DielectricPath( ray, I, prevIntersection );
 	}
 
 	float3 pl; //random point on random light
 	float3 Ld = make_float3( 0 );
 	float3 BRDF = I.material.color / PI;
-	
+
 	Light light;
 	randomPointLight( pl, light );
 
@@ -841,12 +846,12 @@ float3 Raytracer::Sample(const Ray &ray, Intersection prevIntersection, int refl
 
 	float dot1 = dot( I.norm, pl );
 	float dot2 = dot( light.triangle.N, -pl );
-	if ( dot1 > 0 && dot2 > 0)
+	if ( dot1 > 0 && dot2 > 0 )
 	{
-		if (!IsOccluded(lr,light))
+		if ( !IsOccluded( lr, light ) )
 		{
 			float solidAngle = ( dot2 * light.triangle.area ) / ( dist * dist );
-			//USE FOR Multiple Importance Sampling: 
+			//USE FOR Multiple Importance Sampling:
 			//float misPDF = 1 / solidAngle + 1 / ( 2 * PI ); //1 /(2*PI);
 			//Ld = ( dot1 / misPDF ) * light.triangle.radiance * BRDF;
 			Ld = solidAngle * dot1 * light.triangle.radiance * BRDF;
@@ -858,10 +863,11 @@ float3 Raytracer::Sample(const Ray &ray, Intersection prevIntersection, int refl
 	Ray r( I.point, R );
 	// update throughput
 	float dotR = dot( I.norm, R );
-	float PDF =  dotR / PI; //set to 1 / (2 * PI) if you are using DiffReflection
-	float3 Ei = Sample( r, I, reflectionDepth ) * dotR / PDF * ray.I;
-	return BRDF * Ei + Ld;
+	float PDF = dotR / PI; //set to 1 / (2 * PI) if you are using DiffReflection
+	float3 Ei = Sample( r, I, false ) * (dotR / PDF);
+	return (BRDF * Ei + Ld) * ray.I;
 }
+
 
 void Raytracer::rayTrace( Bitmap *screen, const ViewPyramid &view, const int targetTextureID )
 {
@@ -925,7 +931,9 @@ void Raytracer::pathTrace( Bitmap *screen, const ViewPyramid &view, const int ta
 
 			Ray ray = Ray( view.pos, D );
 
-			float3 intersectionColor = Sample(ray, Intersection(), 0);
+			Intersection I = Intersection();
+			I.material.metallic = true;
+			float3 intersectionColor = Sample(ray, I, true);
 			buffer->pixels[i + j * buffer->width] = (buffer->pixels[i + j * buffer->width] * (float) (sampleCount) + intersectionColor) / (float) (sampleCount + 1);
 			screen->pixels[i + j * screen->width] = FloatToIntColor(buffer->pixels[i + j * buffer->width]);
 			rayNr++;

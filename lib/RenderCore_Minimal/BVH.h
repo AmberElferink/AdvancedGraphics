@@ -86,6 +86,7 @@ class Intersection
 		point = inter.point;
 		norm = inter.norm;
 		material = inter.material;
+		material.metallic = true;
 		triangle = inter.triangle;
 	}
 	Intersection()

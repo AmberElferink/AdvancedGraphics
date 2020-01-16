@@ -224,6 +224,11 @@ vector<thread> threads;
 #endif
 void RenderCore::Render(const ViewPyramid& view, const Convergence converge)
 {
+	if (converge == Convergence::Restart)
+	{
+		raytracer.buffer->Clear();
+		sampleNr = 0;
+	}
 
 
 #ifdef THREADS

@@ -171,7 +171,7 @@ class Raytracer
 
 	//Pathtracer methodes
 	float3 MISample( Ray &ray, bool lastSpecular );
-	float3 Sample(const Ray &ray, Intersection prevIntersection, int reflectionDepth);
+	float3 Sample(const Ray &ray, Intersection prevIntersection, bool lastSpecular);
 	void pathTrace(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, uint sampleCount);
 
 	float3 Reflect( const Ray &ray, const Intersection &intersection, int reflectionDepth );
