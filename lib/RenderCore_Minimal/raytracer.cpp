@@ -1,71 +1,5 @@
 #include "core_settings.h"
 int rayNr = 0;
-// adapted from Möller–Trumbore intersection algorithm: https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
-/*bool Raytracer::Intersect( const Ray &ray, const CoreTri &triangle, Intersection &intersection )
-{
-	//TODO: het kan zijn dat een aantal dingen al geprecalculate zijn in CoreTri. Kijk daarnaar voor versnelling
-	float3 vertex0 = triangle.vertex0;
-	float3 vertex1 = triangle.vertex1;
-	float3 vertex2 = triangle.vertex2;
-	float3 edge1, edge2, h, s, q;
-	float a, f, u, v;
-	edge1 = vertex1 - vertex0;
-	edge2 = vertex2 - vertex0;
-	h = cross( ray.D, edge2 );
-	a = dot( edge1, h );
-	if ( a > -EPSILON && a < EPSILON )
-		return false; // This ray is parallel to this triangle.
-	f = 1.0f / a;
-	s = ray.O - vertex0;
-	u = f * dot( s, h );
-	if ( u < 0.0f || u > 1.0f )
-		return false;
-	q = cross( s, edge1 );
-	v = f * dot( ray.D, q );
-	if ( v < 0.0f || u + v > 1.0f )
-		return false;
-	// At this stage we can compute t to find out where the intersection point is on the line.
-	float t = f * dot( edge2, q );
-	if ( t > EPSILON && t < 1.0f / EPSILON ) // ray intersection
-	{
-		float3 intersectionPoint = ray.O + ray.D * t;
-		float3 dir = ray.O - intersectionPoint;
-		dir = dir / length( dir );
-		float3 normal = make_float3( triangle.Nx, triangle.Ny, triangle.Nz ); 
-	
-		intersection = Intersection( t, intersectionPoint, normal, triangle );
-		intersection.material = *scene.matList[triangle.material];
-		intersection.triangle = triangle;
-		return true;
-	}
-	else // This means that there is a line intersection but not a ray intersection.
-		return false;
-}*/
-
-/* Method that checks whether there are any objects between a light point and the origin of a shadowray */
-//bool Raytracer::IsOccluded( const Ray &ray, const Light &light )
-//{
-//	for ( const Mesh &mesh : scene.meshList )
-//	{
-//		int vertexCount = mesh.vcount / 3;
-//		for ( int i = 0; i < vertexCount; i++ )
-//		{
-//			Intersection intersection;
-//			if ( BVHNode::Intersect( ray, mesh.triangles[i], scene.matList, intersection) ) //If there are intersections
-//			{
-//				//light comes from infinetely far away
-//				if ( light.directionalLight )
-//					return true;
-//				else //light comes from a given point
-//				{
-//					if ( length( intersection.point - ray.O ) < length( light.position - ray.O ) ) //Between the light and the origin, not after
-//						return true;
-//				}
-//			}
-//		}
-//	}
-//	return false; //false if no intersections are found
-//}
 
 bool Raytracer::IsOccluded( const Ray &ray, const Light &light )
 {
@@ -347,7 +281,7 @@ float3 Raytracer::calcDielectric( Ray ray, Intersection intersection, const Inte
 	return transmissionColor + reflectionColor;
 }
 
-float3 Raytracer::DielectricPath(Ray ray, Intersection intersection, const Intersection prevIntersection, float n1)
+Ray Raytracer::DielectricPath(Ray ray, Intersection intersection, const Intersection prevIntersection, float n1)
 {
 	//Snells law:
 	//formula: Advanced Graphics slides lecture 2 - Whitted Style - slide 18
@@ -371,12 +305,8 @@ float3 Raytracer::DielectricPath(Ray ray, Intersection intersection, const Inter
 
 	//number within the root
 	float k = 1 - (ncalc * ncalc) * (1 - (cosi * cosi));
-
 	if (k < 0) //total internal reflection
-	{
-		return Sample(ray.Reflect(intersection.norm, intersection.point), intersection, false); //make_float3(1, 0, 0);// 
-	}
-
+		return ray.Reflect(intersection.norm, intersection.point); //make_float3(1, 0, 0);// 
 
 	float3 T = ncalc * ray.D + intersection.norm * (ncalc * cosi - sqrtf(k));
 	Ray transmissionRay(intersection.point + 2 * EPSILON * T, T);
@@ -384,7 +314,7 @@ float3 Raytracer::DielectricPath(Ray ray, Intersection intersection, const Inter
 	float rn = (float)rand() / (float)RAND_MAX;
 	float Fr = Fresnel(cosi, ncalc, n1, n2);
 	if (rn < Fr) //reflect
-		return Sample(ray.Reflect(intersection.norm, intersection.point), intersection, false);
+		return ray.Reflect(intersection.norm, intersection.point);
 	else //transmit and apply beers law
 	{
 		//Beers law:
@@ -398,7 +328,7 @@ float3 Raytracer::DielectricPath(Ray ray, Intersection intersection, const Inter
 			transmissionRay.I *= I;
 			ray.I *= I;
 		}
-		return Sample(transmissionRay, intersection, false);
+		return transmissionRay;
 	}
 
 }
@@ -741,7 +671,8 @@ float3 Raytracer::CosineWeightedDiffuseReflection( float3 N )
 	return P.x * T + P.y * B + P.z * N;
 }
 
-float3 Raytracer::MISample(Ray &ray, bool lastSpecular)
+/*Multiple importance sampling*/
+float3 Raytracer::MISample(Ray &ray, Intersection prevIntersection, bool lastSpecular)
 {
 	float3 T = make_float3(1);
 	float3 E = make_float3(0);
@@ -766,8 +697,13 @@ float3 Raytracer::MISample(Ray &ray, bool lastSpecular)
 			{
 				float3 reflectedDir = ray.D - 2 * dot( ray.D, I.norm ) * I.norm;
 				Ray reflectedRay = Ray( I.point + 2 * EPSILON * reflectedDir, reflectedDir );
-				return E + T * MISample( reflectedRay, true ) * I.material.color;
+				return E + T * MISample( reflectedRay, I, true ) * I.material.color * ray.I;
 			}
+		}
+
+		if (I.material.dielectric)
+		{
+			return E + T * MISample( DielectricPath( ray, I, prevIntersection ), I, false ) * ray.I;
 		}
 		// sample a random light source
 		float3 pl; 
@@ -784,7 +720,7 @@ float3 Raytracer::MISample(Ray &ray, bool lastSpecular)
 				{
 					float solidAngle = ( dot2 * light.triangle.area ) / ( dist * dist );
 					float misPDF = 1 / solidAngle + 1 / (2*PI); //1 /(2*PI);
-					E += T * ( dot1 / misPDF ) * light.triangle.radiance * BRDF;
+					E += T * ( dot1 / misPDF ) * light.triangle.radiance * BRDF * ray.I;
 				}
 			}
 		// continue random walk
@@ -828,9 +764,7 @@ float3 Raytracer::Sample( const Ray &ray, Intersection prevIntersection, bool la
 	}
 
 	if (I.material.dielectric)
-	{
-		return DielectricPath( ray, I, prevIntersection );
-	}
+		return Sample( DielectricPath( ray, I, prevIntersection ), I, false) * ray.I;
 
 	float3 pl; //random point on random light
 	float3 Ld = make_float3( 0 );
@@ -933,7 +867,7 @@ void Raytracer::pathTrace( Bitmap *screen, const ViewPyramid &view, const int ta
 
 			Intersection I = Intersection();
 			I.material.metallic = true;
-			float3 intersectionColor = Sample(ray, I, true);
+			float3 intersectionColor = MISample(ray, I, true);
 			buffer->pixels[i + j * buffer->width] = (buffer->pixels[i + j * buffer->width] * (float) (sampleCount) + intersectionColor) / (float) (sampleCount + 1);
 			screen->pixels[i + j * screen->width] = FloatToIntColor(buffer->pixels[i + j * buffer->width]);
 			rayNr++;
