@@ -208,10 +208,10 @@ void RenderCore::SetProbePos(const int2 pos)
 //  +-----------------------------------------------------------------------------+
 uint lineNr = 0;
 int frameCounter = 0;
-//#define THREADS
-#define AVX
+#define THREADS
+//#define AVX
 //#define AVXPACKETTRAVERSAL
-//#define PACKETFRUSTRUMS
+#define PACKETFRUSTRUMS
 
 
 #ifdef THREADS
@@ -266,6 +266,9 @@ void RenderCore::Render(const ViewPyramid& view, const Convergence converge)
 		#elif defined AVXPACKETTRAVERSAL
 			raytracer.rayTraceLinesPackets(screen, view, targetTextureID, lineNr);
 			lineNr+= RAYPACKETSIZE;
+		#elif defined PACKETFRUSTRUMS
+			raytracer.rayTraceLinesPacketsFr(screen, view, targetTextureID, lineNr);
+			lineNr += RAYPACKETSIZE;
 		#else
 			raytracer.rayTraceLine(screen, view, targetTextureID, lineNr);
 			lineNr++;

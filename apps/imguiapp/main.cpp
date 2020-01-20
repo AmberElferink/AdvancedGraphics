@@ -59,7 +59,7 @@ void PrepareScene()
 	//int lightMat = renderer->AddMaterial(make_float3(10, 10, 8));
 	//int lightQuad = renderer->AddQuad(make_float3(0, -1, 0), make_float3(0, 26.0f, 0), 6.9f, 6.9f, lightMat);
 	//int lightInst = renderer->AddInstance(lightQuad);
-	int lightBulb = renderer->AddPointLight(make_float3(0, 26, 0), make_float3(1000), true);
+	int lightBulb = renderer->AddPointLight(make_float3(0, 26, 0), make_float3(500), true);
 	//int lightBulb2 = renderer->AddPointLight(make_float3(64, -6, 21), make_float3(30000), true);
 
 	//int lightBulb2 = renderer->AddPointLight(make_float3(10, -8, 4), make_float3(100, 100, 100), true);

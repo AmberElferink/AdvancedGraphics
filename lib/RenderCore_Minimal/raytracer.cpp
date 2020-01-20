@@ -99,7 +99,7 @@ bool Raytracer::viewLight( const Intersection &intersection, const Light &light,
 	float dist = length( dir );
 	lightVector = dir / dist; //normalized vector
 
-	Ray shadowRay = Ray( intersection.point + intersection.norm * 0.002f, lightVector ); //shadow ray from origin to light point
+	Ray shadowRay = Ray( intersection.point + intersection.norm * EPSILON, lightVector ); //shadow ray from origin to light point
 
 	if ( IsOccluded( shadowRay, light ) )
 		return false; //cannot see light source

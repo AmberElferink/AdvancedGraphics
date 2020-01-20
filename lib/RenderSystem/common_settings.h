@@ -48,7 +48,7 @@
 #define TWOPI				6.28318530717958647692528f
 #define SQRT_PI_INV			0.56418958355f
 #define LARGE_FLOAT			1e34f
-#define EPSILON				0.0001f
+#define EPSILON				0.002f
 #define MINROUGHNESS		0.0001f	// minimal GGX roughness
 #define BLACK				make_float3( 0 )
 #define WHITE				make_float3( 1 )
