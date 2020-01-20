@@ -125,6 +125,7 @@ class Scene
 	vector<Texture *> texList;
 	vector<Light> lightList;
 	vector<Mesh> meshList;
+	float areaLights;
 };
 
 // -----------------------------------------------------------
@@ -136,7 +137,7 @@ class Raytracer
 {
   public:
 	vector<BVH> bvh;
-	Bitmap *buffer;
+	BitmapFloat *buffer;
 	Scene scene;
 	int2 probePos; //mouse position for which you want to get more info
 
@@ -153,6 +154,7 @@ class Raytracer
 	int viewSpotLight( const Intersection &intersection, const Light &light, float3 &lightVector );
 	bool viewAreaLight( const Intersection &intersection, Light &light );
 	float3 randomPointTri( const CoreLightTri &triangle );
+	float3 randomPointLight( float3 &pl, Light &light );
 	void rayTrace( Bitmap *screen, const ViewPyramid &view, const int targetTextureID );
 	void rayTraceBlock( const ViewPyramid &view, Bitmap *screen, const int targetTextureID, int lineStart, int lineEnd );
 	void rayTraceLine( Bitmap *screen, const ViewPyramid &view, const int targetTextureID, const int lineNr );
@@ -160,7 +162,7 @@ class Raytracer
 	void rayTraceBlockPackets(const ViewPyramid &view, Bitmap *screen, const int targetTextureID, int lineStart, int lineEnd);
 	void rayTraceBlockPacketsFr(const ViewPyramid &view, Bitmap *screen, const int targetTextureID, int lineStart, int lineEnd);
 	void rayTraceLineAVX(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, const int lineNr);
-	void rayTraceLinesPackets(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, const int lineNr);
+	void rayTraceInPackets(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, const int lineNr);
 	void rayTraceLinesPacketsFr(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, const int lineNr);
 	uint FloatToIntColor( float3 floatColor );
 	Intersection nearestIntersection( const Ray &ray );
@@ -170,10 +172,21 @@ class Raytracer
 	Bitmap *rayTraceRandom( const ViewPyramid &view, const int targetTextureID, int &frameCounter );
 	void TextureColor( Intersection &intersection, const CoreTri &triangle, uint &color );
 
+
+	//Pathtracer methodes
+	float3 MISample( Ray &ray, Intersection prevIntersection, bool lastSpecular );
+	float3 Sample(const Ray &ray, Intersection prevIntersection, bool lastSpecular);
+	void pathTrace(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, uint sampleCount);
+
 	float3 Reflect( const Ray &ray, const Intersection &intersection, int reflectionDepth );
+	float3 ReflectPath( const Ray &ray, const Intersection &intersection, int reflectionDepth );
+	//not having references in dielectric is intentional.
 	float3 calcDielectric( Ray ray, Intersection intersection, const Intersection prevIntersection, int reflectionDepth, const float n1 = 1.0002f ); //only adjust n1 if previous trace is also a dielectric material
+	Ray DielectricPath( Ray ray, Intersection intersection, const Intersection prevIntersection, const float n1 = 1.0002f ); //only adjust n1 if previous trace is also a dielectric material
 	float Fresnel( const float cosi, const float ncalc, const float n1, const float n2 );
 	float3 DirectIllumination( Intersection intersection );
+	float3 DiffuseReflection( float3 N );
+	float3 CosineWeightedDiffuseReflection( float3 N );
 	float3 Trace( const Ray &ray, const Intersection prevIntersection, int reflectionDepth ); //default: air
 	Color8 Trace(Ray8 &ray, const Intersection8 prevIntersection, int reflectionDepth); //default: air
 	void Trace(Rays &ray, Indices I, const Intersections prevIntersection, int reflectionDepth); //default: air

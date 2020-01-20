@@ -13,7 +13,7 @@
    limitations under the License.
 */
 #include "core_settings.h"
-
+uint sampleNr = 0;
 
 //#include "common_classes.h"
 
@@ -73,18 +73,17 @@ void RenderCore::SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, co
 				m->metallic = true;
 			else
 				m->metallic = false;
-
 			m->color = make_float3(float(mat[i].diffuse_b), float(mat[i].diffuse_g), float(mat[i].diffuse_r));
 
-			//if (glassIndex == 1)
-			//{
-			//	m->dielectric = true;
-			//	m->metallic = false;
-			//	m->indexOfRefraction = 1.05; //glass
-			//	m->absorption = make_float3(0.8, 0.8, 0);
-			//	m->color = make_float3(1, 1, 1);
-			//}
-			//glassIndex++;
+			if (glassIndex == 1)
+			{
+				m->dielectric = true;
+				m->metallic = false;
+				m->indexOfRefraction = 1.05; //glass
+				m->absorption = make_float3(0.8, 0.8, 0);
+				m->color = make_float3(1, 1, 1);
+			}
+			glassIndex++;
 
 
 		}
@@ -111,7 +110,9 @@ void RenderCore::SetTarget(GLTexture *target)
 	delete screen;
 	screen = new Bitmap(target->width, target->height);
 	delete raytracer.buffer;
-	raytracer.buffer = new Bitmap(screen->width, screen->height);
+	raytracer.buffer = new BitmapFloat(screen->width, screen->height);
+	sampleNr = 0;
+	
 }
 
 
@@ -187,13 +188,17 @@ void RenderCore::SetLights(const CoreLightTri *areaLights, const int areaLightCo
 		raytracer.scene.lightList.push_back(l);
 	}
 
+	float area = 0; //summed area of all lights
+
 	for (int i = 0; i < areaLightCount; i++)
 	{
 		Light l;
 		l.areaLight = true;
 		l.triangle = areaLights[i];
+		area += l.triangle.area;
 		raytracer.scene.lightList.push_back(l);
 	}
+	raytracer.scene.areaLights = area;
 }
 
 void RenderCore::SetProbePos(const int2 pos)
@@ -208,17 +213,23 @@ void RenderCore::SetProbePos(const int2 pos)
 //  +-----------------------------------------------------------------------------+
 uint lineNr = 0;
 int frameCounter = 0;
+
 #define THREADS
 //#define AVX
 //#define AVXPACKETTRAVERSAL
 #define PACKETFRUSTRUMS
-
+//#define PATHTRACE
 
 #ifdef THREADS
 vector<thread> threads;
 #endif
 void RenderCore::Render(const ViewPyramid& view, const Convergence converge)
 {
+	if (converge == Convergence::Restart)
+	{
+		raytracer.buffer->Clear();
+		sampleNr = 0;
+	}
 
 
 #ifdef THREADS
@@ -246,13 +257,6 @@ void RenderCore::Render(const ViewPyramid& view, const Convergence converge)
 	}
 		printf("raytracer traced in %f\n", t.elapsed());
 #else
-
-	//for (int i = 0; i < 4; i++)
-	//{
-	//	raytracer.rayTraceBlock(view, screen, 0, i * (screen->height / 4), (i + 1) * (screen->height / 4));
-	//}
-
-
 	//raytracer.rayTrace(screen, view, targetTextureID);
 
 	//---------per line raytracing --------
@@ -269,6 +273,8 @@ void RenderCore::Render(const ViewPyramid& view, const Convergence converge)
 		#elif defined PACKETFRUSTRUMS
 			raytracer.rayTraceLinesPacketsFr(screen, view, targetTextureID, lineNr);
 			lineNr += RAYPACKETSIZE;
+		#elif defined PATHTRACE
+				raytracer.pathTrace(screen, view, targetTextureID, sampleNr++);
 		#else
 			raytracer.rayTraceLine(screen, view, targetTextureID, lineNr);
 			lineNr++;
@@ -284,13 +290,6 @@ void RenderCore::Render(const ViewPyramid& view, const Convergence converge)
 		t.reset();
 	}
 
-	// -----------per block raytracing ---------------
-	//raytracer.rayTraceRandom(view, targetTextureID, frameCounter);
-	//int screenSize = screen->width * screen->height;
-	//for (int j = 0; j < screenSize; j++)
-	//{
-	//	screen->pixels[j] = raytracer.buffer->pixels[j] / frameCounter;
-	//}
 #endif
 	glBindTexture(GL_TEXTURE_2D, targetTextureID);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, screen->width, screen->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, screen->pixels);

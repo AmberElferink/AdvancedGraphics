@@ -32,6 +32,7 @@ bool BVHNode::Intersect( const Ray &ray, const CoreTri &triangle, const vector<M
 		float3 normal = make_float3( triangle.Nx, triangle.Ny, triangle.Nz );
 
 		intersection = Intersection( t, intersectionPoint, normal, triangle );
+		intersection.triangle = triangle;
 		intersection.material = *matList[triangle.material];
 		return true;
 	}

@@ -1,5 +1,5 @@
 <materials>
-    <material_count>6</material_count>
+    <material_count>7</material_count>
     <material_0>
         <name>White</name>
         <origin>data/reflectionScene/test2.glb</origin>

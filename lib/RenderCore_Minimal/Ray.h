@@ -19,6 +19,11 @@ public:
 		signY = ( recDir.y < 0 );
 		signZ = ( recDir.z < 0 );
 	}
+	inline Ray Ray::Reflect(const float3 &N, const float3 &point) const
+	{
+		float3 reflectedDir = D - 2 * dot(D, N) * N;
+		return  Ray(point + 2 * EPSILON * reflectedDir, reflectedDir);
+	}
 	Ray::~Ray()
 	{
 	}
