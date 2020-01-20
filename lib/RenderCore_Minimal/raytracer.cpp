@@ -99,7 +99,7 @@ bool Raytracer::viewLight( const Intersection &intersection, const Light &light,
 	float dist = length( dir );
 	lightVector = dir / dist; //normalized vector
 
-	Ray shadowRay = Ray( intersection.point + intersection.norm * 0.0002f, lightVector ); //shadow ray from origin to light point
+	Ray shadowRay = Ray( intersection.point + intersection.norm * 0.002f, lightVector ); //shadow ray from origin to light point
 
 	if ( IsOccluded( shadowRay, light ) )
 		return false; //cannot see light source
@@ -767,6 +767,8 @@ void Raytracer::rayTraceLineAVX(Bitmap *screen, const ViewPyramid &view, const i
 {
 	for (uint i = 0; i < screen->width; i+=8)
 	{
+		if (i >= probePos.x && i <= probePos.x + 8  && lineNr == probePos.y)
+			printf("probing: x: %i, y: %i, rayNr: %i\n", i, lineNr, rayNr);
 		float3 O[8], D[8];
 
 		for (int di = 0; di < 8; di++)
@@ -787,7 +789,7 @@ void Raytracer::rayTraceLineAVX(Bitmap *screen, const ViewPyramid &view, const i
 		{
 			screen->pixels[i + di + lineNr * screen->width] = FloatToIntColor(make_float3(intersectionColor.b[di], intersectionColor.g[di], intersectionColor.r[di]));
 		}
-		rayNr += 8;
+		rayNr+= 8;
 	}
 }
 

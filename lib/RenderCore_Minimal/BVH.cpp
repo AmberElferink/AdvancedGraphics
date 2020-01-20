@@ -449,8 +449,6 @@ void BVHNode::IntersectPrimitives(const Ray8 &rays, const vector<uint> &indices,
 	for (int i = leftFirst; i < right; i++)
 	{
 		IntersectClosest(rays, triangles[indices[i]], matList, closest);
-		if (closest.t[0] < 10e29)
-			int w = 0; //does not fire, so no intersection is found.
 	}
 }
 
