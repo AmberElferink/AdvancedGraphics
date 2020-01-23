@@ -780,7 +780,7 @@ float3 Raytracer::MISample(Ray &ray, Intersection prevIntersection)
 	while ( true )
 	{
 		Intersection I = nearestIntersection( ray );
-		float3 BRDF = I.material.color / PI;
+	
 		if ( I.t > 10e29 ) 
 			return E * ray.I;
 		if ( I.triangle.ltriIdx >= 0 )
@@ -796,9 +796,7 @@ float3 Raytracer::MISample(Ray &ray, Intersection prevIntersection)
 			float rn = (float)rand() / (float)RAND_MAX;
 			if ( rn <= I.material.specularity )
 			{
-				float3 reflectedDir = ray.D - 2 * dot( ray.D, I.norm ) * I.norm;
-				Ray reflectedRay = Ray( I.point + 2 * EPSILON * reflectedDir, reflectedDir );
-				return E + T * MISample( reflectedRay, I) * I.material.color * ray.I;
+				return E + T * MISample( ray.Reflect(I.norm, I.point), I) * I.material.color * ray.I;
 			}
 		}
 
@@ -815,6 +813,7 @@ float3 Raytracer::MISample(Ray &ray, Intersection prevIntersection)
 		Ray lr( I.point, pl );
 		float dot1 = dot( I.norm, pl );
 		float dot2 = dot( light.triangle.N, -pl );
+		float3 BRDF = I.material.color / PI;
 		if ( dot1 > 0 && dot2 > 0 )
 			{
 				if ( !IsOccluded( lr, light ) )
@@ -836,6 +835,8 @@ float3 Raytracer::MISample(Ray &ray, Intersection prevIntersection)
 	}
 	return E;
 }
+
+
 
 float3 Raytracer::Sample( const Ray &ray, Intersection prevIntersection, bool lastSpecular )
 {
