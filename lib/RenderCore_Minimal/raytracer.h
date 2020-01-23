@@ -174,7 +174,7 @@ class Raytracer
 
 
 	//Pathtracer methodes
-	float3 MISample( Ray &ray, Intersection prevIntersection, bool lastSpecular );
+	float3 MISample( Ray &ray, Intersection prevIntersection);
 	float3 Sample(const Ray &ray, Intersection prevIntersection, bool lastSpecular);
 	void pathTrace(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, uint sampleCount);
 
@@ -182,7 +182,7 @@ class Raytracer
 	float3 ReflectPath( const Ray &ray, const Intersection &intersection, int reflectionDepth );
 	//not having references in dielectric is intentional.
 	float3 calcDielectric( Ray ray, Intersection intersection, const Intersection prevIntersection, int reflectionDepth, const float n1 = 1.0002f ); //only adjust n1 if previous trace is also a dielectric material
-	Ray DielectricPath( Ray ray, Intersection intersection, const Intersection prevIntersection, const float n1 = 1.0002f ); //only adjust n1 if previous trace is also a dielectric material
+	Ray DielectricPath( Ray ray, Intersection &intersection, const Intersection prevIntersection, const float n1 = 1.0002f ); //only adjust n1 if previous trace is also a dielectric material
 	float Fresnel( const float cosi, const float ncalc, const float n1, const float n2 );
 	float3 DirectIllumination( Intersection intersection );
 	float3 DiffuseReflection( float3 N );
