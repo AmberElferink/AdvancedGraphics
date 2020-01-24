@@ -14,6 +14,7 @@
 */
 #include "core_settings.h"
 uint sampleNr = 0;
+bool firsttime = true;
 
 //#include "common_classes.h"
 
@@ -196,6 +197,7 @@ void RenderCore::SetLights(const CoreLightTri *areaLights, const int areaLightCo
 		l.areaLight = true;
 		l.triangle = areaLights[i];
 		area += l.triangle.area;
+		l.corner = raytracer.cornerTriangle( areaLights[i] );
 		raytracer.scene.lightList.push_back(l);
 	}
 	raytracer.scene.areaLights = area;
@@ -224,6 +226,13 @@ vector<thread> threads;
 #endif
 void RenderCore::Render(const ViewPyramid& view, const Convergence converge)
 {
+
+	if (firsttime)
+	{
+		raytracer.storePhotonMap();
+		firsttime = false;
+	}
+
 	if (converge == Convergence::Restart)
 	{
 		raytracer.buffer->Clear();

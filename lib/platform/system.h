@@ -243,7 +243,7 @@ public:
 	}
 	~BitmapFloat() { delete pixels; }
 	void Plot(uint x, uint y, float3 c) { if (x < width && y < height) pixels[x + y * width] = c; }
-	void Clear() { memset(pixels, 0, width * height * 4); }
+	void Clear() { memset(pixels, 0, width * height * 12); }
 	float3* pixels = nullptr;
 	uint width = 0, height = 0;
 };

@@ -84,61 +84,107 @@ int Raytracer::viewSpotLight( const Intersection &intersection, const Light &lig
 }
 
 /*Method that returns a random point on a triangle */
-float3 Raytracer::randomPointTri( const CoreLightTri &triangle )
+float3 Raytracer::randomPointTri( const Light &light )
 {
 	//Generate two random floats between 0 and 1
 	float u1 = ( (float)rand() ) / (float)RAND_MAX;
 	float u2 = ( (float)rand() ) / (float)RAND_MAX;
 	//Compute a random point on the quadrileteral that consists of the original triangle and the reflection of that triangle
-	float3 point = triangle.vertex0 + u1 * ( triangle.vertex1 - triangle.vertex0 ) + u2 * ( triangle.vertex2 - triangle.vertex0 );
+
+	uint corner = light.corner;
+	float3 v0, v1, v2, point;
+	if (light.corner == 0)
+	{
+		v0 = light.triangle.vertex0;
+		v1 = light.triangle.vertex1;
+		v2 = light.triangle.vertex2;
+	}
+	else if (light.corner == 1)
+	{
+		v0 = light.triangle.vertex1;
+		v1 = light.triangle.vertex0;
+		v2 = light.triangle.vertex2;
+	}
+	else
+	{
+		v0 = light.triangle.vertex2;
+		v1 = light.triangle.vertex1;
+		v2 = light.triangle.vertex0;
+	}
+
+	point = v0 + u1 * ( v1 - v0 ) + u2 * ( v2 - v0 );
 
 	//Compute a point p on the edge between vertex1 and vertex2 that forms a perpendicular line from the random point to p
-	float3 A = point - triangle.vertex1;
+	float3 A = point - v1;
 	float3 normA = A / length( A );
-	float3 edge = triangle.vertex2 - triangle.vertex1;
+	float3 edge = v2 - v1;
 	float3 normEdge = edge / length( edge );
 
 	float cosTheta = dot( normA, normEdge );
 
-	float3 p = cosTheta * A;
+	float p = cosTheta * length(A);
+	float3 locP = v1 + p * normEdge;
 
 	//compute the angle between the vector from p to the point and from p to vertex0
-	float3 dirV0 = triangle.vertex0 - p;
+	float3 dirV0 = v0 - locP;
 	float3 normV0 = dirV0 / length( dirV0 );
-	float3 dirA = A - p;
+	float3 dirA = A - locP;
 	float3 normVA = dirA / length( dirA );
 	cosTheta = dot( normV0, normVA );
+
+	float3 point2;
+	point2 = point - 2 * ( point - locP ) * ( 1 - 2 * EPSILON );
 
 	//if this angle is larger than 90 degrees (and thus cosTheta < 0), then the random point is in the reflected triangle
 	if ( cosTheta >= 0 )
 		return point;
 	else
-		return point - 2 * p; //therefore, we reflect the point over p
+		return point2; //therefore, we reflect the point over p
+}
+
+/* returns the vertex that is opposite of the longest axis of a triangle */
+uint Raytracer::cornerTriangle(const CoreLightTri &triangle)
+{
+	float l1, l2, l3;
+	l1 = length( triangle.vertex0 - triangle.vertex1 );
+	l2 = length( triangle.vertex1 - triangle.vertex2 );
+	l3 = length( triangle.vertex0 - triangle.vertex2 );
+
+	if ( l1 > l2 )
+	{
+		if ( l1 > l3 )
+			return 2;
+		if ( l3 > l2 )
+			return 1;
+	}
+	if ( l2 > l3 )
+		return 0;
+	else
+		return 1;
 }
 
 /*Method that returns a random point on a random light*/
-float3 Raytracer::randomPointLight( float3 &pl, Light &light_out )
+void Raytracer::randomPointLight( float3 &pl, Light &light_out )
 {
 	float rp = scene.areaLights * ( (float)rand() ) / (float)RAND_MAX;
 	float area = 0;
-	for (Light &light : scene.lightList)
+	for ( Light &light : scene.lightList )
 	{
-		if ( light.triangle.area + area >= rp )
-			{
-				light_out = light;
-				pl = randomPointTri( light.triangle );
-				return pl;
-			}
-			area += light.triangle.area;
+		if ( light.triangle.area + area >= rp  )
+		{
+			light_out = light;
+			pl = randomPointTri( light );
+			return;
+		}
+		area += light.triangle.area;
 	}
-	return pl;
 }
 
-	/*method that checks whether a random point in an area of light is visible*/
-	bool Raytracer::viewAreaLight( const Intersection &intersection, Light &light )
+/*method that checks whether a random point in an area of light is visible*/
+bool Raytracer::viewAreaLight( const Intersection &intersection, Light &light )
 {
 	//Random point on the triangle
-	float3 point = randomPointTri( light.triangle );
+	float3 point = randomPointTri( light );
 
 	//normalized vector from intersection point to the random point on the triangle
 	float3 dir = point - intersection.point;
@@ -281,15 +327,15 @@ float3 Raytracer::calcDielectric( Ray ray, Intersection intersection, const Inte
 	return transmissionColor + reflectionColor;
 }
 
-Ray Raytracer::DielectricPath(Ray ray, Intersection intersection, const Intersection prevIntersection, float n1)
+Ray Raytracer::DielectricPath( Ray ray, Intersection intersection, const Intersection prevIntersection, float n1 )
 {
 	//Snells law:
 	//formula: Advanced Graphics slides lecture 2 - Whitted Style - slide 18
 	//or For a full derivation, see http://www.flipcode.com/archives/reflection_transmission.pdf
 
-	float cosi = dot(intersection.norm, make_float3(-ray.D.x, -ray.D.y, -ray.D.z));
+	float cosi = dot( intersection.norm, make_float3( -ray.D.x, -ray.D.y, -ray.D.z ) );
 	float n2;
-	if (cosi <= 0) 	 //you're going from n2 into n1, which makes them switch	
+	if ( cosi <= 0 ) //you're going from n2 into n1, which makes them switch
 	{
 		n2 = n1;
 		n1 = intersection.material.indexOfRefraction;
@@ -304,33 +350,32 @@ Ray Raytracer::DielectricPath(Ray ray, Intersection intersection, const Intersec
 	float ncalc = n1 / n2;
 
 	//number within the root
-	float k = 1 - (ncalc * ncalc) * (1 - (cosi * cosi));
-	if (k < 0) //total internal reflection
-		return ray.Reflect(intersection.norm, intersection.point); //make_float3(1, 0, 0);// 
+	float k = 1 - ( ncalc * ncalc ) * ( 1 - ( cosi * cosi ) );
+	if ( k < 0 )													 //total internal reflection
+		return ray.Reflect( intersection.norm, intersection.point ); //make_float3(1, 0, 0);//
 
-	float3 T = ncalc * ray.D + intersection.norm * (ncalc * cosi - sqrtf(k));
-	Ray transmissionRay(intersection.point + 2 * EPSILON * T, T);
+	float3 T = ncalc * ray.D + intersection.norm * ( ncalc * cosi - sqrtf( k ) );
+	Ray transmissionRay( intersection.point + 2 * EPSILON * T, T );
 
 	float rn = (float)rand() / (float)RAND_MAX;
-	float Fr = Fresnel(cosi, ncalc, n1, n2);
-	if (rn < Fr) //reflect
-		return ray.Reflect(intersection.norm, intersection.point);
+	float Fr = Fresnel( cosi, ncalc, n1, n2 );
+	if ( rn < Fr ) //reflect
+		return ray.Reflect( intersection.norm, intersection.point );
 	else //transmit and apply beers law
 	{
 		//Beers law:
-		if (prevIntersection.material.dielectric) //there was a previous intersection in dielectric
+		if ( prevIntersection.material.dielectric ) //there was a previous intersection in dielectric
 		{
-			float distance = length(intersection.point - prevIntersection.point);
+			float distance = length( intersection.point - prevIntersection.point );
 			float3 I;
-			I.x = exp(-intersection.material.absorption.x * distance);
-			I.y = exp(-intersection.material.absorption.y * distance);
-			I.z = exp(-intersection.material.absorption.z * distance);
+			I.x = exp( -intersection.material.absorption.x * distance );
+			I.y = exp( -intersection.material.absorption.y * distance );
+			I.z = exp( -intersection.material.absorption.z * distance );
 			transmissionRay.I *= I;
 			ray.I *= I;
 		}
 		return transmissionRay;
 	}
-
 }
 
 void Raytracer::TextureColor( Intersection &intersection, const CoreTri &triangle, uint &color )
@@ -397,8 +442,6 @@ float3 Raytracer::Reflect( const Ray &ray, const Intersection &intersection, int
 		return s * intersection.material.color * Trace( reflectedRay, intersection, ++reflectionDepth ) + d * DirectIllumination( intersection );
 	}
 }
-
-
 
 //Method that sends a ray into a scene and returns the color of the hitted objects
 //prevIntersection is only used for dieelectric n2.
@@ -619,6 +662,55 @@ float3 Raytracer::DirectIllumination( Intersection intersection )
 
 //---------------------------------------------------------PATHTRACER METHODS------------------------------------
 
+/* Method that scatters a photon and returns the final position, along with the traversed distance D 
+   N = total number of photons that are going to be scattered */
+void Raytracer::ScatterPhotons( const long &N )
+{
+	uint n = 0;
+	while ( n < N )
+	{
+		float3 origin;
+		Light light;
+
+		//pick a random direction for the photon on a random light source
+		randomPointLight( origin, light );
+		float3 dir = CosineWeightedDiffuseReflection( light.triangle.N );
+		Ray ray = Ray( origin, dir );
+		Intersection I = nearestIntersection( ray );
+
+		if ( I.t < 10e29 )
+			{
+				scene.photonMap.StorePhoton(I.point, light.triangle.triIdx);
+				n++;
+			}
+	}
+}
+
+void Raytracer::PNEE(const float3 &point, float3 &pl, Light &light, float &p)
+{
+	uint x, y, z;
+	uint nlights = scene.lightList.size();
+	scene.photonMap.LookupCell( x, y, z, point );
+	if ( !scene.photonMap.grid[x][y][z].p_dist )
+		scene.photonMap.grid[x][y][z].CalculateProbs();
+	vector<float> probs = scene.photonMap.grid[x][y][z].probs;
+
+	float rp = ( (float)rand() ) / (float)RAND_MAX;
+	float tp = 0;
+	for ( int i = 0; i < nlights; i++ )
+	{
+		if ( probs[i] + tp >= rp || i == nlights - 1 )
+		{
+			light = scene.lightList[i];
+			pl = randomPointTri( light );
+			p = probs[i];
+			return;
+		}
+		tp += probs[i];
+	}
+	int test = 0;
+}
+
 /* Random vector on the hemisphere following a uniform distribution */
 float3 Raytracer::DiffuseReflection( float3 N )
 {
@@ -665,29 +757,29 @@ float3 Raytracer::CosineWeightedDiffuseReflection( float3 N )
 	else
 		W = make_float3( 1, 0, 0 );
 	float3 T = cross( N, W );
-	T = T / length(T);
+	T = T / length( T );
 	float3 B = cross( T, N );
 	//return make_float3( dot( P, T ), dot( P, B ), dot( P, N ) );
 	return P.x * T + P.y * B + P.z * N;
 }
 
 /*Multiple importance sampling*/
-float3 Raytracer::MISample(Ray &ray, Intersection prevIntersection, bool lastSpecular)
+float3 Raytracer::MISample( Ray &ray, Intersection prevIntersection, bool lastSpecular )
 {
-	float3 T = make_float3(1);
-	float3 E = make_float3(0);
+	float3 T = make_float3( 1 );
+	float3 E = make_float3( 0 );
 	while ( true )
 	{
 		Intersection I = nearestIntersection( ray );
 		float3 BRDF = I.material.color / PI;
-		if ( I.t > 10e29 ) 
+		if ( I.t > 10e29 )
 			return E;
 		if ( I.triangle.ltriIdx >= 0 )
-			{
-			if ( lastSpecular )
+		{
+			if ( prevIntersection.material.metallic )
 				return I.material.color;
 			return E;
-			}
+		}
 		//specular surfaces
 		if ( I.material.metallic )
 		{
@@ -701,28 +793,30 @@ float3 Raytracer::MISample(Ray &ray, Intersection prevIntersection, bool lastSpe
 			}
 		}
 
-		if (I.material.dielectric)
+		if ( I.material.dielectric )
 		{
 			return E + T * MISample( DielectricPath( ray, I, prevIntersection ), I, false ) * ray.I;
 		}
 		// sample a random light source
-		float3 pl; 
+		float3 pl;
 		Light light;
-		randomPointLight(pl,light);
+		float p;
+		//randomPointLight( pl, light );
+		PNEE(I.point, pl, light , p);
 		float dist = length( pl - I.point );
 		pl = ( pl - I.point ) / dist;
-		Ray lr( I.point, pl );
+		Ray lr( I.point + 2 * EPSILON * pl, pl );
 		float dot1 = dot( I.norm, pl );
 		float dot2 = dot( light.triangle.N, -pl );
 		if ( dot1 > 0 && dot2 > 0 )
+		{
+			if ( !IsOccluded( lr, light ) )
 			{
-				if ( !IsOccluded( lr, light ) )
-				{
-					float solidAngle = ( dot2 * light.triangle.area ) / ( dist * dist );
-					float misPDF = 1 / solidAngle + 1 / (2*PI); //1 /(2*PI);
-					E += T * ( dot1 / misPDF ) * light.triangle.radiance * BRDF * ray.I;
-				}
+				float solidAngle = ( dot2 * light.triangle.area  ) / ( dist * dist );
+				float misPDF = 1 / solidAngle + 1 / ( 2 * PI ); //1 /(2*PI);
+				E += T * ( dot1 / misPDF ) * light.triangle.radiance * BRDF * ray.I;
 			}
+		}
 		// continue random walk
 		float3 R = CosineWeightedDiffuseReflection( I.norm );
 		float dotR = dot( R, I.norm );
@@ -731,6 +825,8 @@ float3 Raytracer::MISample(Ray &ray, Intersection prevIntersection, bool lastSpe
 		T *= ( dotR / PDF ) * BRDF;
 		ray = r;
 		lastSpecular = false;
+		prevIntersection = I;
+		prevIntersection.material.metallic = false;
 	}
 	return E;
 }
@@ -763,8 +859,8 @@ float3 Raytracer::Sample( const Ray &ray, Intersection prevIntersection, bool la
 		}
 	}
 
-	if (I.material.dielectric)
-		return Sample( DielectricPath( ray, I, prevIntersection ), I, false) * ray.I;
+	if ( I.material.dielectric )
+		return Sample( DielectricPath( ray, I, prevIntersection ), I, false ) * ray.I;
 
 	float3 pl; //random point on random light
 	float3 Ld = make_float3( 0 );
@@ -798,10 +894,9 @@ float3 Raytracer::Sample( const Ray &ray, Intersection prevIntersection, bool la
 	// update throughput
 	float dotR = dot( I.norm, R );
 	float PDF = dotR / PI; //set to 1 / (2 * PI) if you are using DiffReflection
-	float3 Ei = Sample( r, I, false ) * (dotR / PDF);
-	return (BRDF * Ei + Ld) * ray.I;
+	float3 Ei = Sample( r, I, false ) * ( dotR / PDF );
+	return ( BRDF * Ei + Ld ) * ray.I;
 }
-
 
 void Raytracer::rayTrace( Bitmap *screen, const ViewPyramid &view, const int targetTextureID )
 {
@@ -867,13 +962,13 @@ void Raytracer::pathTrace( Bitmap *screen, const ViewPyramid &view, const int ta
 
 			Intersection I = Intersection();
 			I.material.metallic = true;
-			float3 intersectionColor = MISample(ray, I, true);
-			buffer->pixels[i + j * buffer->width] = (buffer->pixels[i + j * buffer->width] * (float) (sampleCount) + intersectionColor) / (float) (sampleCount + 1);
-			screen->pixels[i + j * screen->width] = FloatToIntColor(buffer->pixels[i + j * buffer->width]);
+			float3 intersectionColor = MISample( ray, I, true );
+			buffer->pixels[i + j * buffer->width] = ( buffer->pixels[i + j * buffer->width] * (float)( sampleCount ) + intersectionColor ) / (float)( sampleCount + 1 );
+			screen->pixels[i + j * screen->width] = FloatToIntColor( buffer->pixels[i + j * buffer->width] );
 			rayNr++;
 		}
 	}
-	//rayNr = 0;
+	rayNr = 0;
 }
 
 void Raytracer::rayTraceLineAVX( Bitmap *screen, const ViewPyramid &view, const int targetTextureID, const int lineNr )
@@ -1014,4 +1109,16 @@ void Raytracer::storeBVH()
 		bvh[i].ConstructBVH( mesh.vertices, mesh.vcount, mesh.triangles );
 		i++;
 	}
+}
+
+/*set k to the desired dimension size of the photon map*/
+void Raytracer::storePhotonMap()
+{
+	uint k = 100;
+	aabb bounds;
+	bounds.Reset();
+	for ( BVH &b : bvh )
+		bounds.Grow( b.root->bounds );
+	scene.photonMap.InitializeGrid( k, scene.lightList.size(), bounds );
+	ScatterPhotons(1000000);
 }

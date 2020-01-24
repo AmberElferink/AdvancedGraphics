@@ -97,6 +97,7 @@ class Light
 	float cosOuter = 0;
 	CoreLightTri triangle;
 	float energy = 1.0;
+	uint corner = 0;
 	int dummy = 1;
 };
 
@@ -126,6 +127,7 @@ class Scene
 	vector<Light> lightList;
 	vector<Mesh> meshList;
 	float areaLights;
+	PhotonGrid photonMap;
 };
 
 // -----------------------------------------------------------
@@ -153,8 +155,9 @@ class Raytracer
 	bool viewDirLight( const Intersection &intersection, const Light &light, float3 &lightVector );
 	int viewSpotLight( const Intersection &intersection, const Light &light, float3 &lightVector );
 	bool viewAreaLight( const Intersection &intersection, Light &light );
-	float3 randomPointTri( const CoreLightTri &triangle );
-	float3 randomPointLight( float3 &pl, Light &light );
+	float3 randomPointTri( const Light &light );
+	uint cornerTriangle( const CoreLightTri &triangle );
+	void randomPointLight( float3 &pl, Light &light );
 	void rayTrace( Bitmap *screen, const ViewPyramid &view, const int targetTextureID );
 	void rayTraceBlock( const ViewPyramid &view, Bitmap *screen, const int targetTextureID, int lineStart, int lineEnd );
 	void rayTraceLine( Bitmap *screen, const ViewPyramid &view, const int targetTextureID, const int lineNr );
@@ -181,11 +184,14 @@ class Raytracer
 	Ray DielectricPath( Ray ray, Intersection intersection, const Intersection prevIntersection, const float n1 = 1.0002f ); //only adjust n1 if previous trace is also a dielectric material
 	float Fresnel( const float cosi, const float ncalc, const float n1, const float n2 );
 	float3 DirectIllumination( Intersection intersection );
+	void ScatterPhotons( const long &N );
+	void PNEE( const float3 &point, float3 &pl, Light &light, float &p );
 	float3 DiffuseReflection( float3 N );
 	float3 CosineWeightedDiffuseReflection( float3 N );
 	float3 Trace( const Ray &ray, const Intersection prevIntersection, int reflectionDepth ); //default: air
 	Color8 Trace(Ray8 &ray, const Intersection8 prevIntersection, int reflectionDepth); //default: air
 	void Trace(Rays &ray, Indices I, const Intersections prevIntersection, int reflectionDepth); //default: air
 	void storeBVH();
+	void storePhotonMap();
 };
 } // namespace lh2core

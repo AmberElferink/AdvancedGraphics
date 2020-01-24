@@ -505,6 +505,7 @@ class aabb
 {
 public:
 	aabb() = default;
+    aabb( float3 a ) { bmin[0] = a.x, bmin[1] = a.y, bmin[2] = a.z, bmin[3] = 0, bmax[0] = a.x, bmax[1] = a.y, bmax[2] = a.z, bmax[3] = 0; }
 	aabb( const __m128 a, const __m128 b ) { bmin4 = a, bmax4 = b; bmin[3] = bmax[3] = 0; }
 	aabb( float3 a, float3 b ) { bmin[0] = a.x, bmin[1] = a.y, bmin[2] = a.z, bmin[3] = 0, bmax[0] = b.x, bmax[1] = b.y, bmax[2] = b.z, bmax[3] = 0; }
 	aabb( float4 a, float4 b )

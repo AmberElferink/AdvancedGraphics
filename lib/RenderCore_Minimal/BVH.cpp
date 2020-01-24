@@ -464,8 +464,6 @@ bool BVHNode::IntersectNode(const Ray &ray)
 	return true;
 }
 
-
-
 //translating code of the intersectNode method
 bool BVHNode::IntersectNode(const Ray8 &ray8)
 {

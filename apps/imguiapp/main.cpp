@@ -56,8 +56,10 @@ void PrepareScene()
 	//renderer->SetNodeTransform(rootNode, mat4::RotateX(-PI / 2));
 #if 1
 	// overhead light, use regular PT
-	int lightMat = renderer->AddMaterial(make_float3(50, 50, 40));
+	int lightMat = renderer->AddMaterial(make_float3(30, 30, 30));
 	int lightQuad = renderer->AddQuad(make_float3(0, -1, 0), make_float3(0, 26, 0), 10, 10, lightMat,-1);
+	int wall1 = renderer->AddQuad( make_float3( 0, 0, -1 ), make_float3( 0, 6.22658730, 6.22658730 ), 12.45, 12.45, 2 );
+	int extra = renderer->AddInstance( wall1 );
 	int lightInst = renderer->AddInstance(lightQuad);
 	//int lightBulb = renderer->AddPointLight(make_float3(-100, -90, -400), make_float3(100000), true);
 	//int lightBulb2 = renderer->AddPointLight(make_float3(64, -6, 21), make_float3(30000), true);

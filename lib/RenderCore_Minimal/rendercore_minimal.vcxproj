@@ -163,6 +163,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">core_settings.h</PrecompiledHeaderFile>
     </ClCompile>
+    <ClCompile Include="photongrid.cpp" />
     <ClCompile Include="raytracer.cpp" />
     <ClCompile Include="rendercore.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
@@ -178,6 +179,7 @@
     <ClInclude Include="camera.h" />
     <ClInclude Include="core_api.h" />
     <ClInclude Include="core_settings.h" />
+    <ClInclude Include="photongrid.h" />
     <ClInclude Include="Ray.h" />
     <ClInclude Include="raytracer.h" />
     <ClInclude Include="rendercore.h" />
