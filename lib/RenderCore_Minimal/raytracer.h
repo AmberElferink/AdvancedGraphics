@@ -167,16 +167,20 @@ class Raytracer
 	uint FloatToIntColor( float3 floatColor );
 	Intersection nearestIntersection( const Ray &ray );
 	void nearestIntersection(const Ray8 &ray, Intersection8 &closest);
-	void nearestIntersection( Rays &r, Intersections &closests);
+	void nearestIntersection( Rays &r, Intersections &closests, Indices indices = Indices(), int ia = RAYPACKETSIZE);
 	void nearestIntersection( Rays &r, const Frustrum &fr, Intersections &closests);
 	Bitmap *rayTraceRandom( const ViewPyramid &view, const int targetTextureID, int &frameCounter );
 	void TextureColor( Intersection &intersection, const CoreTri &triangle, uint &color );
 
 
 	//Pathtracer methodes
-	float3 MISample( Ray &ray, Intersection prevIntersection);
+	float3 MISample(Ray &ray, Intersection prevIntersection, float3 &T, float3 &E);
+	void MISample(Rays &r, const Frustrum &fr, Indices I, Intersections prevIntersections, int ia = RAYPACKETSIZE);
 	float3 Sample(const Ray &ray, Intersection prevIntersection, bool lastSpecular);
 	void pathTrace(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, uint sampleCount);
+	void pathTracePackets(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, uint sampleCount);
+	//Transmission = ray.I TODO, remove that its automatically 1
+	Ray DiffuseBounce(const Intersection &intersection, float3 &E, float3 &T, const float3 &Transmission = make_float3(1.0f));
 
 	float3 Reflect( const Ray &ray, const Intersection &intersection, int reflectionDepth );
 	float3 ReflectPath( const Ray &ray, const Intersection &intersection, int reflectionDepth );

@@ -111,6 +111,11 @@ public:
 		d[3] = r.rays[RAYPACKETSIZE - 1].ox[0] * nx[3] + r.rays[RAYPACKETSIZE - 1].oy[0] * ny[3] + r.rays[RAYPACKETSIZE - 1].oz[0] * nz[3];
 	}
 
+	Frustrum() //TODO REMOVE IMMEDIATELY AFTER TESTING THE REFLECTIONS, YOU SHOULD NOT BE ABLE TO CALL IT
+	{
+
+	}
+
 	bool Includes(const aabb &bbox) const
 	{
 		//all boundingbox corners must be checked:

@@ -1,6 +1,7 @@
 #pragma once
 #define COHERENTTRAVERSAL //packet traversal, 4 rays at once
 #define RAYPACKETSIZE 4 //8 simd rays per packet, so 32 rays total
+#define TOTALPACKETSIZE 8 * RAYPACKETSIZE 
 class Ray
 {
 public:
@@ -103,7 +104,6 @@ public:
 			signZ8 = _mm256_cmp_ps(recDirZ8, _mm256_setzero_ps(), _CMP_LT_OS);
 
 			activeMask8 = _mm256_cmp_ps(_mm256_setzero_ps(), _mm256_setzero_ps(), _CMP_EQ_OS);
-			int w = 0;
 	}
 	Ray8::Ray8()
 	{
@@ -120,6 +120,7 @@ class Rays
 public:
 	Ray8 rays[RAYPACKETSIZE];
 	
+
 	//int ia = RAYPACKETSIZE; //one past last active ray (rays at and behind rays[I[ia]] do not intersect)
 };
 

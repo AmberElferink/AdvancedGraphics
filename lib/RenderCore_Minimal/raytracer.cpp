@@ -1,5 +1,6 @@
 #include "core_settings.h"
 int rayNr = 0;
+#define ROULETTEREFLECT 0.01f //chance that a ray dies
 
 bool Raytracer::IsOccluded( const Ray &ray, const Light &light )
 {
@@ -194,14 +195,14 @@ void Raytracer::nearestIntersection( const Ray8 &ray, Intersection8 &closest )
 	}
 }
 
-void Raytracer::nearestIntersection( Rays &r, Intersections &closests )
+void Raytracer::nearestIntersection( Rays &r, Intersections &closests, Indices indices, int ia )
 {
 	int id = 0;
 
 	//	Find closest intersection point for all meshes
 	for ( Mesh &mesh : scene.meshList )
 	{
-		bvh[id].root->Traverse( r, RAYPACKETSIZE, Indices(), bvh[id].pool, bvh[id].indices, bvh[id].triangles, closests, scene.matList );
+		bvh[id].root->Traverse( r, ia, indices, bvh[id].pool, bvh[id].indices, bvh[id].triangles, closests, scene.matList );
 		id++;
 	}
 }
@@ -772,11 +773,170 @@ float3 Raytracer::CosineWeightedDiffuseReflection( float3 N )
 	return P.x * T + P.y * B + P.z * N;
 }
 
-/*Multiple importance sampling*/
-float3 Raytracer::MISample(Ray &ray, Intersection prevIntersection)
+inline void SetColor(Rays &r, const float3 &color, const Indices &I, const int i, const int j)
 {
-	float3 T = make_float3(1);
-	float3 E = make_float3(0);
+	r.rays[I.I[j]].color.b[i] = color.x;
+	r.rays[I.I[j]].color.g[i] = color.y;
+	r.rays[I.I[j]].color.r[i] = color.z;
+	r.rays[I.I[j]].deadMask[i] = 0x00000000; //filled in color, so the ray has terminated
+}
+
+//set the corresponding Intersection color of the ray to the ray.
+inline void SetColor(Rays &r, const Intersections &inter, const Indices &I, const int i, const int j)
+{
+	r.rays[I.I[j]].color.b[i] = inter.inter[I.I[j]].intersections[i].material.color.x;
+	r.rays[I.I[j]].color.g[i] = inter.inter[I.I[j]].intersections[i].material.color.y;
+	r.rays[I.I[j]].color.r[i] = inter.inter[I.I[j]].intersections[i].material.color.z;
+	r.rays[I.I[j]].deadMask[i] = 0x00000000; //filled in color, so the ray has terminated
+}
+
+inline void SetColor(Rays &r, const Intersection* inter, const Indices &I, const int i, const int j)
+{
+	r.rays[I.I[j]].color.b[i] = inter->material.color.x;
+	r.rays[I.I[j]].color.g[i] = inter->material.color.y;
+	r.rays[I.I[j]].color.r[i] = inter->material.color.z;
+	r.rays[I.I[j]].deadMask[i] = 0x00000000; //filled in color, so the ray has terminated
+}
+
+//set one ray of a Ray8 by using an existing one.
+inline void SetSingleRay(Ray8 &to, const Ray8 &from, const int indexTo, const int indexFrom )
+{
+	to.dx[indexTo] = from.dx[indexFrom];
+	to.dy[indexTo] = from.dy[indexFrom];
+	to.dz[indexTo] = from.dz[indexFrom];
+	to.ox[indexTo] = from.ox[indexFrom];
+	to.oy[indexTo] = from.oy[indexFrom];
+	to.oz[indexTo] = from.oz[indexFrom];
+	to.recDirX[indexTo] = from.recDirX[indexFrom];
+	to.recDirY[indexTo] = from.recDirY[indexFrom];
+	to.recDirZ[indexTo] = from.recDirZ[indexFrom];
+	to.signX[indexTo] = from.signX[indexFrom];
+	to.signY[indexTo] = from.signY[indexFrom];
+	to.signZ[indexTo] = from.signZ[indexFrom];
+	to.color.b[indexTo] = from.color.b[indexFrom];
+	to.color.g[indexTo] = from.color.g[indexFrom];
+	to.color.r[indexTo] = from.color.r[indexFrom];
+	to.deadMask[indexTo] = from.deadMask[indexFrom];
+}
+
+//set one ray of a Ray8 by using an existing one.
+//Intersection will be interfaced the same as the from ray.
+void SetSingleReflectRay(Ray8 &to, const Ray8 &from, const int indexTo, const int indexFrom, const Intersection8 &inter)
+{
+	// reflect formula:
+	// float3 reflectedDir = D - 2 * dot(D, N) * N;
+	//	return  Ray(point + 2 * EPSILON * reflectedDir, reflectedDir);
+	//dot(d, n): return d.x * n.x + d.y * n.y + d.z * n.z;
+	float3 N = inter.intersections[indexFrom].norm; 
+	to.dx[indexTo] = from.dx[indexFrom] - 2 * (from.dx[indexFrom] * N.x + from.dy[indexFrom] * N.y + from.dx[indexFrom] * N.z) * N.x;
+	to.dy[indexTo] = from.dy[indexFrom] - 2 * (from.dx[indexFrom] * N.x + from.dy[indexFrom] * N.y + from.dx[indexFrom] * N.z) * N.y;
+	to.dz[indexTo] = from.dz[indexFrom] - 2 * (from.dx[indexFrom] * N.x + from.dy[indexFrom] * N.y + from.dx[indexFrom] * N.z) * N.z;
+	to.ox[indexTo] = inter.intersections[indexFrom].point.x + 2 * EPSILON * to.dx[indexTo];
+	to.oy[indexTo] = inter.intersections[indexFrom].point.y + 2 * EPSILON * to.dy[indexTo];
+	to.oz[indexTo] = inter.intersections[indexFrom].point.z + 2 * EPSILON * to.dz[indexTo];
+	to.recDirX[indexTo] = 1.0f / to.recDirX[indexFrom];
+	to.recDirY[indexTo] = 1.0f / from.recDirY[indexFrom];
+	to.recDirZ[indexTo] = 1.0f / from.recDirZ[indexFrom];
+
+	//TODO: this might be the stupidest way on the planet to get value true (-nan) into this signX, but that deadMask value is true if it gets here, and I just want to test
+	to.signX[indexTo] = to.recDirX[indexTo] < 0 ? from.deadMask[indexFrom] : 0x00000000;
+	to.signY[indexTo] = to.recDirY[indexTo] < 0 ? from.deadMask[indexFrom] : 0x00000000;
+	to.signZ[indexTo] = to.recDirZ[indexTo] < 0 ? from.deadMask[indexFrom] : 0x00000000;
+
+	to.color.b[indexTo] = from.color.b[indexFrom];
+	to.color.g[indexTo] = from.color.g[indexFrom];
+	to.color.r[indexTo] = from.color.r[indexFrom];
+
+	to.deadMask[indexTo] = from.deadMask[indexFrom];
+}
+
+//copy the in metalRayRefs indicated rays from r over to the metalPacket
+int2 PackMetalRays(Rays &metalPacket, const Rays &r, const Indices &I, const Intersections &currInts, const int2* metalRayRefs)
+{
+	//Send the metal and dielectric ray packets
+//specular surfaces
+	for (int u = 0; u < RAYPACKETSIZE; u++)
+	{
+		for (int v = 0; v < 8; v++)
+		{
+			const int index = v + 8 * u;
+			const int j = metalRayRefs[index].y;
+
+			if (j < 0) // The rest is not occupied
+				return make_int2(u,v); //this is the "ia" at the start, so ia -1 is the last index of a metal ray in use
+
+			const int i = metalRayRefs[index].x;
+
+			// for instance first metal intersection was j = 3, i = 5 in original. 
+			// Copy the reflected to index 0, since it was the first that comes up in metalRayRefs
+			// After packettraversal is complete, this result should go back from index 0 to ray j = 3, i = 5 in the original
+			SetSingleReflectRay(metalPacket.rays[u], r.rays[I.I[j]], v, i, currInts.inter[I.I[j]]);
+		}
+	}
+}
+
+//copy the in metalRayRefs indicated rays from r over to the metalPacket
+void UnpackMetalRays(const Rays &tempPacket, Rays &r, const Indices &I, const int2* tempRayRefs, int2 metalIa, const float3 &E, const float3 &T, const Intersections &currInts)
+{
+	//Send the metal and dielectric ray packets
+	//specular surfaces
+	int maxV = 8;
+	for (int u = 0; u < metalIa.x; u++)
+	{
+		if (u == metalIa.x - 1 ) //if it is at the last horizontal SIMD ray
+			maxV = metalIa.y;
+		for (int v = 0; v < maxV; v++)
+		{
+			const int index = v + 8 * u;
+			const int j = tempRayRefs[index].y;
+			const int i = tempRayRefs[index].x;
+
+			// for instance during packing first metal intersection was j = 3, i = 5 in original. 
+			// Copy the reflected to index 0, since it was the first that comes up in metalRayRefs
+			// After packettraversal is complete, this result should go back from index 0 to ray j = 3, i = 5 in the original
+			SetSingleRay(r.rays[I.I[j]], tempPacket.rays[u], j, v);  
+
+			//adjust the ray color with T, E and material color to match what is normally returned by metallic: E + T * MISample(ray.Reflect(I.norm, I.point), I) * I.material.color
+			r.rays[I.I[j]].color.b[i] = E.x + r.rays[I.I[j]].color.b[i] * T.x  * currInts.inter[I.I[j]].intersections[i].material.color.x;
+			r.rays[I.I[j]].color.g[i] = E.y + r.rays[I.I[j]].color.b[i] * T.y  * currInts.inter[I.I[j]].intersections[i].material.color.y;
+			r.rays[I.I[j]].color.r[i] = E.z + r.rays[I.I[j]].color.b[i] * T.z  * currInts.inter[I.I[j]].intersections[i].material.color.z;
+			r.rays[I.I[j]].deadMask[i] = 0x00000000; //its dead now, since metallic has been fully handled
+		}
+	}
+}
+
+Ray Raytracer::DiffuseBounce(const Intersection &I, float3 &E, float3 &T, const float3 &Transmission)
+{
+	float3 pl;
+	Light light;
+	randomPointLight(pl, light);
+	float dist = length(pl - I.point);
+	pl = (pl - I.point) / dist;
+	Ray lr(I.point, pl);
+	float dot1 = dot(I.norm, pl);
+	float dot2 = dot(light.triangle.N, -pl);
+	float3 BRDF = I.material.color / PI;
+	if (dot1 > 0 && dot2 > 0)
+	{
+		if (!IsOccluded(lr, light))
+		{
+			float solidAngle = (dot2 * light.triangle.area) / (dist * dist);
+			float misPDF = 1 / solidAngle + 1 / (2 * PI); //1 /(2*PI);
+			E += T * (dot1 / misPDF) * light.triangle.radiance * BRDF * Transmission;
+		}
+	}
+	// continue random walk
+	float3 R = CosineWeightedDiffuseReflection(I.norm) + 2 * EPSILON * I.norm;
+	float dotR = dot(R, I.norm);
+	float PDF = dotR / PI;
+	Ray r(I.point, R);
+	T *= (dotR / PDF) * BRDF;
+	return r;
+}
+
+/*Multiple importance sampling*/
+float3 Raytracer::MISample(Ray &ray, Intersection prevIntersection, float3 &T, float3 &E)
+{
 	while ( true )
 	{
 		Intersection I = nearestIntersection( ray );
@@ -796,45 +956,162 @@ float3 Raytracer::MISample(Ray &ray, Intersection prevIntersection)
 			float rn = (float)rand() / (float)RAND_MAX;
 			if ( rn <= I.material.specularity )
 			{
-				return E + T * MISample( ray.Reflect(I.norm, I.point), I) * I.material.color * ray.I;
+				float rn = (float)rand() / (float)RAND_MAX;
+				if (rn > ROULETTEREFLECT)
+					return E + T * MISample(ray.Reflect(I.norm, I.point), I, make_float3(1), make_float3(0)) * I.material.color * ray.I;
+				else
+					return E * I.material.color * ray.I;
 			}
 		}
 
 		if (I.material.dielectric)
 		{
-			return E + T * MISample( DielectricPath( ray, I, prevIntersection ), I ) * ray.I;
+			float rn = (float)rand() / (float)RAND_MAX;
+			if (rn > ROULETTEREFLECT)
+				return E + T * MISample(DielectricPath(ray, I, prevIntersection), I, make_float3(1), make_float3(0)) * ray.I;
+			else
+				return E * I.material.color * ray.I;
 		}
 		// sample a random light source
-		float3 pl; 
-		Light light;
-		randomPointLight(pl,light);
-		float dist = length( pl - I.point );
-		pl = ( pl - I.point ) / dist;
-		Ray lr( I.point, pl );
-		float dot1 = dot( I.norm, pl );
-		float dot2 = dot( light.triangle.N, -pl );
-		float3 BRDF = I.material.color / PI;
-		if ( dot1 > 0 && dot2 > 0 )
-			{
-				if ( !IsOccluded( lr, light ) )
-				{
-					float solidAngle = ( dot2 * light.triangle.area ) / ( dist * dist );
-					float misPDF = 1 / solidAngle + 1 / (2*PI); //1 /(2*PI);
-					E += T * ( dot1 / misPDF ) * light.triangle.radiance * BRDF * ray.I;
-				}
-			}
-		// continue random walk
-		float3 R = CosineWeightedDiffuseReflection( I.norm );
-		float dotR = dot( R, I.norm );
-		float PDF = dotR / PI;
-		Ray r( I.point, R );
-		T *= ( dotR / PDF ) * BRDF;
-		ray = r;
+		
+		ray = DiffuseBounce(I, E, T, ray.I);
+
 		I.material.metallic = false;
 		prevIntersection = I;
 	}
 	return E;
 }
+
+bool SomeRaysAreAlive(const Rays &r, const Indices &I, int ia)
+{
+	for (int j = 0; j < ia; j++)
+	{
+		if (_mm256_movemask_ps(r.rays[I.I[j]].activeMask8) != 0) //if its 0, none are active
+			return true;
+	}
+	return false;
+}
+
+
+//ia is automatically RAYPACKETSIZE, unless MISample samples half filled metal or dielectric raypackets
+void Raytracer::MISample(Rays &r, const Frustrum &fr, Indices I, Intersections prevIntersections, int ia)
+{
+	/////////////////////////TODO!! Check for isDead everywhere you use setcolor
+	// TODO!!! Check if every ray is dead, if so terminate
+	// TODO: Lambert, and remove that Transmission for diffuse reflection is automatically 1
+	// TODO: make this method recursive relying on the double for loops, instead of checking all the rays alive everytime
+	// TODO: shadow rays in packets.
+	//check for everywhere that previntersection is correct
+
+	float3 T = make_float3(1);
+	float3 E = make_float3(0);
+	float3 backgroundColor = make_float3(0.3f);
+
+	//keep track of where the rays come from in the reorganised packets by taking note of i and j.
+	int2 metalRayRefs[TOTALPACKETSIZE];
+	int metalCount;
+	int2 dielecRayRefs[TOTALPACKETSIZE];
+	int dielecCount;
+
+	while (SomeRaysAreAlive(r, I, ia))
+	{
+		memset(metalRayRefs, -1, sizeof(metalRayRefs));
+		memset(dielecRayRefs, -1, sizeof(dielecRayRefs));
+		dielecCount = 0;
+		metalCount = 0;
+
+		Intersections currInts;
+		nearestIntersection(r, currInts, I, ia);
+		//all active rays must be checked.
+		for (int j = 0; j < ia; j++)
+		{
+			for (int i = 0; i < 8; i++)
+			{
+				//if the ray is active
+				if (isnan(abs(r.rays[I.I[j]].deadMask[i]))) //it's -nan, which means it's true. (0 is false). So, if the ray is not yet terminated, give it a color
+				{
+					const Intersection* currInt = &currInts.inter[I.I[j]].intersections[i];
+					const Intersection* prevInt = &prevIntersections.inter[I.I[j]].intersections[i];
+
+					if (currInt->triangle.ltriIdx >= 0)
+					{
+						if (prevInt->material.metallic) //in metallic reflections, show the lightsource
+							SetColor(r, currInt, I, i, j); //light color
+						else
+							SetColor(r, E, I, i, j); //give the color up to now if you accidentally find a light, and not via NEE
+					}
+
+					else if (currInts.inter[I.I[j]].t[i] > 10e29)
+						SetColor(r, backgroundColor, I, i, j);
+
+					//TODO: GLASS, if the metal works
+					//gather the dielectric rays from the rest to make a new raypacket and do them all at once after the for loops.
+					//else if (currInt->material.dielectric)
+					//{
+						//	//note from which original raypacket i and j the repacked ray comes from.
+						//	//repacking and execution happens after the for loop.
+						//	dielecRayRefs[dielecCount++] = make_int2(i, j);
+					//}
+
+					//same as for the dielectric
+					else if (currInt->material.metallic)
+					{
+
+						float rn = (float)rand() / (float)RAND_MAX;
+						if (rn <= currInt->material.specularity)
+							metalRayRefs[metalCount++] = make_int2(i, j);
+
+					}
+				}
+			}
+		}
+
+		//if there is at least one metal intersection
+		if (metalRayRefs[0].x != -1)
+		{
+			Rays metalPacket; //TODO: currently the new packet will in some cases only be 25% full. Make Rays packet size more flexible.
+			//index one after the last in use metal ray in the packet
+			int2 metalIa = PackMetalRays(metalPacket, r, I, currInts, metalRayRefs);
+
+			//Trace the new metal packet
+			MISample(metalPacket, Frustrum(), Indices(), prevIntersections, metalIa.x); //Indices is only needed when going into nearestIntersections, and since you are repacking and giving ia = last metal ray + 1, this is fine.
+
+			//loop over the metal rays to copy the results back to the originals, while doing: E + T * MISample(ray.Reflect(I.norm, I.point), I) * I.material.color
+			UnpackMetalRays(metalPacket, r, I, metalRayRefs, metalIa, E, T, currInts);
+		}
+
+		//TODO: Glass, if the metal works
+		//if (I.material.dielectric)
+		//{
+		//	return E + T * MISample(DielectricPath(ray, I, prevIntersection), I) * ray.I;
+		//}
+
+
+
+		//every ray before this are packet traversed, now after they have diffusely bounced, they are basically all over the place. 
+		//Therefore, use the normal MISample for each ray in the packet that is still active.
+		for (int j = 0; j < ia; j++)
+		{
+			for (int i = 0; i < 8; i++)
+			{
+				if (isnan(abs(r.rays[I.I[j]].deadMask[i])))
+				{
+					Intersection* currInt = &currInts.inter[I.I[j]].intersections[i];
+
+					// sample a random light source
+
+					currInt->material.metallic = false;
+					float3 color = MISample(DiffuseBounce(*currInt, E, T), *currInt, E, T);
+					r.rays[I.I[j]].color.b[i] = color.x;
+					r.rays[I.I[j]].color.g[i] = color.y;
+					r.rays[I.I[j]].color.r[i] = color.z;
+					r.rays[I.I[j]].deadMask[i] = 0x00000000;
+				}
+			}
+		}
+	}
+}
+
 
 
 
@@ -970,10 +1247,60 @@ void Raytracer::pathTrace( Bitmap *screen, const ViewPyramid &view, const int ta
 
 			Intersection I = Intersection();
 			I.material.metallic = true;
-			float3 intersectionColor = MISample(ray, I);
+			float3 intersectionColor = MISample(ray, I, make_float3(1), make_float3(0));
 			buffer->pixels[i + j * buffer->width] = (buffer->pixels[i + j * buffer->width] * (float) (sampleCount) + intersectionColor) / (float) (sampleCount + 1);
 			screen->pixels[i + j * screen->width] = FloatToIntColor(buffer->pixels[i + j * buffer->width]);
 			rayNr++;
+		}
+	}
+	//rayNr = 0;
+}
+
+//TODO: rewrite color8 to float3 array, it makes no sense, I just make a float3 anyway for every interaction with it.
+void Raytracer::pathTracePackets(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, uint sampleCount)
+{
+	for (uint j = 0; j < screen->height; j += RAYPACKETSIZE)
+	{
+		for (uint i = 0; i < screen->width; i += 8)
+		{
+			Rays r;
+			Intersections inter = Intersections();
+			float3 O[8], D[8];
+			for (int dj = 0; dj < RAYPACKETSIZE; dj++)
+			{
+				for (int di = 0; di < 8; di++)
+				{
+					inter.inter[dj].intersections[di].material.metallic = true;
+
+					if (i + di == probePos.x && j + dj == probePos.y)
+						printf("probing: x: %i, y: %i, rayNr: %i\n", i + di, j + dj, rayNr);
+					int x = i + di;
+					//u and v are the vectors within the virtual screen scaled between 0 and 1, so u = px / screenwidth and y = py / screenwidth
+					float u = ((float)(i + di)) / (float)screen->width;
+					float v = ((float)(j + dj)) / (float)screen->height;
+					float3 P = view.p1 + u * (view.p2 - view.p1) + v * (view.p3 - view.p1);
+
+					float3 dir = P - view.pos; // vector in the direction you want to shoot your ray
+					O[di] = view.pos;
+					D[di] = dir / length(dir); //normalize it
+				}
+				r.rays[dj] = Ray8(O, D);
+			}
+			Frustrum fr(r);
+
+			MISample(r, fr, Indices(), inter);
+
+			for (int dj = 0; dj < RAYPACKETSIZE; dj++)
+			{
+				for (int di = 0; di < 8; di++)
+				{
+					int bufferIndex = (i + di) + (j + dj) * buffer->width;
+					float3 color = make_float3(r.rays[dj].color.b[di], r.rays[dj].color.g[di], r.rays[dj].color.r[di]);
+					buffer->pixels[bufferIndex] = (buffer->pixels[bufferIndex] * (float)(sampleCount)+color) / (float)(sampleCount + 1);
+					screen->pixels[bufferIndex] = FloatToIntColor(buffer->pixels[bufferIndex]);
+				}
+			}
+			rayNr += 8; //*RAYPACKETSIZE, but for debugging only look at the first row.
 		}
 	}
 	//rayNr = 0;

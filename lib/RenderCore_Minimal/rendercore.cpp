@@ -219,6 +219,7 @@ int frameCounter = 0;
 //#define AVXPACKETTRAVERSAL
 //#define PACKETFRUSTRUMS
 #define PATHTRACE
+//#define PATHTRACEPACKETS
 
 #ifdef THREADS
 vector<thread> threads;
@@ -275,6 +276,8 @@ void RenderCore::Render(const ViewPyramid& view, const Convergence converge)
 			lineNr += RAYPACKETSIZE;
 		#elif defined PATHTRACE
 				raytracer.pathTrace(screen, view, targetTextureID, sampleNr++);
+		#elif defined PATHTRACEPACKETS
+			raytracer.pathTracePackets(screen, view, targetTextureID, sampleNr++);
 		#else
 			raytracer.rayTraceLine(screen, view, targetTextureID, lineNr);
 			lineNr++;

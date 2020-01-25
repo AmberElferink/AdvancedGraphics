@@ -322,8 +322,8 @@ int BVHNode::partRays(Rays &r, int ia, Indices &I)
 //I are the list of indices to the rays that can be sorted based on if it is active
 int BVHNode::partRays(Rays &r, const Frustrum &fr, int ia, Indices &I)
 {
-	if (!fr.Includes(bounds))
-		return 0; //paper says size(r), which means RAYPACKETSIZE, which does not seem logical, since all rays would be active if the frustrum doesn't contain a bbox.
+	//if (!fr.Includes(bounds))
+	//	return 0; //paper says size(r), which means RAYPACKETSIZE, which does not seem logical, since all rays would be active if the frustrum doesn't contain a bbox.
 	int ie = 0;
 	for (int i = 0; i < ia; ++i)
 	{
