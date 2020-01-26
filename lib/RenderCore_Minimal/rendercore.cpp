@@ -217,8 +217,8 @@ int frameCounter = 0;
 //#define AVX
 //#define AVXPACKETTRAVERSAL
 //#define PACKETFRUSTRUMS
-#define PATHTRACE
-//#define PATHTRACEPACKETS
+//#define PATHTRACE
+#define PATHTRACEPACKETS
 
 #ifdef THREADS
 vector<thread> threads;

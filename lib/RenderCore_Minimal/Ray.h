@@ -9,6 +9,8 @@ public:
 	float3 O;	//ray origin
 	float3 D;	//ray direction (normalised)
 	float3 I = make_float3(1); //Intensity of the light remaining after traveling for every color, this diminishes by absorption in a dielectric.
+	float3 color = make_float3(0.0f); //rayColor up to the current bounce
+	float3 T = make_float3(1.0f);
 	float3 recDir; //reciprocal is used multiple times per ray
 	int signX; //this is also used multiple times per ray
 	int signY;
@@ -84,7 +86,7 @@ public:
 
 	Ray8::Ray8(const float3* O, const float3* D) //8 origins and 8 directions
 	{
-		color = Color8(1.f, 0.f, 0.f);
+		color = Color8(1.f, 0.f, 1.f);
 		for (int i = 0; i < 8; i++)
 		{
 			ox[i] = O[i].x;
