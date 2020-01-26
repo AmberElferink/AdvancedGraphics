@@ -25,7 +25,6 @@ Timer t;
 void RenderCore::Init()
 {
 	t.reset();
-
 }
 
 

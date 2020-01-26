@@ -2,6 +2,7 @@
 #define COHERENTTRAVERSAL //packet traversal, 4 rays at once
 #define RAYPACKETSIZE 4 //8 simd rays per packet, so 32 rays total
 #define TOTALPACKETSIZE 8 * RAYPACKETSIZE 
+static union { __m256 trueMask8; float trueMask[8]; };
 class Ray
 {
 public:
@@ -103,11 +104,13 @@ public:
 			signY8 = _mm256_cmp_ps(recDirY8, _mm256_setzero_ps(), _CMP_LT_OS);
 			signZ8 = _mm256_cmp_ps(recDirZ8, _mm256_setzero_ps(), _CMP_LT_OS);
 
-			activeMask8 = _mm256_cmp_ps(_mm256_setzero_ps(), _mm256_setzero_ps(), _CMP_EQ_OS);
+			//somehow, just throwing the truemask set in raytracer constructor or rendercore init doesn't work correctly.
+			trueMask8 = _mm256_cmp_ps(_mm256_setzero_ps(), _mm256_setzero_ps(), _CMP_EQ_OS);
+			activeMask8 = trueMask8;// _mm256_cmp_ps(_mm256_setzero_ps(), _mm256_setzero_ps(), _CMP_EQ_OS);// trueMask8;
 	}
 	Ray8::Ray8()
 	{
-
+		activeMask8 = trueMask8;
 	}
 	Ray8::~Ray8()
 	{

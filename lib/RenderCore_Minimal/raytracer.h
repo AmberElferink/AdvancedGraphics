@@ -142,7 +142,10 @@ class Raytracer
 	int2 probePos; //mouse position for which you want to get more info
 
 	// constructor / destructor
-	Raytracer() = default;
+	Raytracer()
+	{
+		
+	} 
 	// methods
 	void Init();
 	void Reinit( int w, int h, Surface *screen );
