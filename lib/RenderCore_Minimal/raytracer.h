@@ -184,6 +184,8 @@ class Raytracer
 	void pathTracePackets(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, uint sampleCount);
 	//Transmission = ray.I TODO, remove that its automatically 1
 	Ray DiffuseBounce(const Intersection &intersection, float3 &E, float3 &T, const float3 &Transmission = make_float3(1.0f));
+	void SetSingleDielectricRay(Ray8 &to, const Ray8 &from, const int indexTo, const int indexFrom, Intersection8 &inter, const Intersection8 &prevInt);
+	int2 PackDielectricRays(Rays &dielectricPacket, const Rays &r, const Indices &I, Intersections &currInts, Intersections &prevInts, const int2* dielectricRayRefs);
 
 	float3 Reflect( const Ray &ray, const Intersection &intersection, int reflectionDepth );
 	float3 ReflectPath( const Ray &ray, const Intersection &intersection, int reflectionDepth );

@@ -2,7 +2,7 @@
 
 #include "core_settings.h"
 int rayNr = 0;
-#define ROULETTEREFLECT 0.01f //chance that a ray dies
+#define ROULETTEREFLECT 0.08f //chance that a ray dies
 #define ROULETTEREFLECTPACKET 0.1f //chance that a ray dies
 
 bool Raytracer::IsOccluded(const Ray &ray, const Light &light)
@@ -725,32 +725,32 @@ float3 Raytracer::DirectIllumination(Intersection intersection)
 //---------------------------------------------------------PATHTRACER METHODS------------------------------------
 
 /* Random vector on the hemisphere following a uniform distribution */
-float3 Raytracer::DiffuseReflection(float3 N)
-{
-	while (true)
-	{
-		//Generate three random floats between -1 and 1
-		float x = 2 * ((float)rand()) / (float)RAND_MAX;
-		float y = 2 * ((float)rand()) / (float)RAND_MAX;
-		float z = 2 * ((float)rand()) / (float)RAND_MAX;
-		if (x > 1)
-			x = 1 - x;
-		if (y > 1)
-			y = 1 - y;
-		if (z > 1)
-			z = 1 - z;
-
-		float radius = x * x + y * y + z * z;
-		if (radius <= 1)
-		{
-			float3 dir = make_float3(x, y, z);
-			dir = dir / sqrt(radius);
-			if (dot(N, dir) < 0)
-				dir = -dir;
-			return dir;
-		}
-	}
-}
+//float3 Raytracer::DiffuseReflection(float3 N)
+//{
+//	while (true)
+//	{
+//		//Generate three random floats between -1 and 1
+//		float x = 2 * ((float)rand()) / (float)RAND_MAX;
+//		float y = 2 * ((float)rand()) / (float)RAND_MAX;
+//		float z = 2 * ((float)rand()) / (float)RAND_MAX;
+//		if (x > 1)
+//			x = 1 - x;
+//		if (y > 1)
+//			y = 1 - y;
+//		if (z > 1)
+//			z = 1 - z;
+//
+//		float radius = x * x + y * y + z * z;
+//		if (radius <= 1)
+//		{
+//			float3 dir = make_float3(x, y, z);
+//			dir = dir / sqrt(radius);
+//			if (dot(N, dir) < 0)
+//				dir = -dir;
+//			return dir;
+//		}
+//	}
+//}
 
 /* Random vector on the hemisphere following a cosine weighted distribution */
 float3 Raytracer::CosineWeightedDiffuseReflection(float3 N)
@@ -853,6 +853,35 @@ void SetSingleReflectRay(Ray8 &to, const Ray8 &from, const int indexTo, const in
 	to.deadMask[indexTo] = from.deadMask[indexFrom];
 }
 
+//set one ray of a Ray8 by using an existing one.
+//Intersection will be interfaced the same as the from ray.
+void Raytracer::SetSingleDielectricRay(Ray8 &to, const Ray8 &from, const int indexTo, const int indexFrom, Intersection8 &inter, const Intersection8 &prevInt)
+{
+	// reflect formula:
+	Ray fromRay(make_float3(from.ox[indexFrom], from.oy[indexFrom], from.oz[indexFrom]), make_float3(from.dx[indexFrom], from.dy[indexFrom], from.dz[indexFrom]));
+	fromRay = DielectricPath(fromRay, inter.intersections[indexFrom], prevInt.intersections[indexFrom]);
+
+	to.dx[indexTo] = fromRay.D.x;
+	to.dy[indexTo] = fromRay.D.y;
+	to.dz[indexTo] = fromRay.D.z;
+	to.ox[indexTo] = fromRay.O.x;
+	to.oy[indexTo] = fromRay.O.y;
+	to.oz[indexTo] = fromRay.O.z;
+	to.recDirX[indexTo] = fromRay.recDir.x;
+	to.recDirY[indexTo] = fromRay.recDir.y;
+	to.recDirZ[indexTo] = fromRay.recDir.z;
+
+	to.signX[indexTo] = fromRay.signX;
+	to.signY[indexTo] = fromRay.signY;
+	to.signZ[indexTo] = fromRay.signZ;
+
+	to.color.b[indexTo] = from.color.b[indexFrom];
+	to.color.g[indexTo] = from.color.g[indexFrom];
+	to.color.r[indexTo] = from.color.r[indexFrom];
+
+	to.deadMask[indexTo] = from.deadMask[indexFrom];
+}
+
 //copy the in metalRayRefs indicated rays from r over to the metalPacket
 //gives back the "ia" for the metalpackets and the index after which the total raypacket is empty
 int2 PackMetalRays(Rays &metalPacket, const Rays &r, const Indices &I, const Intersections &currInts, const int2* metalRayRefs)
@@ -868,7 +897,7 @@ int2 PackMetalRays(Rays &metalPacket, const Rays &r, const Indices &I, const Int
 				const int j = metalRayRefs[index].y;
 
 			if (j < 0) // The rest is not occupied
-				return make_int2(u, index); //this is the "ia" at the start, so ia -1 is the last index of a metal ray in use
+				return make_int2(u + 1, index); //this is the "ia" at the start, so ia -1 is the last index of a metal ray in use
 
 			const int i = metalRayRefs[index].x;
 
@@ -911,6 +940,73 @@ void UnpackMetalRays(const Rays &tempPacket, Rays &r, const Indices &I, const in
 			r.rays[I.I[j]].deadMask[i] = 0x00000000; //its dead now, since metallic has been fully handled
 		}
 	}
+}
+
+//copy the in metalRayRefs indicated rays from r over to the metalPacket
+//gives back the "ia" for the metalpackets and the index after which the total raypacket is empty
+int2 Raytracer::PackDielectricRays(Rays &dielectricPacket, const Rays &r, const Indices &I, Intersections &currInts, Intersections &prevInts, const int2* dielectricRayRefs)
+{
+	//Send the metal and dielectric ray packets
+//specular surfaces
+	int index = 0;
+	for (int u = 0; u < RAYPACKETSIZE; u++)
+	{
+		for (int v = 0; v < 8; v++)
+		{
+			index = v + (u * 8);
+			const int j = dielectricRayRefs[index].y;
+
+			if (j < 0) // The rest is not occupied
+				return make_int2(u + 1, index); //this is the "ia" at the start, so ia -1 is the last index of a metal ray in use
+
+			const int i = dielectricRayRefs[index].x;
+
+			// for instance first metal intersection was j = 3, i = 5 in original. 
+			// Copy the reflected to index 0, since it was the first that comes up in metalRayRefs
+			// After packettraversal is complete, this result should go back from index 0 to ray j = 3, i = 5 in the original
+			SetSingleDielectricRay(dielectricPacket.rays[u], r.rays[I.I[j]], v, i, currInts.inter[I.I[j]], prevInts.inter[I.I[j]]);
+		}
+	}
+	return make_int2(RAYPACKETSIZE, index + 1);;
+}
+
+//copy the in metalRayRefs indicated rays from r over to the metalPacket
+void UnpackDielectricRays(const Rays &tempPacket, Rays &r, const Indices &I, const int2* tempRayRefs, int2 metalIa, const float3 *E, const float3* T, const Intersections &currInts)
+{
+	//Send the metal and dielectric ray packets
+	//specular surfaces
+	int index = 0;
+	for (int u = 0; u < RAYPACKETSIZE; u++)
+	{
+		for (int v = 0; v < 8; v++)
+		{
+			index = v + (u * 8);
+			if (index == metalIa.y) //this and further no rays are present in the packet
+			{
+				return;
+			}
+			const int j = tempRayRefs[index].y;
+			const int i = tempRayRefs[index].x;
+
+			// for instance during packing first metal intersection was j = 3, i = 5 in original. 
+			// Copy the reflected to index 0, since it was the first that comes up in metalRayRefs
+			// After packettraversal is complete, this result should go back from index 0 to ray j = 3, i = 5 in the original
+			SetSingleRay(r.rays[I.I[j]], tempPacket.rays[u], i, v);
+
+			//adjust the ray color with T, E and material color to match what is normally returned by dielectric: return E + T * MISample(DielectricPath(ray, I, prevIntersection), I) * ray.I;
+			r.rays[I.I[j]].color.b[i] = E[index].x + T[index].x * r.rays[I.I[j]].color.b[i];
+			r.rays[I.I[j]].color.g[i] = E[index].y + T[index].y * r.rays[I.I[j]].color.g[i];
+			r.rays[I.I[j]].color.r[i] = E[index].z + T[index].z * r.rays[I.I[j]].color.r[i];
+			r.rays[I.I[j]].deadMask[i] = 0x00000000; //its dead now, since metallic has been fully handled
+		}
+	}
+}
+
+//caution: Ray does not obtain ray8's color. its purely a new ray 
+Ray Ray8ToRay(const Ray8 &ray8, int index)
+{
+	Ray r(make_float3(ray8.ox[index], ray8.oy[index], ray8.oz[index]), make_float3(ray8.dx[index], ray8.dy[index], ray8.dz[index]));
+	return r;
 }
 
 Ray Raytracer::DiffuseBounce(const Intersection &I, float3 &E, float3 &T, const float3 &Transmission)
@@ -1007,12 +1103,9 @@ float3 zerofloat3 = make_float3(0.0f);
 //ia is automatically RAYPACKETSIZE, unless MISample samples half filled metal or dielectric raypackets
 void Raytracer::MISample(Rays &r, const Frustrum &fr, Indices I, Intersections prevIntersections, int ia)
 {
-	/////////////////////////TODO!! Check for isDead everywhere you use setcolor
-	// TODO!!! Check if every ray is dead, if so terminate
 	// TODO: Lambert, and remove that Transmission for diffuse reflection is automatically 1
 	// TODO: make this method recursive relying on the double for loops, instead of checking all the rays alive everytime
 	// TODO: shadow rays in packets.
-	//check for everywhere that previntersection is correct
 
 	float3 T[TOTALPACKETSIZE];
 	float3 E[TOTALPACKETSIZE];
@@ -1047,7 +1140,7 @@ void Raytracer::MISample(Rays &r, const Frustrum &fr, Indices I, Intersections p
 				//if the ray is active
 				if (isnan(abs(r.rays[I.I[j]].deadMask[i]))) //it's -nan, which means it's true. (0 is false). So, if the ray is not yet terminated, give it a color
 				{
-					const Intersection* currInt = &currInts.inter[I.I[j]].intersections[i];
+					Intersection* currInt = &currInts.inter[I.I[j]].intersections[i];
 					const Intersection* prevInt = &prevIntersections.inter[I.I[j]].intersections[i];
 					const int index = i + 8 * j;
 
@@ -1062,21 +1155,30 @@ void Raytracer::MISample(Rays &r, const Frustrum &fr, Indices I, Intersections p
 							SetColor(r, E[index], I, i, j);
 					}
 
-					//TODO: GLASS, if the metal works
-					//gather the dielectric rays from the rest to make a new raypacket and do them all at once after the for loops.
-					//else if (currInt->material.dielectric)
-					//{
-						//	//note from which original raypacket i and j the repacked ray comes from.
-						//	//repacking and execution happens after the for loop.
-						//	dielecRayRefs[dielecCount++] = make_int2(i, j);
-					//}
+					else if (currInt->material.dielectric)
+					{
+						float rn = (float)rand() / (float)RAND_MAX;
+						if (rn <= currInt->material.specularity)
+						{
+							 Ray dielRay = DielectricPath(Ray8ToRay(r.rays[j], i), *currInt, prevIntersections.inter[j].intersections[i]);
+							float3 color = E[index] + T[index] *MISample(dielRay, *currInt, T[index], E[index]);
+							SetColor(r, color, I, i, j);
+
+							//float rn = (float)rand() / (float)RAND_MAX;
+							//if (rn > ROULETTEREFLECTPACKET)
+							//	dielecRayRefs[metalCount++] = make_int2(i, j);
+							//else
+							//	SetColor(r, E[index] * currInt->material.color, I, i, j);
+						}
+					}
 
 					//same as for the dielectric
 					else if (currInt->material.metallic)
 					{
 						float rn = (float)rand() / (float)RAND_MAX;
-						if (1)//rn <= currInt->material.specularity)
+						if (rn <= currInt->material.specularity)
 						{
+							
 							float rn = (float)rand() / (float)RAND_MAX;
 							if (rn > ROULETTEREFLECTPACKET)
 								metalRayRefs[metalCount++] = make_int2(i, j);
@@ -1097,11 +1199,24 @@ void Raytracer::MISample(Rays &r, const Frustrum &fr, Indices I, Intersections p
 			int2 metalIa = PackMetalRays(metalPacket, r, I, currInts, metalRayRefs);
 
 			//Trace the new metal packet
-			MISample(metalPacket, Frustrum(), Indices(), prevIntersections, RAYPACKETSIZE); //Indices is only needed when going into nearestIntersections, and since you are repacking and giving ia = last metal ray + 1, this is fine.
+			MISample(metalPacket, Frustrum(), Indices(), prevIntersections, metalIa.x); //Indices is only needed when going into nearestIntersections, and since you are repacking and giving ia = last metal ray + 1, this is fine.
 
 			//loop over the metal rays to copy the results back to the originals, while doing: E + T * MISample(ray.Reflect(I.norm, I.point), I) * I.material.color
 			UnpackMetalRays(metalPacket, r, I, metalRayRefs, metalIa, E, T, currInts);
 			int w = 0;
+		}
+		//if there is at least one metal intersection
+		if (dielecRayRefs[0].x != -1)
+		{
+			Rays dielectricRays(true); //TODO: currently the new packet will in some cases only be 25% full. Make Rays packet size more flexible.
+			//index one after the last in use metal ray in the packet
+			int2 dielectricIa = PackDielectricRays(dielectricRays, r, I, currInts, prevIntersections, dielecRayRefs);
+
+			//Trace the new metal packet
+			MISample(dielectricRays, Frustrum(), Indices(), prevIntersections, dielectricIa.x); //Indices is only needed when going into nearestIntersections, and since you are repacking and giving ia = last metal ray + 1, this is fine.
+
+			//loop over the metal rays to copy the results back to the originals, while doing: E + T * MISample(ray.Reflect(I.norm, I.point), I) * I.material.color
+			UnpackDielectricRays(dielectricRays, r, I, dielecRayRefs, dielectricIa, E, T, currInts);
 		}
 
 		//TODO: Glass, if the metal works

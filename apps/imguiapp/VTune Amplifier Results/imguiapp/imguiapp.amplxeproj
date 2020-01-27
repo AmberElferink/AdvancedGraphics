@@ -223,11 +223,21 @@
      <recursive type="bool">true</recursive>
      <priority type="bool">true</priority>
     </searchDirectory>
+    <searchDirectory>
+     <name>C:\CodeRepositories\Master\Advanced Graphics\lh2\advanced-graphics</name>
+     <recursive type="bool">true</recursive>
+     <priority type="bool">true</priority>
+    </searchDirectory>
    </searchCategory>
    <searchCategory>
     <category type="u8_t">2</category>
     <searchDirectory>
      <name>C:\CodeRepositories\Master\Advanced Graphics\lighthouse2</name>
+     <recursive type="bool">true</recursive>
+     <priority type="bool">true</priority>
+    </searchDirectory>
+    <searchDirectory>
+     <name>C:\CodeRepositories\Master\Advanced Graphics\lh2\advanced-graphics</name>
      <recursive type="bool">true</recursive>
      <priority type="bool">true</priority>
     </searchDirectory>
@@ -301,6 +311,11 @@
     </searchDirectory>
     <searchDirectory>
      <name>C:\Program Files (x86)\Windows Kits\NETFXSDK\4.6.1\Include\um</name>
+     <recursive type="bool">true</recursive>
+     <priority type="bool">true</priority>
+    </searchDirectory>
+    <searchDirectory>
+     <name>C:\CodeRepositories\Master\Advanced Graphics\lh2\advanced-graphics\apps\imguiapp</name>
      <recursive type="bool">true</recursive>
      <priority type="bool">true</priority>
     </searchDirectory>
