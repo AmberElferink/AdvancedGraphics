@@ -1,12 +1,16 @@
 #pragma once
 #define COHERENTTRAVERSAL //packet traversal, 4 rays at once
 #define RAYPACKETSIZE 4 //8 simd rays per packet, so 32 rays total
+#define TOTALPACKETSIZE 8 * RAYPACKETSIZE 
+static union { __m256 trueMask8; float trueMask[8]; };
 class Ray
 {
 public:
 	float3 O;	//ray origin
 	float3 D;	//ray direction (normalised)
 	float3 I = make_float3(1); //Intensity of the light remaining after traveling for every color, this diminishes by absorption in a dielectric.
+	float3 color = make_float3(0.0f); //rayColor up to the current bounce
+	float3 T = make_float3(1.0f);
 	float3 recDir; //reciprocal is used multiple times per ray
 	int signX; //this is also used multiple times per ray
 	int signY;
@@ -82,7 +86,7 @@ public:
 
 	Ray8::Ray8(const float3* O, const float3* D) //8 origins and 8 directions
 	{
-		color = Color8(1.f, 0.f, 0.f);
+		color = Color8(1.f, 0.f, 1.f);
 		for (int i = 0; i < 8; i++)
 		{
 			ox[i] = O[i].x;
@@ -102,12 +106,19 @@ public:
 			signY8 = _mm256_cmp_ps(recDirY8, _mm256_setzero_ps(), _CMP_LT_OS);
 			signZ8 = _mm256_cmp_ps(recDirZ8, _mm256_setzero_ps(), _CMP_LT_OS);
 
-			activeMask8 = _mm256_cmp_ps(_mm256_setzero_ps(), _mm256_setzero_ps(), _CMP_EQ_OS);
-			int w = 0;
+			//somehow, just throwing the truemask set in raytracer constructor or rendercore init doesn't work correctly.
+			trueMask8 = _mm256_cmp_ps(_mm256_setzero_ps(), _mm256_setzero_ps(), _CMP_EQ_OS);
+			activeMask8 = trueMask8;// _mm256_cmp_ps(_mm256_setzero_ps(), _mm256_setzero_ps(), _CMP_EQ_OS);// trueMask8;
 	}
 	Ray8::Ray8()
 	{
-
+		trueMask8 = _mm256_cmp_ps(_mm256_setzero_ps(), _mm256_setzero_ps(), _CMP_EQ_OS);
+		activeMask8 = trueMask8;
+	}
+	//only put true, the bool itself will not be checked
+	Ray8::Ray8(bool raysStartDead)
+	{
+		activeMask8 = _mm256_setzero_ps();
 	}
 	Ray8::~Ray8()
 	{
@@ -120,6 +131,15 @@ class Rays
 public:
 	Ray8 rays[RAYPACKETSIZE];
 	
+	Rays() = default;
+	//only put true, the bool itself will not be checked
+	Rays(bool raysStartDead)
+	{
+		for (int i = 0; i < RAYPACKETSIZE; i++)
+		{
+			rays->activeMask8 = _mm256_setzero_ps();
+		}
+	}
 	//int ia = RAYPACKETSIZE; //one past last active ray (rays at and behind rays[I[ia]] do not intersect)
 };
 

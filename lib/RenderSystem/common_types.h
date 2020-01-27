@@ -367,7 +367,12 @@ inline int4 abs( int4 v ) { return make_int4( abs( v.x ), abs( v.y ), abs( v.z )
 inline float3 reflect( float3 i, float3 n ) { return i - 2.0f * n * dot( n, i ); }
 
 inline float3 cross( float3 a, float3 b ) { return make_float3( a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x ); }
-
+inline void cross(float ax, float ay, float az, float bx, float by, float bz, float &cx, float &cy, float &cz) 
+{ 
+	cx = ay * bz - az * by;
+	cy = az * bx - ax * bz;
+	cz = ax * by - ay * bx; 
+}
 
 inline float smoothstep( float a, float b, float x )
 {
