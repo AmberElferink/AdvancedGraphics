@@ -835,9 +835,9 @@ void SetSingleReflectRay(Ray8 &to, const Ray8 &from, const int indexTo, const in
 	to.dx[indexTo] = from.dx[indexFrom] - 2 * dotDN * N.x;
 	to.dy[indexTo] = from.dy[indexFrom] - 2 * dotDN * N.y;
 	to.dz[indexTo] = from.dz[indexFrom] - 2 * dotDN * N.z;
-	to.ox[indexTo] = inter.intersections[indexFrom].point.x + 2 * EPSILON * to.dx[indexTo];
-	to.oy[indexTo] = inter.intersections[indexFrom].point.y + 2 * EPSILON * to.dy[indexTo];
-	to.oz[indexTo] = inter.intersections[indexFrom].point.z + 2 * EPSILON * to.dz[indexTo];
+	to.ox[indexTo] = inter.intersections[indexFrom].point.x + 2 * EPSILON * N.x;
+	to.oy[indexTo] = inter.intersections[indexFrom].point.y + 2 * EPSILON * N.y;
+	to.oz[indexTo] = inter.intersections[indexFrom].point.z + 2 * EPSILON * N.z;
 	to.recDirX[indexTo] = 1.0f / to.dx[indexTo];
 	to.recDirY[indexTo] = 1.0f / to.dy[indexTo];
 	to.recDirZ[indexTo] = 1.0f / to.dz[indexTo];
@@ -854,19 +854,21 @@ void SetSingleReflectRay(Ray8 &to, const Ray8 &from, const int indexTo, const in
 }
 
 //copy the in metalRayRefs indicated rays from r over to the metalPacket
+//gives back the "ia" for the metalpackets and the index after which the total raypacket is empty
 int2 PackMetalRays(Rays &metalPacket, const Rays &r, const Indices &I, const Intersections &currInts, const int2* metalRayRefs)
 {
 	//Send the metal and dielectric ray packets
 //specular surfaces
+	int index = 0;
 	for (int u = 0; u < RAYPACKETSIZE; u++)
 	{
 		for (int v = 0; v < 8; v++)
 		{
-			const int index = v + 8 * u;
-			const int j = metalRayRefs[index].y;
+			index = v + (u * 8);
+				const int j = metalRayRefs[index].y;
 
 			if (j < 0) // The rest is not occupied
-				return make_int2(u, v); //this is the "ia" at the start, so ia -1 is the last index of a metal ray in use
+				return make_int2(u, index); //this is the "ia" at the start, so ia -1 is the last index of a metal ray in use
 
 			const int i = metalRayRefs[index].x;
 
@@ -876,6 +878,7 @@ int2 PackMetalRays(Rays &metalPacket, const Rays &r, const Indices &I, const Int
 			SetSingleReflectRay(metalPacket.rays[u], r.rays[I.I[j]], v, i, currInts.inter[I.I[j]]);
 		}
 	}
+	return make_int2(RAYPACKETSIZE, index + 1);;
 }
 
 //copy the in metalRayRefs indicated rays from r over to the metalPacket
@@ -883,21 +886,23 @@ void UnpackMetalRays(const Rays &tempPacket, Rays &r, const Indices &I, const in
 {
 	//Send the metal and dielectric ray packets
 	//specular surfaces
-	int maxV = 8;
-	for (int u = 0; u < metalIa.x; u++)
+	int index = 0;
+	for (int u = 0; u < RAYPACKETSIZE; u++)
 	{
-		if (u == metalIa.x - 1) //if it is at the last horizontal SIMD ray
-			maxV = metalIa.y;
-		for (int v = 0; v < maxV; v++)
+		for (int v = 0; v < 8; v++)
 		{
-			const int index = v + 8 * u;
+			index = v + (u * 8);
+			if (index == metalIa.y) //this and further no rays are present in the packet
+			{
+				return;
+			}
 			const int j = tempRayRefs[index].y;
 			const int i = tempRayRefs[index].x;
 
 			// for instance during packing first metal intersection was j = 3, i = 5 in original. 
 			// Copy the reflected to index 0, since it was the first that comes up in metalRayRefs
 			// After packettraversal is complete, this result should go back from index 0 to ray j = 3, i = 5 in the original
-			SetSingleRay(r.rays[I.I[j]], tempPacket.rays[u], j, v);
+			SetSingleRay(r.rays[I.I[j]], tempPacket.rays[u], i, v);
 
 			//adjust the ray color with T, E and material color to match what is normally returned by metallic: E + T * MISample(ray.Reflect(I.norm, I.point), I) * I.material.color
 			r.rays[I.I[j]].color.b[i] = E[index].x + T[index].x * r.rays[I.I[j]].color.b[i] * currInts.inter[I.I[j]].intersections[i].material.color.x;
@@ -1070,7 +1075,7 @@ void Raytracer::MISample(Rays &r, const Frustrum &fr, Indices I, Intersections p
 					else if (currInt->material.metallic)
 					{
 						float rn = (float)rand() / (float)RAND_MAX;
-						if (rn <= currInt->material.specularity)
+						if (1)//rn <= currInt->material.specularity)
 						{
 							float rn = (float)rand() / (float)RAND_MAX;
 							if (rn > ROULETTEREFLECTPACKET)
@@ -1096,6 +1101,7 @@ void Raytracer::MISample(Rays &r, const Frustrum &fr, Indices I, Intersections p
 
 			//loop over the metal rays to copy the results back to the originals, while doing: E + T * MISample(ray.Reflect(I.norm, I.point), I) * I.material.color
 			UnpackMetalRays(metalPacket, r, I, metalRayRefs, metalIa, E, T, currInts);
+			int w = 0;
 		}
 
 		//TODO: Glass, if the metal works

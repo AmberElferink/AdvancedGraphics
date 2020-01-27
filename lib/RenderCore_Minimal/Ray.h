@@ -137,7 +137,7 @@ public:
 	{
 		for (int i = 0; i < RAYPACKETSIZE; i++)
 		{
-			rays->activeMask8 = _mm256_setzero_ps();
+			rays[i].activeMask8 = _mm256_setzero_ps();
 		}
 	}
 	//int ia = RAYPACKETSIZE; //one past last active ray (rays at and behind rays[I[ia]] do not intersect)
