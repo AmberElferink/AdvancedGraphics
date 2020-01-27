@@ -112,7 +112,13 @@ public:
 	}
 	Ray8::Ray8()
 	{
+		trueMask8 = _mm256_cmp_ps(_mm256_setzero_ps(), _mm256_setzero_ps(), _CMP_EQ_OS);
 		activeMask8 = trueMask8;
+	}
+	//only put true, the bool itself will not be checked
+	Ray8::Ray8(bool raysStartDead)
+	{
+		activeMask8 = _mm256_setzero_ps();
 	}
 	Ray8::~Ray8()
 	{
@@ -125,7 +131,15 @@ class Rays
 public:
 	Ray8 rays[RAYPACKETSIZE];
 	
-
+	Rays() = default;
+	//only put true, the bool itself will not be checked
+	Rays(bool raysStartDead)
+	{
+		for (int i = 0; i < RAYPACKETSIZE; i++)
+		{
+			rays->activeMask8 = _mm256_setzero_ps();
+		}
+	}
 	//int ia = RAYPACKETSIZE; //one past last active ray (rays at and behind rays[I[ia]] do not intersect)
 };
 

@@ -3,6 +3,7 @@
 #include "core_settings.h"
 int rayNr = 0;
 #define ROULETTEREFLECT 0.01f //chance that a ray dies
+#define ROULETTEREFLECTPACKET 0.1f //chance that a ray dies
 
 bool Raytracer::IsOccluded(const Ray &ray, const Light &light)
 {
@@ -1048,12 +1049,12 @@ void Raytracer::MISample(Rays &r, const Frustrum &fr, Indices I, Intersections p
 					if (currInts.inter[I.I[j]].t[i] > 10e29)
 						SetColor(r, E[index], I, i, j);
 
-					else if (currInt->triangle.ltriIdx >= 0)
+					else if (currInt->triangle.ltriIdx >= 0) //light is hit
 					{
 						if (prevInt->material.metallic) //in metallic reflections, show the lightsource
 							SetColor(r, currInt, I, i, j); //light color
 						else
-							SetColor(r, E[index], I, i, j); //give the color up to now if you accidentally find a light, and not via NEE
+							SetColor(r, E[index], I, i, j);
 					}
 
 					//TODO: GLASS, if the metal works
@@ -1070,7 +1071,14 @@ void Raytracer::MISample(Rays &r, const Frustrum &fr, Indices I, Intersections p
 					{
 						float rn = (float)rand() / (float)RAND_MAX;
 						if (rn <= currInt->material.specularity)
-							metalRayRefs[metalCount++] = make_int2(i, j);
+						{
+							float rn = (float)rand() / (float)RAND_MAX;
+							if (rn > ROULETTEREFLECTPACKET)
+								metalRayRefs[metalCount++] = make_int2(i, j);
+							else
+								SetColor(r, E[index] * currInt->material.color, I, i, j);
+						}
+							
 					}
 				}
 			}
@@ -1079,12 +1087,12 @@ void Raytracer::MISample(Rays &r, const Frustrum &fr, Indices I, Intersections p
 		//if there is at least one metal intersection
 		if (metalRayRefs[0].x != -1)
 		{
-			Rays metalPacket; //TODO: currently the new packet will in some cases only be 25% full. Make Rays packet size more flexible.
+			Rays metalPacket(true); //TODO: currently the new packet will in some cases only be 25% full. Make Rays packet size more flexible.
 			//index one after the last in use metal ray in the packet
 			int2 metalIa = PackMetalRays(metalPacket, r, I, currInts, metalRayRefs);
 
 			//Trace the new metal packet
-			MISample(metalPacket, Frustrum(), Indices(), prevIntersections, metalIa.x); //Indices is only needed when going into nearestIntersections, and since you are repacking and giving ia = last metal ray + 1, this is fine.
+			MISample(metalPacket, Frustrum(), Indices(), prevIntersections, RAYPACKETSIZE); //Indices is only needed when going into nearestIntersections, and since you are repacking and giving ia = last metal ray + 1, this is fine.
 
 			//loop over the metal rays to copy the results back to the originals, while doing: E + T * MISample(ray.Reflect(I.norm, I.point), I) * I.material.color
 			UnpackMetalRays(metalPacket, r, I, metalRayRefs, metalIa, E, T, currInts);
