@@ -494,9 +494,7 @@ bool BVHNode::IntersectNode(const Ray &ray)
 	return true;
 }
 
-
-
-//translating code of the intersectNode method to AVX
+//translating code of the intersectNode method
 bool BVHNode::IntersectNode(const Ray8 &ray8)
 {
 	//float tmin, tmax, tymin, tymax, tzmin, tzmax;

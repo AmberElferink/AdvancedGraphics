@@ -7,6 +7,7 @@
     </ClCompile>
     <ClCompile Include="raytracer.cpp" />
     <ClCompile Include="BVH.cpp" />
+    <ClCompile Include="photongrid.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="rendercore.h" />
@@ -18,6 +19,7 @@
     <ClInclude Include="Ray.h" />
     <ClInclude Include="raytracer.h" />
     <ClInclude Include="BVH.h" />
+    <ClInclude Include="photongrid.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="API">
