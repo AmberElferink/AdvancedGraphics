@@ -184,7 +184,8 @@ class Raytracer
 	Ray DielectricPath( Ray ray, Intersection intersection, const Intersection prevIntersection, const float n1 = 1.0002f ); //only adjust n1 if previous trace is also a dielectric material
 	float Fresnel( const float cosi, const float ncalc, const float n1, const float n2 );
 	float3 DirectIllumination( Intersection intersection );
-	void ScatterPhotons( const long &N );
+	void ScatterPhotons( const uint &N );
+	void ContinuePhoton( Ray &ray, const Intersection &prevIntersection );
 	void PNEE( const float3 &point, float3 &pl, Light &light, float &p );
 	float3 DiffuseReflection( float3 N );
 	float3 CosineWeightedDiffuseReflection( float3 N );

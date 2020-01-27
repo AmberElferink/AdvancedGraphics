@@ -93,13 +93,13 @@ float3 Raytracer::randomPointTri( const Light &light )
 
 	uint corner = light.corner;
 	float3 v0, v1, v2, point;
-	if (light.corner == 0)
+	if ( light.corner == 0 )
 	{
 		v0 = light.triangle.vertex0;
 		v1 = light.triangle.vertex1;
 		v2 = light.triangle.vertex2;
 	}
-	else if (light.corner == 1)
+	else if ( light.corner == 1 )
 	{
 		v0 = light.triangle.vertex1;
 		v1 = light.triangle.vertex0;
@@ -122,7 +122,7 @@ float3 Raytracer::randomPointTri( const Light &light )
 
 	float cosTheta = dot( normA, normEdge );
 
-	float p = cosTheta * length(A);
+	float p = cosTheta * length( A );
 	float3 locP = v1 + p * normEdge;
 
 	//compute the angle between the vector from p to the point and from p to vertex0
@@ -143,7 +143,7 @@ float3 Raytracer::randomPointTri( const Light &light )
 }
 
 /* returns the vertex that is opposite of the longest axis of a triangle */
-uint Raytracer::cornerTriangle(const CoreLightTri &triangle)
+uint Raytracer::cornerTriangle( const CoreLightTri &triangle )
 {
 	float l1, l2, l3;
 	l1 = length( triangle.vertex0 - triangle.vertex1 );
@@ -170,7 +170,7 @@ void Raytracer::randomPointLight( float3 &pl, Light &light_out )
 	float area = 0;
 	for ( Light &light : scene.lightList )
 	{
-		if ( light.triangle.area + area >= rp  )
+		if ( light.triangle.area + area >= rp )
 		{
 			light_out = light;
 			pl = randomPointTri( light );
@@ -662,9 +662,7 @@ float3 Raytracer::DirectIllumination( Intersection intersection )
 
 //---------------------------------------------------------PATHTRACER METHODS------------------------------------
 
-/* Method that scatters a photon and returns the final position, along with the traversed distance D 
-   N = total number of photons that are going to be scattered */
-void Raytracer::ScatterPhotons( const long &N )
+void Raytracer::ScatterPhotons( const uint &N )
 {
 	uint n = 0;
 	while ( n < N )
@@ -676,17 +674,80 @@ void Raytracer::ScatterPhotons( const long &N )
 		randomPointLight( origin, light );
 		float3 dir = CosineWeightedDiffuseReflection( light.triangle.N );
 		Ray ray = Ray( origin, dir );
-		Intersection I = nearestIntersection( ray );
+		Intersection I = nearestIntersection(ray);
 
 		if ( I.t < 10e29 )
+		{
+			scene.photonMap.StorePhoton( I.point, light.triangle.triIdx );
+			if ( I.material.dielectric )
 			{
-				scene.photonMap.StorePhoton(I.point, light.triangle.triIdx);
-				n++;
+				DielectricPath( ray, I, Intersection(), 0.0f );
+				ContinuePhoton( ray, I );
 			}
+			else if ( I.material.metallic )
+			{
+				float r = (float)rand() / (float)RAND_MAX;
+				if ( r < I.material.specularity )
+				{
+					ray.Reflect( I.norm, I.point );
+					ContinuePhoton( ray, I );
+				}
+				else 
+					{
+						dir = CosineWeightedDiffuseReflection( I.norm );
+						ray = Ray( I.point, dir );
+						ContinuePhoton( ray, I );
+					}
+			}
+			else
+			{
+				dir = CosineWeightedDiffuseReflection( I.norm );
+				ray = Ray( I.point, dir );
+				ContinuePhoton( ray, I );
+			}
+			n++;
+		}
 	}
 }
 
-void Raytracer::PNEE(const float3 &point, float3 &pl, Light &light, float &p)
+/* Method that scatters a photon and returns the final position, along with the traversed distance D 
+   N = total number of photons that are going to be scattered 
+   dirIll = true if the current ray originates at a light source */
+void Raytracer::ContinuePhoton( Ray &ray, const Intersection &prevIntersection )
+{
+	Intersection I = nearestIntersection( ray );
+	if (I.t < 10e29)
+		{
+		scene.photonMap.StoreDirection( I.point, -ray.D );
+		//perform russian roulette
+		float rr = (float)rand() / (float)RAND_MAX;
+		if ( rr < 0.5 )
+			return;
+
+		if ( I.material.metallic )
+		{
+			float r = (float)rand() / (float)RAND_MAX;
+			if ( r < I.material.specularity )
+			{
+				ray.Reflect( I.norm, I.point );
+				ContinuePhoton( ray, I );
+				return;
+			}
+		}
+		if ( I.material.dielectric )
+		{
+			DielectricPath( ray, I, prevIntersection, 0 );
+			ContinuePhoton( ray, I );
+			return;
+		}
+		float3 dir = CosineWeightedDiffuseReflection( I.norm );
+		ray = Ray( I.point, dir );
+		ContinuePhoton( ray, I );
+		return;
+	}
+}
+
+void Raytracer::PNEE( const float3 &point, float3 &pl, Light &light, float &p )
 {
 	uint x, y, z;
 	uint nlights = scene.lightList.size();
@@ -802,7 +863,7 @@ float3 Raytracer::MISample( Ray &ray, Intersection prevIntersection, bool lastSp
 		Light light;
 		float p;
 		//randomPointLight( pl, light );
-		PNEE(I.point, pl, light , p);
+		PNEE( I.point, pl, light, p );
 		float dist = length( pl - I.point );
 		pl = ( pl - I.point ) / dist;
 		Ray lr( I.point + 2 * EPSILON * pl, pl );
@@ -812,13 +873,18 @@ float3 Raytracer::MISample( Ray &ray, Intersection prevIntersection, bool lastSp
 		{
 			if ( !IsOccluded( lr, light ) )
 			{
-				float solidAngle = ( dot2 * light.triangle.area  ) / ( dist * dist );
+				float solidAngle = ( dot2 * light.triangle.area ) / ( dist * dist );
 				float misPDF = 1 / solidAngle + 1 / ( 2 * PI ); //1 /(2*PI);
 				E += T * ( dot1 / misPDF ) * light.triangle.radiance * BRDF * ray.I;
 			}
 		}
 		// continue random walk
-		float3 R = CosineWeightedDiffuseReflection( I.norm );
+		float3 R;
+		float rn = (float)rand() / (float)RAND_MAX;
+		if ( rn < 0.5 )
+			R = CosineWeightedDiffuseReflection( I.norm );
+		else
+			R = scene.photonMap.pickDirection( I.point, I.norm );
 		float dotR = dot( R, I.norm );
 		float PDF = dotR / PI;
 		Ray r( I.point, R );
@@ -1120,5 +1186,5 @@ void Raytracer::storePhotonMap()
 	for ( BVH &b : bvh )
 		bounds.Grow( b.root->bounds );
 	scene.photonMap.InitializeGrid( k, scene.lightList.size(), bounds );
-	ScatterPhotons(1000000);
+	ScatterPhotons( 1000000 );
 }
