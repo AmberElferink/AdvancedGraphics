@@ -223,12 +223,7 @@ void RenderCore::SetProbePos( const int2 pos )
 uint lineNr = 0;
 int frameCounter = 0;
 
-//#define THREADS
-//#define AVX
-//#define AVXPACKETTRAVERSAL
-//#define PACKETFRUSTRUMS
-#define PATHTRACE
-//#define PATHTRACEPACKETS
+
 
 #ifdef THREADS
 vector<thread> threads;
@@ -239,7 +234,9 @@ void RenderCore::Render( const ViewPyramid &view, const Convergence converge )
 	if ( firsttime )
 	{
 		t.reset();
+#ifdef PhotonMap
 		raytracer.storePhotonMap();
+#endif
 		printf( "Photon map loaded in %f s\n", t.elapsed() );
 		firsttime = false;
 	}

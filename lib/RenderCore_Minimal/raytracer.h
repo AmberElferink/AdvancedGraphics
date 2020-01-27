@@ -175,7 +175,7 @@ class Raytracer
 	Intersection nearestIntersection( const Ray &ray );
 	void nearestIntersection(const Ray8 &ray, Intersection8 &closest);
 	void nearestIntersection( Rays &r, Intersections &closests, Indices indices = Indices(), int ia = RAYPACKETSIZE);
-	void nearestIntersection( Rays &r, const Frustrum &fr, Intersections &closests);
+	void nearestIntersection( Rays &r, const Frustrum &fr, Intersections &closests, Indices indices = Indices(), int ia = RAYPACKETSIZE);
 	Bitmap *rayTraceRandom( const ViewPyramid &view, const int targetTextureID, int &frameCounter );
 	void TextureColor( Intersection &intersection, const CoreTri &triangle, uint &color );
 
@@ -183,6 +183,7 @@ class Raytracer
 	//Pathtracer methodes
 	float3 MISample(Ray &ray, Intersection prevIntersection, float3 &T, float3 &E);
 	void MISample(Rays &r, const Frustrum &fr, Indices I, Intersections prevIntersections, int ia = RAYPACKETSIZE);
+	void MISample(Rays &r, Indices I, Intersections prevIntersections, int ia);
 	float3 Sample(const Ray &ray, Intersection prevIntersection, bool lastSpecular);
 	void pathTrace(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, uint sampleCount);
 	void pathTracePackets(Bitmap *screen, const ViewPyramid &view, const int targetTextureID, uint sampleCount);

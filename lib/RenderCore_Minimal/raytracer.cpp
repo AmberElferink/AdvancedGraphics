@@ -277,7 +277,7 @@ void Raytracer::nearestIntersection(Rays &r, Intersections &closests, Indices in
 	}
 }
 
-void Raytracer::nearestIntersection(Rays &r, const Frustrum &fr, Intersections &closests)
+void Raytracer::nearestIntersection(Rays &r, const Frustrum &fr, Intersections &closests, Indices indices, int ia)
 {
 	int id = 0;
 
@@ -1188,8 +1188,12 @@ Ray Raytracer::DiffuseBounce(const Intersection &I, float3 &E, float3 &T, const 
 	float3 pl;
 	Light light;
 	float p;
-	//randomPointLight( pl, light );
-	PNEE( I.point, pl, light, p );
+#ifdef PhotonMap
+	PNEE(I.point, pl, light, p);
+#else
+	randomPointLight( pl, light );
+#endif
+	
 	float dist = length(pl - I.point);
 	pl = (pl - I.point) / dist;
 	Ray lr(I.point, pl);
@@ -1203,20 +1207,20 @@ Ray Raytracer::DiffuseBounce(const Intersection &I, float3 &E, float3 &T, const 
 			float solidAngle = (dot2 * light.triangle.area) / (dist * dist);
 			float misPDF = 1 / solidAngle + 1 / (2 * PI); //1 /(2*PI);
 			E += T * (dot1 / misPDF) * light.triangle.radiance * BRDF * Transmission;
-			int w = 0;
-		}
-		else
-		{
-			int w = 0;
 		}
 	}
 	// continue random walk
 	float3 R;
+#ifdef PhotonMap
+	
 	float rn = (float)rand() / (float)RAND_MAX;
-	if ( rn < 0.1 )
+	if ( rn < 0.9 )
 		R = CosineWeightedDiffuseReflection( I.norm );
 	else
 		R = scene.photonMap.pickDirection( I.point, I.norm );
+#else
+	R = CosineWeightedDiffuseReflection(I.norm);
+#endif
 	float dotR = dot(R, I.norm);
 	float PDF = dotR / PI;
 	Ray r(I.point, R);
@@ -1312,7 +1316,7 @@ void Raytracer::MISample(Rays &r, const Frustrum &fr, Indices I, Intersections p
 		metalCount = 0;
 
 		Intersections currInts;
-		nearestIntersection(r, currInts, I, ia);
+			nearestIntersection(r, fr, currInts, I, ia);
 		//all active rays must be checked.
 		for (int j = 0; j < ia; j++)
 		{
@@ -1380,7 +1384,7 @@ void Raytracer::MISample(Rays &r, const Frustrum &fr, Indices I, Intersections p
 			int2 metalIa = PackMetalRays(metalPacket, r, I, currInts, metalRayRefs);
 
 			//Trace the new metal packet
-			MISample(metalPacket, Frustrum(), Indices(), prevIntersections, metalIa.x); //Indices is only needed when going into nearestIntersections, and since you are repacking and giving ia = last metal ray + 1, this is fine.
+			MISample(metalPacket, Indices(), prevIntersections, metalIa.x); //Indices is only needed when going into nearestIntersections, and since you are repacking and giving ia = last metal ray + 1, this is fine.
 
 			//loop over the metal rays to copy the results back to the originals, while doing: E + T * MISample(ray.Reflect(I.norm, I.point), I) * I.material.color
 			UnpackMetalRays(metalPacket, r, I, metalRayRefs, metalIa, E, T, currInts);
@@ -1394,7 +1398,7 @@ void Raytracer::MISample(Rays &r, const Frustrum &fr, Indices I, Intersections p
 			int2 dielectricIa = PackDielectricRays(dielectricRays, r, I, currInts, prevIntersections, dielecRayRefs);
 
 			//Trace the new metal packet
-			MISample(dielectricRays, Frustrum(), Indices(), prevIntersections, dielectricIa.x); //Indices is only needed when going into nearestIntersections, and since you are repacking and giving ia = last metal ray + 1, this is fine.
+			MISample(dielectricRays, Indices(), prevIntersections, dielectricIa.x); //Indices is only needed when going into nearestIntersections, and since you are repacking and giving ia = last metal ray + 1, this is fine.
 
 			//loop over the metal rays to copy the results back to the originals, while doing: E + T * MISample(ray.Reflect(I.norm, I.point), I) * I.material.color
 			UnpackDielectricRays(dielectricRays, r, I, dielecRayRefs, dielectricIa, E, T, currInts);
@@ -1433,6 +1437,157 @@ void Raytracer::MISample(Rays &r, const Frustrum &fr, Indices I, Intersections p
 	}
 }
 
+
+void Raytracer::MISample(Rays &r, Indices I, Intersections prevIntersections, int ia)
+{
+	// TODO: Lambert, and remove that Transmission for diffuse reflection is automatically 1
+	// TODO: make this method recursive relying on the double for loops, instead of checking all the rays alive everytime
+	// TODO: shadow rays in packets.
+
+	float3 T[TOTALPACKETSIZE];
+	float3 E[TOTALPACKETSIZE];
+
+	for (int i = 0; i < TOTALPACKETSIZE; i++)
+	{
+		T[i] = onefloat3;
+		E[i] = zerofloat3;
+	}
+
+	//keep track of where the rays come from in the reorganised packets by taking note of i and j.
+	int2 metalRayRefs[TOTALPACKETSIZE];
+	int metalCount;
+	int2 dielecRayRefs[TOTALPACKETSIZE];
+	int dielecCount;
+
+	while (SomeRaysAreAlive(r, I, ia))
+	{
+
+		memset(metalRayRefs, -1, sizeof(metalRayRefs));
+		memset(dielecRayRefs, -1, sizeof(dielecRayRefs));
+		dielecCount = 0;
+		metalCount = 0;
+
+		Intersections currInts;
+		nearestIntersection(r, currInts, I, ia);
+		//all active rays must be checked.
+		for (int j = 0; j < ia; j++)
+		{
+			for (int i = 0; i < 8; i++)
+			{
+				//if the ray is active
+				if (isnan(abs(r.rays[I.I[j]].deadMask[i]))) //it's -nan, which means it's true. (0 is false). So, if the ray is not yet terminated, give it a color
+				{
+					Intersection* currInt = &currInts.inter[I.I[j]].intersections[i];
+					const Intersection* prevInt = &prevIntersections.inter[I.I[j]].intersections[i];
+					const int index = i + 8 * j;
+
+					if (currInts.inter[I.I[j]].t[i] > 10e29)
+						SetColor(r, E[index], I, i, j);
+
+					else if (currInt->triangle.ltriIdx >= 0) //light is hit
+					{
+						if (prevInt->material.metallic) //in metallic reflections, show the lightsource
+							SetColor(r, currInt, I, i, j); //light color
+						else
+							SetColor(r, E[index], I, i, j);
+					}
+
+					else if (currInt->material.dielectric)
+					{
+						float rn = (float)rand() / (float)RAND_MAX;
+						if (rn <= currInt->material.specularity)
+						{
+							Ray dielRay = DielectricPath(Ray8ToRay(r.rays[j], i), *currInt, prevIntersections.inter[j].intersections[i]);
+							float3 color = E[index] + T[index] * MISample(dielRay, *currInt, T[index], E[index]);
+							SetColor(r, color, I, i, j);
+
+							//float rn = (float)rand() / (float)RAND_MAX;
+							//if (rn > ROULETTEREFLECTPACKET)
+							//	dielecRayRefs[metalCount++] = make_int2(i, j);
+							//else
+							//	SetColor(r, E[index] * currInt->material.color, I, i, j);
+						}
+					}
+
+					//same as for the dielectric
+					else if (currInt->material.metallic)
+					{
+						float rn = (float)rand() / (float)RAND_MAX;
+						if (rn <= currInt->material.specularity)
+						{
+
+							float rn = (float)rand() / (float)RAND_MAX;
+							if (rn > ROULETTEREFLECTPACKET)
+								metalRayRefs[metalCount++] = make_int2(i, j);
+							else
+								SetColor(r, E[index] * currInt->material.color, I, i, j);
+						}
+
+					}
+				}
+			}
+		}
+
+		//if there is at least one metal intersection
+		if (metalRayRefs[0].x != -1)
+		{
+			Rays metalPacket(true); //TODO: currently the new packet will in some cases only be 25% full. Make Rays packet size more flexible.
+			//index one after the last in use metal ray in the packet
+			int2 metalIa = PackMetalRays(metalPacket, r, I, currInts, metalRayRefs);
+
+			//Trace the new metal packet
+			MISample(metalPacket, Indices(), prevIntersections, metalIa.x); //Indices is only needed when going into nearestIntersections, and since you are repacking and giving ia = last metal ray + 1, this is fine.
+
+			//loop over the metal rays to copy the results back to the originals, while doing: E + T * MISample(ray.Reflect(I.norm, I.point), I) * I.material.color
+			UnpackMetalRays(metalPacket, r, I, metalRayRefs, metalIa, E, T, currInts);
+			int w = 0;
+		}
+		//if there is at least one metal intersection
+		if (dielecRayRefs[0].x != -1)
+		{
+			Rays dielectricRays(true); //TODO: currently the new packet will in some cases only be 25% full. Make Rays packet size more flexible.
+			//index one after the last in use metal ray in the packet
+			int2 dielectricIa = PackDielectricRays(dielectricRays, r, I, currInts, prevIntersections, dielecRayRefs);
+
+			//Trace the new metal packet
+			MISample(dielectricRays, Indices(), prevIntersections, dielectricIa.x); //Indices is only needed when going into nearestIntersections, and since you are repacking and giving ia = last metal ray + 1, this is fine.
+
+			//loop over the metal rays to copy the results back to the originals, while doing: E + T * MISample(ray.Reflect(I.norm, I.point), I) * I.material.color
+			UnpackDielectricRays(dielectricRays, r, I, dielecRayRefs, dielectricIa, E, T, currInts);
+		}
+
+		//TODO: Glass, if the metal works
+		//if (I.material.dielectric)
+		//{
+		//	return E + T * MISample(DielectricPath(ray, I, prevIntersection), I) * ray.I;
+		//}
+
+
+
+		//every ray before this are packet traversed, now after they have diffusely bounced, they are basically all over the place. 
+		//Therefore, use the normal MISample for each ray in the packet that is still active.
+		for (int j = 0; j < ia; j++)
+		{
+			for (int i = 0; i < 8; i++)
+			{
+				if (isnan(abs(r.rays[I.I[j]].deadMask[i])))
+				{
+					Intersection* currInt = &currInts.inter[I.I[j]].intersections[i];
+					const int index = i + 8 * j;
+					// sample a random light source
+
+					currInt->material.metallic = false;
+
+					float3 color = MISample(DiffuseBounce(*currInt, E[index], T[index]), *currInt, T[index], E[index]);
+					r.rays[I.I[j]].color.b[i] = color.x;
+					r.rays[I.I[j]].color.g[i] = color.y;
+					r.rays[I.I[j]].color.r[i] = color.z;
+					r.rays[I.I[j]].deadMask[i] = 0x00000000;
+				}
+			}
+		}
+	}
+}
 
 
 
