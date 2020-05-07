@@ -36,13 +36,31 @@ using namespace lighthouse2;
 #include "core_api_base.h"
 #include "core_api.h"
 using namespace lh2core;
-//#define THREADS
+
+//#define THREADS //only for raytracer 
+
+//raytracer:
 //#define AVX
 //#define AVXPACKETTRAVERSAL
 //#define PACKETFRUSTRUMS
+
+//pathtracer:
+#define PhotonMap
+
 //#define PATHTRACE
 #define PATHTRACEPACKETS
-//#define PhotonMap
+
+
+
+#if defined(AVX) || defined(AVXPACKETTRAVERSAL) || defined(PACKETFRUSTRUMS) 
+	#define RAYTRACER
+#endif
+
+#if defined(PATHTRACEPACKETS) || defined(AVXPACKETTRAVERSAL) || defined(PACKETFRUSTRUMS)  || defined(AVX)  
+	#define EPSILON	0.008f
+#else
+	#define EPSILON 0.0001f
+#endif
 #include "BVH.h"
 #include "photongrid.h"
 #include "raytracer.h"
