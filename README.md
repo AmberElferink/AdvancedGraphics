@@ -1,4 +1,4 @@
-#How to run?
+# How to run?
 
 This project consists from three assignments. You can switch between them via the branches.
 
