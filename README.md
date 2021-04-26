@@ -1,4 +1,18 @@
+#How to run?
+
 This project consists from three assignments. You can switch between them via the branches.
+
+If you just want to see the visuals, you can open up the imguiapp.exe in apps > imguiapp > imguiapp.exe
+Sadly only Assignment 1 and 3 work like this currently on my computer a year after implementation, probably due to diverse updates. 
+
+To run it from the code:
+Due to an update on OpenGL and some Microsoft updates, Assigment 2 and 3 may give issues in compilation here.
+
+If you clone the project, and open the .sln in Visual Studio. It may ask to Retarget the project. It is the safest to not Retarget it, and to install the version it wants in the Visual Studio Installer. It may work on your installed version, but it depends per version. 
+
+In the Solution Explorer fold open render cores > rendercore_minimal. You can find the implemented code there. All files here are implemented by us. The other rendercores should be unloaded, except for rendercore_softrasterizer and rendercore_minimal, to prevent possible errors (right click and select "Unload"). Fold open applications, and set imguiapp as the startup project, and it should run. It may take a while for the image of assignment 1 to render, during which you will see the Lighthouse Technology demo screen, please give it a while depending on your CPU. Do not run it in Debug, since you will be waiting for a very long 
+
+
 
 # Assignment 1 - Whitted style raytracer
 ![Raytraced - Whitted style -CPU 25s - A1](https://user-images.githubusercontent.com/32518317/115625724-c7a6fc80-a2fc-11eb-92ae-140999ff1a0d.png)
